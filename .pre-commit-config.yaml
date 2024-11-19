@@ -1,0 +1,32 @@
+# Install the pre-commit hooks below with
+# 'pre-commit install'
+
+# Auto-update the version of the hooks with
+# 'pre-commit autoupdate'
+
+# Run the hooks on all files with
+# 'pre-commit run --all'
+
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  hooks:
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-yaml
+  - id: check-added-large-files
+
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.7.4
+  hooks:
+  - id: ruff
+    types_or: [ python, pyi ]
+    args: [ --fix ]
+  - id: ruff-format
+    types_or: [ python, pyi ]
+
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.13.0
+  hooks:
+  - id: mypy
+    files: (panther/)

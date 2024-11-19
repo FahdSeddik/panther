@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "panther"
+version = "0.0.1"
+description = "A streamlined Python library offering optimized RandNLA, automatic differentiation, and GPU acceleration for advanced numerical computing and machine learning."
+dependencies = [
+    "numpy",
+]
+
+[tool.setuptools.packages.find]
+where = ["panther"]
+
+[tool.ruff]
+exclude = ["*.ipynb"]
+include = ["panther/**/*.py", "tests/**/*.py"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+    "sphinx",
+    "pre-commit",
+]
+
+[tool.mypy]
+files = "panther"
+ignore_missing_imports = true
