@@ -1,22 +1,41 @@
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
 import os
 import sys
 
-# Add the path to your library to sys.path
-sys.path.insert(0, os.path.abspath("../panther"))
+sys.path.insert(0, os.path.abspath("../"))
+
 
 project = "Panther"
-copyright = "2024, The Panther Authors"
-release = "0.1.0"
+copyright = "2024, The Panther Team"
+author = "The Panther Team"
 
-extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",  # For Google and NumPy style docstrings
-    "sphinx_rtd_theme",
-]
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+extensions = ["sphinx.ext.autodoc"]
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+source_suffix = [".rst", ".md"]
 
-# The theme used for HTML output
-html_theme = "sphinx_rtd_theme"
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
+html_logo = "_static/panther-logo.png"
+html_title = "Panther Documentation"
+
+html_theme_options = {
+    "repository_url": "https://github.com/FahdSeddik/panther",
+    "use_repository_button": True,
+}

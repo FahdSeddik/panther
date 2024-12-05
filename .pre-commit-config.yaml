@@ -11,13 +11,22 @@ repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v5.0.0
   hooks:
-  - id: trailing-whitespace
-  - id: end-of-file-fixer
+  - id: check-ast
+  - id: check-merge-conflict
+  - id: check-toml
   - id: check-yaml
-  - id: check-added-large-files
+  - id: end-of-file-fixer
+    # only include python files
+    files: \.py$
+  - id: debug-statements
+    # only include python files
+    files: \.py$
+  - id: trailing-whitespace
+    # only include python files
+    files: \.py$
 
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.7.4
+  rev: v0.8.2
   hooks:
   - id: ruff
     types_or: [ python, pyi ]

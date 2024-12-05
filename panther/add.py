@@ -1,13 +1,12 @@
 def add(a: int, b: int) -> int:
     """
-    Add two numbers together.
+    Adds two integers together.
 
-    Parameters:
-    a (int): The first number
-    b (int): The second number
+    Args:
+        a (int): The first integer to add.
+        b (int): The second integer to add.
 
     Returns:
-    int: The sum of the two numbers
-
+        int: The sum of the two integers.
     """
     return a + b
