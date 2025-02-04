@@ -17,11 +17,12 @@ class SketchedLinearFunction(Function):
         bias: torch.Tensor,
     ):
         d1, num_terms = S2s.shape[1], S2s.shape[0]
-        tot = torch.zeros((d1, 1), device=input.device)
+        tot = torch.zeros((d1, input.shape[1]), device=input.device)
         # Efficiently perform the sum over all l terms
         for i in range(num_terms):
-            tot += U1s[i].T.mm(S1s[i].mm(input)) + S2s[i].mm(U2s[i].mm(input))
-
+            term1 = U1s[i].T.mm(S1s[i].mm(input))
+            term2 = S2s[i].mm(U2s[i].mm(input))
+            tot += term1 + term2
         return tot / (2 * num_terms) + bias.reshape(-1, 1)
 
     @staticmethod
@@ -41,16 +42,23 @@ class SketchedLinearFunction(Function):
         num_terms = S2s.shape[0]
         g = grad_output[0] / (2 * num_terms)
 
-        grad = torch.zeros(input.shape)
-        grad_S1s = torch.zeros(S1s.shape)
-        grad_S2s = torch.zeros(S2s.shape)
+        grad = torch.zeros(input.shape, device=input.device)
+        grad_S1s = torch.zeros(S1s.shape, device=input.device)
+        grad_S2s = torch.zeros(S2s.shape, device=input.device)
         for i in range(num_terms):
-            print(S1s[i].shape, U1s[i].shape, g.shape, U2s[i].shape, S2s[i].shape)
             grad += S1s[i].T.mm(U1s[i].mm(g)) + U2s[i].T.mm(S2s[i].T.mm(g))
             grad_S2s[i] = g.mm(input.T.mm(U2s[i].T))
             grad_S1s[i] = U1s[i].mm(g).mm(input.T)
 
-        return grad / (2 * num_terms), grad_S1s, grad_S2s, None, None, g.reshape(-1)
+        return (
+            grad / (2 * num_terms),
+            grad_S1s,
+            grad_S2s,
+            None,
+            None,
+            # sum g on batch dimension input.shape[1]
+            g.reshape(-1, input.shape[1]).sum(1),
+        )
 
 
 class SKLinear(nn.Module):
