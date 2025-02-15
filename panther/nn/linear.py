@@ -16,14 +16,12 @@ class SketchedLinearFunction(Function):
         U2s: torch.Tensor,
         bias: torch.Tensor,
     ):
-        d1, num_terms = S2s.shape[1], S2s.shape[0]
-        tot = torch.zeros((d1, input.shape[1]), device=input.device)
+        d1, num_terms = S2s.shape[2], S2s.shape[0]
+        tot = torch.zeros((input.shape[0], d1), device=input.device)
         # Efficiently perform the sum over all l terms
         for i in range(num_terms):
-            term1 = U1s[i].T.mm(S1s[i].mm(input))
-            term2 = S2s[i].mm(U2s[i].mm(input))
-            tot += term1 + term2
-        return tot / (2 * num_terms) + bias.reshape(-1, 1)
+            tot += (input.mm(S1s[i])).mm(U1s[i]) + (input.mm(U2s[i])).mm(S2s[i])
+        return tot / (2 * num_terms) + bias
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
@@ -43,21 +41,24 @@ class SketchedLinearFunction(Function):
         g = grad_output[0] / (2 * num_terms)
 
         grad = torch.zeros(input.shape, device=input.device)
+
         grad_S1s = torch.zeros(S1s.shape, device=input.device)
+
         grad_S2s = torch.zeros(S2s.shape, device=input.device)
+
         for i in range(num_terms):
-            grad += S1s[i].T.mm(U1s[i].mm(g)) + U2s[i].T.mm(S2s[i].T.mm(g))
-            grad_S2s[i] = g.mm(input.T.mm(U2s[i].T))
-            grad_S1s[i] = U1s[i].mm(g).mm(input.T)
+            grad += (g.mm(U1s[i].T)).mm(S1s[i].T) + (g.mm(S2s[i].T)).mm(U2s[i].T)
+            grad_S2s[i] = (U2s[i].T.mm(input.T)).mm(g)
+            grad_S1s[i] = input.T.mm(g.mm(U1s[i].T))
 
         return (
-            grad / (2 * num_terms),
+            grad,
             grad_S1s,
             grad_S2s,
             None,
             None,
-            # sum g on batch dimension input.shape[1]
-            g.reshape(-1, input.shape[1]).sum(1),
+            # sum g on batch dimension input.shape[0]
+            g.reshape(input.shape[0], -1).sum(0),
         )
 
 
@@ -73,11 +74,11 @@ class SKLinear(nn.Module):
     ):
         super(SKLinear, self).__init__()
 
-        if 2 * num_terms * low_rank * (output_dim + input_dim) > output_dim * input_dim:
-            raise ValueError(
-                "The number of parameters in the sketching layer is larger "
-                + "than the number of parameters in the fully connected layer."
-            )
+        # if 2 * num_terms * low_rank * (output_dim + input_dim) > output_dim * input_dim:
+        #     raise ValueError(
+        #         "The number of parameters in the sketching layer is larger "
+        #         + "than the number of parameters in the fully connected layer."
+        #     )
 
         self.l = num_terms
         self.k = low_rank
@@ -96,22 +97,23 @@ class SKLinear(nn.Module):
         self.register_buffer(
             "U1s",
             torch.stack([generate_U(low_rank, output_dim) for _ in range(num_terms)]),
-        )
+        )  # kxd1
         self.register_buffer(
             "U2s",
-            torch.stack([generate_U(low_rank, input_dim) for _ in range(num_terms)]),
-        )
+            torch.stack([generate_U(input_dim, low_rank) for _ in range(num_terms)]),
+        )  # d2xk
 
         # W is used to only initialize S
-        W = torch.randn(output_dim, input_dim) if W is None else W.clone().detach()
+
+        W = torch.randn(input_dim, output_dim) if W is None else W.T.clone().detach()
 
         # S1s and S2s are precomputed but not updated in the backward pass
         self.S1s = nn.Parameter(
-            torch.stack([torch.matmul(self.U1s[i], W) for i in range(num_terms)])
-        )
+            torch.stack([torch.matmul(W, self.U1s[i].T) for i in range(num_terms)])
+        )  # d2xk
         self.S2s = nn.Parameter(
-            torch.stack([torch.matmul(W, self.U2s[i].T) for i in range(num_terms)])
-        )
+            torch.stack([torch.matmul(self.U2s[i].T, W) for i in range(num_terms)])
+        )  # kxd1
 
         # Bias term initialized with a small standard deviation
         self.bias = nn.Parameter(torch.randn(output_dim) * bias_init_std)

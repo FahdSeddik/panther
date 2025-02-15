@@ -24,7 +24,9 @@ def test_sklinear_vs_linear():
     # call the forward method of the linear layer
     input = torch.randn(1, 30)
     linear_output = linear(input)
-    sklinear_output = sklinear(input.T)
+    sklinear_output = sklinear(input)
+    print("linear_output", linear_output.shape)
+    print("sklinear_output", sklinear_output.shape)
     assert (
         sklinear_output.reshape(-1, 1).shape == linear_output.reshape(-1, 1).shape
     ), "Output shapes do not match"
@@ -48,7 +50,7 @@ def test_backward():
 
     # call the forward method of the linear layer
     input = torch.randn(1, 30)
-    sklinear_output = sklinear(input.T)
+    sklinear_output = sklinear(input)
 
     # call the backward method of the linear layer
     sklinear_output.backward(torch.ones_like(sklinear_output))
