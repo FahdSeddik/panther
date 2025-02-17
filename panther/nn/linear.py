@@ -92,7 +92,10 @@ class SKLinear(nn.Module):
         factory_kwargs = {"dtype": dtype, "device": device}
         super(SKLinear, self).__init__()
 
-        # if 2 * num_terms * low_rank * (output_dim + input_dim) > output_dim * input_dim:
+        # if (
+        #     2 * num_terms * low_rank * (out_features + in_features)
+        #     > out_features * in_features
+        # ):
         #     raise ValueError(
         #         "The number of parameters in the sketching layer is larger "
         #         + "than the number of parameters in the fully connected layer."
