@@ -1,3 +1,4 @@
+import pytest
 import torch
 from torch.nn import Linear
 
@@ -7,12 +8,11 @@ from panther.nn import SKLinear
 def test_sklinear_vs_linear():
     linear = Linear(in_features=30, out_features=5)
     sklinear = SKLinear(
-        input_dim=30,
-        output_dim=5,
+        in_features=30,
+        out_features=5,
         num_terms=1,
         low_rank=1,
-        bias_init_std=0.01,
-        W=linear.weight,
+        W_init=linear.weight,
     )
 
     sklinear_bias = sklinear.bias.detach().numpy()
@@ -25,8 +25,7 @@ def test_sklinear_vs_linear():
     input = torch.randn(1, 30)
     linear_output = linear(input)
     sklinear_output = sklinear(input)
-    print("linear_output", linear_output.shape)
-    print("sklinear_output", sklinear_output.shape)
+
     assert (
         sklinear_output.reshape(-1, 1).shape == linear_output.reshape(-1, 1).shape
     ), "Output shapes do not match"
@@ -41,11 +40,10 @@ def test_sklinear_vs_linear():
 
 def test_backward():
     sklinear = SKLinear(
-        input_dim=30,
-        output_dim=5,
+        in_features=30,
+        out_features=5,
         num_terms=1,
-        low_rank=1,
-        bias_init_std=0.01,
+        low_rank=3,
     )
 
     # call the forward method of the linear layer
@@ -54,3 +52,50 @@ def test_backward():
 
     # call the backward method of the linear layer
     sklinear_output.backward(torch.ones_like(sklinear_output))
+
+
+@pytest.mark.parametrize(
+    "input_dim, output_dim, num_terms, low_rank",
+    [
+        (30, 10, 2, 3),
+        (100, 200, 3, 15),
+        (100, 200, 3, 30),
+    ],
+)
+def test_network_output_variance(
+    input_dim, output_dim, num_terms, low_rank, samples=100, scale_rng=0.1
+):
+    W = torch.randn(output_dim, input_dim) * scale_rng
+    bias = torch.randn(output_dim) * scale_rng
+
+    input = torch.randn(1, input_dim) * scale_rng
+    ground_truth = input @ W.T + bias
+
+    input = input.unsqueeze(0).expand(num_terms, input.shape[0], input.shape[1])
+    output_term1s = []
+    output_term2s = []
+    for _ in range(samples):
+        sklinear = SKLinear(
+            in_features=input_dim,
+            out_features=output_dim,
+            num_terms=num_terms,
+            low_rank=low_rank,
+            W_init=W,
+        )
+        output_term1s.append(
+            ((input.bmm(sklinear.S1s)).bmm(sklinear.U1s)).mean(0) + bias
+        )
+        output_term2s.append(
+            ((input.bmm(sklinear.U2s)).bmm(sklinear.S2s)).mean(0) + bias
+        )
+
+    variance_term1 = torch.mean((torch.stack(output_term1s) - ground_truth) ** 2)
+    variance_term2 = torch.mean((torch.stack(output_term2s) - ground_truth) ** 2)
+
+    variance_bound_term1 = 2 * output_dim * torch.norm(input @ W.T) ** 2 / low_rank
+    variance_bound_term2 = (
+        2 * torch.norm(W, p="fro") ** 2 * torch.norm(input) ** 2 / low_rank
+    )
+
+    assert variance_term1 <= variance_bound_term1
+    assert variance_term2 <= variance_bound_term2
