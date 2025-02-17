@@ -17,7 +17,9 @@ class SketchedLinearFunction(Function):
         bias: torch.Tensor,
     ):
         d1, num_terms = S2s.shape[2], S2s.shape[0]
-        tot = torch.zeros((input.shape[0], d1), device=input.device)
+        tot = torch.zeros(
+            (input.shape[0], d1), device=input.device, dtype=torch.float64
+        )
         # Efficiently perform the sum over all l terms
         for i in range(num_terms):
             tot += (input.mm(S1s[i])).mm(U1s[i]) + (input.mm(U2s[i])).mm(S2s[i])
@@ -40,11 +42,11 @@ class SketchedLinearFunction(Function):
         num_terms = S2s.shape[0]
         g = grad_output[0] / (2 * num_terms)
 
-        grad = torch.zeros(input.shape, device=input.device)
+        grad = torch.zeros(input.shape, device=input.device, dtype=torch.float64)
 
-        grad_S1s = torch.zeros(S1s.shape, device=input.device)
+        grad_S1s = torch.zeros(S1s.shape, device=input.device, dtype=torch.float64)
 
-        grad_S2s = torch.zeros(S2s.shape, device=input.device)
+        grad_S2s = torch.zeros(S2s.shape, device=input.device, dtype=torch.float64)
 
         for i in range(num_terms):
             grad += (g.mm(U1s[i].T)).mm(S1s[i].T) + (g.mm(S2s[i].T)).mm(U2s[i].T)
@@ -90,8 +92,8 @@ class SKLinear(nn.Module):
             Generate a random matrix U with orthonormal rows.
             """
             return (
-                torch.randint(0, 2, (k, d), dtype=torch.float32) * 2 - 1
-            ) / torch.sqrt(torch.tensor(k, dtype=torch.float32))
+                torch.randint(0, 2, (k, d), dtype=torch.float64) * 2 - 1
+            ) / torch.sqrt(torch.tensor(k, dtype=torch.float64))
 
         # Register U1s and U2s as buffers since they are not learnable
         self.register_buffer(
@@ -105,7 +107,11 @@ class SKLinear(nn.Module):
 
         # W is used to only initialize S
 
-        W = torch.randn(input_dim, output_dim) if W is None else W.T.clone().detach()
+        W = (
+            torch.randn(input_dim, output_dim, dtype=torch.float64)
+            if W is None
+            else W.T.clone().detach()
+        )
 
         # S1s and S2s are precomputed but not updated in the backward pass
         self.S1s = nn.Parameter(
@@ -116,7 +122,9 @@ class SKLinear(nn.Module):
         )  # kxd1
 
         # Bias term initialized with a small standard deviation
-        self.bias = nn.Parameter(torch.randn(output_dim) * bias_init_std)
+        self.bias = nn.Parameter(
+            torch.randn(output_dim, dtype=torch.float64) * bias_init_std
+        )
 
     def forward(self, h_in):
         """
