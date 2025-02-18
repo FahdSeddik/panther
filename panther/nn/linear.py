@@ -45,17 +45,22 @@ class SketchedLinearFunction(Function):
         input, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
         num_terms = S2s.shape[0]
         g = grad_output[0] / (2 * num_terms)
-        factory_kwargs = {"dtype": input.dtype, "device": input.device}
+        g = g.unsqueeze(0).expand(num_terms, g.shape[0], g.shape[1])
+        input = (
+            input.unsqueeze(0)
+            .expand(num_terms, input.shape[0], input.shape[1])
+            .transpose(1, 2)
+        )
+        U1s = U1s.transpose(1, 2)
+        S1s = S1s.transpose(1, 2)
+        U2s = U2s.transpose(1, 2)
+        S2s = S2s.transpose(1, 2)
+        t1 = g.bmm(U1s)
+        grad = t1.bmm(S1s).sum(0) + g.bmm(S2s).bmm(U2s).sum(0)
+        grad_S2s = (U2s.bmm(input)).bmm(g)
+        grad_S1s = input.bmm(g.bmm(U1s))
 
-        grad = torch.zeros(input.shape, **factory_kwargs)
-        grad_S1s = torch.zeros(S1s.shape, **factory_kwargs)
-        grad_S2s = torch.zeros(S2s.shape, **factory_kwargs)
-
-        for i in range(num_terms):
-            grad += (g.mm(U1s[i].T)).mm(S1s[i].T) + (g.mm(S2s[i].T)).mm(U2s[i].T)
-            grad_S2s[i] = (U2s[i].T.mm(input.T)).mm(g)
-            grad_S1s[i] = input.T.mm(g.mm(U1s[i].T))
-
+        g = g[0]
         return (
             grad,
             grad_S1s,
@@ -63,7 +68,7 @@ class SketchedLinearFunction(Function):
             None,
             None,
             # sum g on batch dimension input.shape[0]
-            g.reshape(input.shape[0], -1).sum(0),
+            g.reshape(input.shape[2], -1).sum(0),
         )
 
 
@@ -109,11 +114,21 @@ class SKLinear(nn.Module):
         # Register U1s and U2s as buffers since they are not learnable
         self.register_buffer(
             "U1s",
-            torch.stack([gen_U(low_rank, out_features) for _ in range(num_terms)]),
+            torch.stack(
+                [
+                    gen_U(low_rank, out_features, **factory_kwargs)
+                    for _ in range(num_terms)
+                ]
+            ),
         )  # kxd1
         self.register_buffer(
             "U2s",
-            torch.stack([gen_U(in_features, low_rank) for _ in range(num_terms)]),
+            torch.stack(
+                [
+                    gen_U(in_features, low_rank, **factory_kwargs)
+                    for _ in range(num_terms)
+                ]
+            ),
         )  # d2xk
 
         # W is used to only initialize S
