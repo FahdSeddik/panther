@@ -26,30 +26,26 @@ class SketchedConv2dFunction(Function):
         stride: Tuple[int, int],
         padding: Tuple[int, int],
         kernelSize: Tuple[int, int],
+        inshape,
         bias: torch.Tensor,
     ):
         # in_channels, height, width = input.shape
         _, dout = U1s[0].shape
-        unfold = nn.Unfold(
-            kernel_size=(kernelSize[0], kernelSize[1]), stride=stride, padding=padding
-        )
-        hout = (input.shape[2] + 2 * padding[0] - kernelSize[0]) // stride[0] + 1
-        wout = (input.shape[3] + 2 * padding[1] - kernelSize[1]) // stride[1] + 1
-        input_reshape = unfold(input)
-
-        input_reshape.transpose_(1, 2)
+        hout = (inshape[2] + 2 * padding[0] - kernelSize[0]) // stride[0] + 1
+        wout = (inshape[3] + 2 * padding[1] - kernelSize[1]) // stride[1] + 1
+        input.transpose_(1, 2)
         t = (
-            torch.einsum("nab,lbc,lcd->nlad", input_reshape, S1s, U1s)
-            + torch.einsum("nab,lbc,lcd->nlad", input_reshape, U2s.transpose(1, 2), S2s)
+            torch.einsum("nab,lbc,lcd->nlad", input, S1s, U1s)
+            + torch.einsum("nab,lbc,lcd->nlad", input, U2s.transpose(1, 2), S2s)
         ).mean(dim=1)
-        t = t.view(input.shape[0], dout, hout, wout)
+        t = t.view(inshape[0], dout, hout, wout)
         return t + bias.view(1, dout, 1, 1)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
     # output is the output of the forward().
     def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
-        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, bias = inputs
+        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshap, bias = inputs
         ctx.save_for_backward(
             input,
             S1s,
@@ -59,12 +55,16 @@ class SketchedConv2dFunction(Function):
             torch.tensor(stride),
             torch.tensor(padding),
             torch.tensor(kernelSize),
+            torch.tensor(inshap),
             bias,
         )
 
     @staticmethod
     def backward(ctx: Any, *grad_output: Any) -> Any:
-        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, bias = ctx.saved_tensors
+        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshape, bias = (
+            ctx.saved_tensors
+        )
+        input.transpose_(1, 2)
         num_terms, _, __ = S2s.shape
         hout = grad_output[0].shape[2]
         wout = grad_output[0].shape[3]
@@ -75,29 +75,17 @@ class SketchedConv2dFunction(Function):
             grad_output[0].shape[1],
         )
         grad_output /= 2 * num_terms
-        unfold = nn.Unfold(
-            kernel_size=(kernelSize[0], kernelSize[1]), stride=stride, padding=padding
-        )
-        input_reshape = unfold(input)
         g_S1s = torch.zeros_like(S1s)
         g_S2s = torch.zeros_like(S2s)
-        gout = torch.zeros(
-            input_reshape.shape[0],
-            input_reshape.shape[2],
-            input_reshape.shape[1],
-            device=input.device,
-        )
         g_S1s = torch.einsum(
-            "nab,nbc,lcd->lad", input_reshape, grad_output, U1s.transpose(1, 2)
+            "nab,nbc,lcd->lad", input, grad_output, U1s.transpose(1, 2)
         )
-
-        g_S2s = torch.einsum("lab,nbc,ncd->lad", U2s, input_reshape, grad_output)
-
+        g_S2s = torch.einsum("lab,nbc,ncd->lad", U2s, input, grad_output)
         gout = torch.einsum(
             "nab,lbc,lcd->nad", grad_output, U1s.transpose(1, 2), S1s.transpose(1, 2)
         ) + torch.einsum("nab,lbc,lcd->nad", grad_output, S2s.transpose(1, 2), U2s)
         fold = nn.Fold(
-            output_size=(input.shape[2], input.shape[3]),
+            output_size=(inshape[2], inshape[3]),
             kernel_size=(kernelSize[0], kernelSize[1]),
             stride=stride,
             padding=padding,
@@ -105,7 +93,7 @@ class SketchedConv2dFunction(Function):
         gout = gout.transpose(1, 2)
         gout = fold(gout)
 
-        return (gout, g_S1s, g_S2s, None, None, None, None, None, g_bias)
+        return (gout, g_S1s, g_S2s, None, None, None, None, None, None, g_bias)
 
 
 class SKConv2d(nn.Module):
@@ -203,8 +191,15 @@ class SKConv2d(nn.Module):
         # Register U1s and U2s as buffers since they are not learnable
 
     def forward(self, h_in):
+        unfold = nn.Unfold(
+            kernel_size=(self.kernel_size[0], self.kernel_size[1]),
+            stride=self.stride,
+            padding=self.padding,
+        )
+        inshape = h_in.shape
+        inn = unfold(h_in)
         return SketchedConv2dFunction.apply(
-            h_in,
+            inn,
             self.S1s,
             self.S2s,
             self.U1s,
@@ -212,5 +207,6 @@ class SKConv2d(nn.Module):
             self.stride,
             self.padding,
             self.kernel_size,
+            inshape,
             self.bias,
         )
