@@ -1,0 +1,3 @@
+[submodule "pawX/ext/nanobind"]
+	path = pawX/ext/nanobind
+	url = https://github.com/wjakob/nanobind
