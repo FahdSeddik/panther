@@ -4,7 +4,6 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/pawX/ext/nanobind/include",
                 "C:/Users/${env:USERNAME}/AppData/Local/Programs/Python/Python312/include",
                 "C:/Program Files/Python312/include",
                 "C:/Python312/include"
