@@ -1,10 +1,4 @@
-import torch
-from torch.utils._triton import has_triton
-
-if not has_triton():
-    print("Skipping because triton is not supported on this device.")
-else:
-    from torch.library import triton_op, wrap_triton
+from torch.library import triton_op, wrap_triton
 
 @triton_op("mylib::mysin", mutates_args={})
 def mysin(x: torch.Tensor) -> torch.Tensor:
@@ -33,14 +27,3 @@ def sin_triton(x):
     n_elements = x.numel()
     sin_kernel[(n_elements,)](x, out, n_elements, BLOCK_SIZE=4)
     return out
-  
-  
-x = torch.randn(3, device="cuda")
-y = mysin(x)
-z = torch.ops.mylib.mysin.default(x)
-
-assert torch.allclose(y, x.sin())
-assert torch.allclose(z, x.sin())
-
-y = torch.compile(mysin)(x)
-assert torch.allclose(y, x.sin())
