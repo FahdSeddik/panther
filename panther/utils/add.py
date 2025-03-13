@@ -1,3 +1,4 @@
+import torch
 import triton
 from triton import language as tl
 from torch.library import triton_op, wrap_triton
