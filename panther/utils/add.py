@@ -1,3 +1,5 @@
+import triton
+from triton import language as tl
 from torch.library import triton_op, wrap_triton
 
 @triton_op("mylib::mysin", mutates_args={})
