@@ -67,6 +67,3 @@ def add_fn(x, y):
 
 def out_add_fn(x, y):
     return add_fn(x, y)
-  
-def hello_world():
-    print("Hello, World!")
