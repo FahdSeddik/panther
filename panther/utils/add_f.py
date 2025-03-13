@@ -35,3 +35,6 @@ def add_fn(x, y):
     grid = lambda meta: (triton.cdiv(n_elements, meta["BLOCK_SIZE"]),)
     add_kernel_autotuned[grid](x, y, output, n_elements)
     return output
+
+def out_add_fn(x, y):
+    return add_fn(x, y)

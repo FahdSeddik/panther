@@ -30,3 +30,4 @@ def sin_triton(x):
     n_elements = x.numel()
     sin_kernel[(n_elements,)](x, out, n_elements, BLOCK_SIZE=4)
     return out
+  
