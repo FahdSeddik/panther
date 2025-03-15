@@ -8,7 +8,7 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "explicit",
-            "source.organizeImports": "never"
+            "source.organizeImports": "explicit"
         },
         "editor.defaultFormatter": "charliermarsh.ruff"
     },
@@ -19,7 +19,7 @@
     "python.testing.pytestEnabled": true,
     "[cpp]": {
         "editor.codeActionsOnSave": {
-            "source.organizeImports": "never"
+            "source.organizeImports": "explicit"
         },
     },
     "files.associations": {

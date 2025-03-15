@@ -30,13 +30,6 @@ def gaussian_orthonormal_sketch(m, n, device=None, dtype=None):
     return torch.qr(torch.randn(m, n, **factory_kwargs))[0]
 
 
-def scaled_sign_sketch(m, n, device=None, dtype=None):
-    factory_kwargs = {"device": device, "dtype": dtype}
-    return (torch.randint(0, 2, (m, n), **factory_kwargs) * 2 - 1) / torch.sqrt(
-        torch.tensor(m, **factory_kwargs)
-    )
-
-
 def clarkson_woodruff_sketch(m, n, device=None, dtype=None):
     factory_kwargs = {"device": device, "dtype": dtype}
     indices = torch.randint(0, m, (n,), **factory_kwargs)

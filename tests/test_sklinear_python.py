@@ -88,9 +88,14 @@ def test_network_output_variance(
         output_term2s.append(
             ((input.bmm(sklinear.U2s)).bmm(sklinear.S2s)).mean(0) + bias
         )
-
-    variance_term1 = torch.mean((torch.stack(output_term1s) - ground_truth) ** 2)
-    variance_term2 = torch.mean((torch.stack(output_term2s) - ground_truth) ** 2)
+    # E[(X - Y)^2] = E[X^2] + E[Y^2] - 2E[XY] = E[X^2] + Y^2 - 2Y^2 = E[X^2] - Y^2
+    # outputterms^2 then take the mean
+    variance_term1 = (
+        (torch.stack(output_term1s) ** 2).mean(0) - ground_truth**2
+    ).mean()
+    variance_term2 = (
+        (torch.stack(output_term2s) ** 2).mean(0) - ground_truth**2
+    ).mean()
 
     variance_bound_term1 = 2 * output_dim * torch.norm(input @ W.T) ** 2 / low_rank
     variance_bound_term2 = (
