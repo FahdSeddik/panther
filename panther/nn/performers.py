@@ -198,7 +198,7 @@ class Performers(nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
         value: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, None]:
         # TODO: add (causallity) a mask for normal attention
         # but here it is a different function as implemented in the original paper
         # and for some reason q,k,v can have different dimensions this is not supported yet
@@ -229,4 +229,4 @@ class Performers(nn.Module):
             query.shape[0], query.shape[1], self.embed_dim
         )
         attention_output = nn.functional.linear(attention_output, self.W0, self.b0)
-        return attention_output
+        return attention_output, None
