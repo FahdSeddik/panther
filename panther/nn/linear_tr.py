@@ -46,7 +46,8 @@ def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: tor
     )
     
     # second pass
-    ############# 
+    #############
+    bias_unsqueezed = bias.unsqueeze(0)
     L, BSIZE, K = in1.shape
     _, _, d1 = U1s.shape
     
@@ -54,13 +55,13 @@ def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: tor
 
     stride_in12_l, stride_in12_bsize, stride_in12_k = in1.shape[1] * in1.shape[2], in1.shape[2], 1
     stride_us_l, stride_us_k, stride_us_d1 = U1s.shape[1] * U1s.shape[2], U1s.shape[2], 1
-    stride_bias_bsize, stride_bias_d1 = bias.shape[1], 1
+    stride_bias_bsize, stride_bias_d1 = bias_unsqueezed.shape[1], 1
     stride_out_bsize, stride_out_d1 = out.shape[1], 1
     
     grid = lambda META: (triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"]) * triton.cdiv(d1, META["BLOCK_SIZE_D1"]), )
     
     wrap_triton(second_pass_kernel)[grid](
-        in1, in2, U1s, S2s, bias, out,
+        in1, in2, U1s, S2s, bias_unsqueezed, out,
         BSIZE, d1, K, L,
         stride_in12_l, stride_in12_bsize, stride_in12_k,
         stride_us_l, stride_us_k, stride_us_d1,
