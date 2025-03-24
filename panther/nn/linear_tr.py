@@ -82,7 +82,7 @@ def _(input, S1s, S2s, U1s, U2s, bias):
     )
     
 @triton_op("mylib::backward_op", mutates_args={})
-def backward_op(ctx: Any, *grad_output: Any) -> Any:
+def backward_op(ctx: torch.autograd.function, *grad_output: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, torch.Tensor]:
     device = 'cuda'
     
     hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
