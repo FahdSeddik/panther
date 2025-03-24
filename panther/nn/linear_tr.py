@@ -8,8 +8,15 @@ from torch.nn import init
 import triton
 from panther.random import scaled_sign_sketch as gen_U
 from torch.library import triton_op, wrap_triton
-from .linear_kernels.forward import first_pass_kernel, second_pass_kernel
-from .linear_kernels.backward import first_pass_gU1s_g_S2s_kernel, second_pass_gUS11_22_kernel, calc_grad_S1s_kernel, first_pass_U2s_hin_kernel, calc_grad_S2s_kernel
+from .linear_kernels import (
+    first_pass_kernel,
+    second_pass_kernel,
+    first_pass_gU1s_g_S2s_kernel,
+    second_pass_gUS11_22_kernel,
+    calc_grad_S1s_kernel,
+    first_pass_U2s_hin_kernel,
+    calc_grad_S2s_kernel
+)
 
 @triton_op("mylib::forward_op", mutates_args={})
 def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: torch.Tensor, U2s: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
