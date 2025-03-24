@@ -1,5 +1,5 @@
 import math
-from typing import Any, Tuple
+from typing import Any, Tuple, Optional
 
 import torch
 import torch.nn as nn
@@ -9,7 +9,7 @@ import triton
 from panther.random import scaled_sign_sketch as gen_U
 from torch.library import triton_op, wrap_triton
 from .linear_kernels.forward import first_pass_kernel, second_pass_kernel
-from .linear_kernels.backward import first_pass_gU1s_g_S2s_kernel, second_pass_gUS11_22_kernel, calc_grad_S1s_kernel, first_pass_U2s_hin_d2ernel, calc_grad_S2s_BSIZEernel
+from .linear_kernels.backward import first_pass_gU1s_g_S2s_kernel, second_pass_gUS11_22_kernel, calc_grad_S1s_kernel, first_pass_U2s_hin_kernel, calc_grad_S2s_kernel
 
 @triton_op("mylib::forward_op", mutates_args={})
 def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: torch.Tensor, U2s: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
@@ -75,7 +75,7 @@ def _(input, S1s, S2s, U1s, U2s, bias):
     )
     
 @triton_op("mylib::backward_op", mutates_args={})
-def backward_op(ctx: Any, *grad_output: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, torch.Tensor]:
+def backward_op(ctx: Any, *grad_output: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor], torch.Tensor]:
     device = 'cuda'
     
     hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
@@ -140,7 +140,7 @@ def backward_op(ctx: Any, *grad_output: torch.Tensor) -> Tuple[torch.Tensor, tor
 
     stride_hin_bsize, stride_hin_BSIZE = hin.shape[1], 1
     stride_su_l, stride_su_BSIZE, stride_su_k = g_U1s.shape[1] * g_U1s.shape[2], g_U1s.shape[2], 1
-    stride_out_l, stride_out_bsize, stride_out_k = grad_S1s.shape[1] * grad_S1s.shape[2], grad_g_S1s.shape[2], 1
+    stride_out_l, stride_out_bsize, stride_out_k = grad_S1s.shape[1] * grad_S1s.shape[2], grad_S1s.shape[2], 1
     
     grid = lambda META: (L, triton.cdiv(d2, META["BLOCK_SIZE_d2"]) * triton.cdiv(k, META["BLOCK_SIZE_k"]), )
     
@@ -161,11 +161,11 @@ def backward_op(ctx: Any, *grad_output: torch.Tensor) -> Tuple[torch.Tensor, tor
 
     stride_hin_d2, stride_hin_BSIZE = hin.shape[1], 1
     stride_su_l, stride_su_K, stride_su_d2 = U2s.shape[1] * U2s.shape[2], U2s.shape[2], 1
-    stride_out_l, stride_out_K, stride_out_BSIZE = U2s_hin.shape[1] * U2s_hin.shape[2], U2s_h_in.shape[2], 1
+    stride_out_l, stride_out_K, stride_out_BSIZE = U2s_hin.shape[1] * U2s_hin.shape[2], U2s_hin.shape[2], 1
     
     grid = lambda META: (L, triton.cdiv(K, META["BLOCK_SIZE_K"]) * triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"]), )
     
-    wrap_triton(first_pass_U2s_hin_d2ernel)[grid](
+    wrap_triton(first_pass_U2s_hin_kernel)[grid](
         hin, U2s, U2s_hin,
         K, d2, BSIZE, L,
         stride_hin_d2, stride_hin_BSIZE,
@@ -186,7 +186,7 @@ def backward_op(ctx: Any, *grad_output: torch.Tensor) -> Tuple[torch.Tensor, tor
     
     grid = lambda META: (L, triton.cdiv(K, META["BLOCK_SIZE_K"]) * triton.cdiv(d1, META["BLOCK_SIZE_d1"]), )
     
-    wrap_triton(calc_grad_S2s_BSIZEernel)[grid](
+    wrap_triton(calc_grad_S2s_kernel)[grid](
         g, U2s_hin, grad_S2s,
         K, BSIZE, d1, L,
         stride_g_BSIZE, stride_g_d1,

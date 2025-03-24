@@ -400,7 +400,7 @@ def calc_grad_S1s(hin, g_U1s):
     key=['K', 'd2', 'BSIZE', 'L'],
 )
 @triton.jit
-def first_pass_U2s_hin_d2ernel(
+def first_pass_U2s_hin_kernel(
         hin_ptr, U2s_ptr, U2s_h_in_ptr,
         K, d2, BSIZE, L,
         stride_hin_d2, stride_hin_BSIZE,
@@ -480,7 +480,7 @@ def first_pass_U2s_hin(U2s, hin):
     
     grid = lambda META: (L, triton.cdiv(K, META["BLOCK_SIZE_K"]) * triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"]), )
     
-    first_pass_U2s_hin_d2ernel[grid](
+    first_pass_U2s_hin_kernel[grid](
         hin, U2s, U2s_h_in,
         K, d2, BSIZE, L,
         stride_hin_d2, stride_hin_BSIZE,
@@ -512,7 +512,7 @@ def first_pass_U2s_hin(U2s, hin):
     key=['K', 'BSIZE', 'd1', 'L'],
 )
 @triton.jit
-def calc_grad_S2s_BSIZEernel(
+def calc_grad_S2s_kernel(
         g_ptr, U2s_hin_ptr, grad_S2s_ptr,
         K, BSIZE, d1, L,
         stride_g_BSIZE, stride_g_d1,
@@ -592,7 +592,7 @@ def calc_grad_S2s(U2s_hin, g):
     
     grid = lambda META: (L, triton.cdiv(K, META["BLOCK_SIZE_K"]) * triton.cdiv(d1, META["BLOCK_SIZE_d1"]), )
     
-    calc_grad_S2s_BSIZEernel[grid](
+    calc_grad_S2s_kernel[grid](
         g, U2s_hin, grad_S2s,
         K, BSIZE, d1, L,
         stride_g_BSIZE, stride_g_d1,
