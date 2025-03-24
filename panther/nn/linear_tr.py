@@ -261,19 +261,7 @@ class SketchedLinearFunction_triton(Function):
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
         hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
-        #DEBUGGIN PRINT INPUTS SHAPES AND TYPES
-        print('hin', hin.shape, "type", hin.dtype)
-        print('S1s', S1s.shape, "type", S1s.dtype)
-        print('S2s', S2s.shape , "type", S2s.dtype)
-        print('U1s', U1s.shape , "type", U1s.dtype)
-        print('U2s', U2s.shape , "type", U2s.dtype)
-        print('grad_output', grad_output[0].shape, "type", grad_output[0].dtype)
         grad_input, grad_S1s, grad_S2s, grad_bias = backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
-        # DEBUGING PRINT SHAPES
-        print('grad_input', grad_input.shape)
-        print('grad_S1s', grad_S1s.shape)
-        print('grad_S2s', grad_S2s.shape)
-        print('grad_bias', grad_bias)
         return grad_input, grad_S1s, grad_S2s, None, None, grad_bias
         
 
