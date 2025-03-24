@@ -82,13 +82,15 @@ def _(input, S1s, S2s, U1s, U2s, bias):
     )
     
 @triton_op("mylib::backward_op", mutates_args={})
-def backward_op(ctx: torch.autograd.function, *grad_output: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, torch.Tensor]:
+def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: torch.Tensor, U2s: torch.Tensor, g: torch.Tensor) -> Tuple[torch.Tensor, 
+                                                                                                                                         torch.Tensor, 
+                                                                                                                                         torch.Tensor, 
+                                                                                                                                         None, 
+                                                                                                                                         None, 
+                                                                                                                                         torch.Tensor]:
     device = 'cuda'
-    
-    hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
     num_terms = S2s.shape[0]
         
-    g = grad_output[0]
     hin = hin.transpose(0, 1)
     U1s = U1s.transpose(1, 2)
     S1s = S1s.transpose(1, 2)
@@ -211,10 +213,9 @@ def backward_op(ctx: torch.autograd.function, *grad_output: Tuple[torch.Tensor, 
     )
     
 @backward_op.register_kernel("cpu")
-def _(ctx: Any, *grad_output: Any) -> Any:
-    input, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
+def _(input, S1s, S2s, U1s, U2s, grad_output):
     num_terms = S2s.shape[0]
-    g = grad_output[0] / (2 * num_terms)
+    g = grad_output / (2 * num_terms)
     g = g.unsqueeze(0).expand(num_terms, g.shape[0], g.shape[1])
     input = (
         input.unsqueeze(0)
@@ -267,7 +268,8 @@ class SketchedLinearFunction_triton(Function):
         # dl/dS1_i = g h_in^T U2_i^T / 2 * l
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
-        return torch.mylib.ops.backward_op(ctx, *grad_output)
+        hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
+        return torch.mylib.ops.backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
 
 
 class SKLinear_triton(nn.Module):
