@@ -6,26 +6,9 @@ from torch.nn.init import constant_, xavier_uniform_
 class CausalNumeratorFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, qs, ks, vs):
-        L, B, H, M = qs.shape
-        D = vs.shape[-1]
+        sums = torch.cumsum(torch.einsum("dijk,dijl->dijkl", ks, vs), dim=0)
+        result = torch.einsum("dijkl,dijk->dijl", sums, qs)
 
-        result = []
-        sums = torch.zeros(B, H, M, D, device=qs.device, dtype=qs.dtype)
-        # all = torch.matmul(ks.unsqueeze(-1), vs.unsqueeze(-2))
-
-        for index in range(L):
-            sums += torch.einsum("ijk,ijl->ijkl", ks[index], vs[index])
-            result.append(torch.einsum("ijkl,ijk->ijl", sums, qs[index]).unsqueeze(0))
-            # sums += all[index]
-            # result.append(
-            #     torch.matmul(sums.transpose(-2, -1), qs[index].unsqueeze(-1))
-            #     .squeeze(-1)
-            #     .unsqueeze(0)
-            # )
-
-        result = torch.cat(result, dim=0)
-
-        # Save tensors for backward pass
         ctx.save_for_backward(qs, ks, vs, sums)
 
         return result
@@ -33,43 +16,18 @@ class CausalNumeratorFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx, res_grad):
         qs, ks, vs, sums = ctx.saved_tensors
-        L, B, H, M = qs.shape
-
-        grads = torch.zeros_like(sums)
-        gr_sums = torch.zeros_like(sums)
-        all = torch.matmul(ks.unsqueeze(-1), vs.unsqueeze(-2))
-        allgrads = torch.matmul(qs.unsqueeze(-1), res_grad.unsqueeze(-2))
-        q_grads, k_grads, v_grads = [], [], []
-
-        for index in range(L - 1, -1, -1):
-            q_grads.append(
-                torch.einsum("ijkl,ijl->ijk", gr_sums, res_grad[index]).unsqueeze(0)
-            )
-            grads += allgrads[index]
-            k_grads.append(torch.einsum("ijkl,ijl->ijk", grads, vs[index]).unsqueeze(0))
-            v_grads.append(torch.einsum("ijkl,ijk->ijl", grads, ks[index]).unsqueeze(0))
-
-            gr_sums -= all[index]
-
-        q_grads = torch.cat(q_grads[::-1], dim=0)
-        k_grads = torch.cat(k_grads[::-1], dim=0)
-        v_grads = torch.cat(v_grads[::-1], dim=0)
-        # q_grads, k_grads, v_grads = [], [], []
-
-        # for index in range(L - 1, -1, -1):
-        #     q_grads.append(
-        #         torch.einsum("ijkl,ijl->ijk", gr_sums, res_grad[index]).unsqueeze(0)
-        #     )
-
-        #     grads += torch.einsum("ijk,ijl->ijkl", qs[index], res_grad[index])
-        #     k_grads.append(torch.einsum("ijkl,ijl->ijk", grads, vs[index]).unsqueeze(0))
-        #     v_grads.append(torch.einsum("ijkl,ijk->ijl", grads, ks[index]).unsqueeze(0))
-
-        #     gr_sums -= torch.einsum("ijk,ijl->ijkl", ks[index], vs[index])
-
-        # q_grads = torch.cat(q_grads[::-1], dim=0)
-        # k_grads = torch.cat(k_grads[::-1], dim=0)
-        # v_grads = torch.cat(v_grads[::-1], dim=0)
+        grads = torch.cumsum(
+            torch.matmul(qs.unsqueeze(-1), res_grad.unsqueeze(-2)).flip(0), dim=0
+        ).flip(0)
+        q_grads = torch.einsum(
+            "dijkl,dijl->dijk", sums, res_grad
+        )  # Batched einsum for q_grads
+        k_grads = torch.einsum(
+            "dijkl,dijl->dijk", grads, vs
+        )  # Batched einsum for k_grads
+        v_grads = torch.einsum(
+            "dijkl,dijk->dijl", grads, ks
+        )  # Batched einsum for v_grads
 
         return q_grads, k_grads, v_grads
 
@@ -77,18 +35,9 @@ class CausalNumeratorFunction(torch.autograd.Function):
 class CausalDenominator(torch.autograd.Function):
     @staticmethod
     def forward(ctx, qs, ks):
-        L, B, H, M = qs.shape
-
         result = []
-        sums = torch.zeros_like(ks[0])  # Initialize sum accumulator
-
-        for index in range(L):
-            sums = sums + ks[index]  # Cumulative sum
-            result.append(
-                torch.einsum("ijk,ijk->ij", qs[index], sums).unsqueeze(0)
-            )  # Compute sum(qs * sums)
-
-        result = torch.cat(result, dim=0)  # Stack results over sequence length
+        sums = torch.cumsum(ks, dim=0)
+        result = torch.einsum("dijk,dijk->dij", qs, sums)
         ctx.save_for_backward(qs, ks, sums)  # Save tensors for backward
 
         return result
@@ -96,26 +45,8 @@ class CausalDenominator(torch.autograd.Function):
     @staticmethod
     def backward(ctx, res_grad):
         qs, ks, sums = ctx.saved_tensors  # Retrieve saved tensors
-        L, B, H, M = qs.shape
-
-        k_grad = torch.zeros_like(ks[0])  # Initialize key gradient accumulator
-        gr_sums = sums  # Start with final sum
-
-        q_grads = []
-        k_grads = []
-
-        for index in range(L - 1, -1, -1):  # Reverse order for backprop
-            q_grads.append(
-                torch.einsum("ijk,ij->ijk", gr_sums, res_grad[index]).unsqueeze(0)
-            )  # q_grad = gr_sums * res_grad
-            k_grad = k_grad + torch.einsum(
-                "ijk,ij->ijk", qs[index], res_grad[index]
-            )  # Update key gradients
-            k_grads.append(k_grad.unsqueeze(0))
-            gr_sums -= ks[index]  # Subtract key contributions
-
-        q_grads = torch.cat(q_grads[::-1], dim=0)
-        k_grads = torch.cat(k_grads[::-1], dim=0)
+        q_grads = torch.einsum("dijk,dij->dijk", sums, res_grad)
+        k_grads = torch.cumsum(torch.einsum("dijk,dij->dijk", qs, res_grad), dim=0)
 
         return q_grads, k_grads  # Return gradients for qs and ks
 
