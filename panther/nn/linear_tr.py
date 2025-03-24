@@ -1,5 +1,5 @@
 import math
-from typing import Any, Tuple, List
+from typing import Any, Tuple, List, Optional
 
 import torch
 import torch.nn as nn
@@ -82,12 +82,7 @@ def _(input, S1s, S2s, U1s, U2s, bias):
     )
     
 @triton_op("mylib::backward_op", mutates_args={})
-def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: torch.Tensor, U2s: torch.Tensor, g: torch.Tensor) -> List[torch.Tensor, 
-                                                                                                                                         torch.Tensor, 
-                                                                                                                                         torch.Tensor, 
-                                                                                                                                         None, 
-                                                                                                                                         None, 
-                                                                                                                                         torch.Tensor]:
+def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: torch.Tensor, U2s: torch.Tensor, g: torch.Tensor) -> List[Optional[torch.Tensor]]:
     device = 'cuda'
     num_terms = S2s.shape[0]
         
