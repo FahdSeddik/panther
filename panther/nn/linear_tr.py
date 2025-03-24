@@ -248,7 +248,7 @@ class SketchedLinearFunction_triton(Function):
         U2s: torch.Tensor,
         bias: torch.Tensor,
     ):
-        return torch.mylib.ops.forward_op(input, S1s, S2s, U1s, U2s, bias)
+        return forward_op(input, S1s, S2s, U1s, U2s, bias)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
@@ -264,7 +264,7 @@ class SketchedLinearFunction_triton(Function):
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
         hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
-        return torch.mylib.ops.backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
+        return backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
 
 
 class SKLinear_triton(nn.Module):
