@@ -203,8 +203,6 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
         grad,
         grad_S1s,
         grad_S2s,
-        None,
-        None,
         g.sum(0) / (2 * num_terms)
     ]
     
@@ -232,8 +230,6 @@ def _(input, S1s, S2s, U1s, U2s, grad_output):
         grad,
         grad_S1s,
         grad_S2s,
-        None,
-        None,
         # sum g on batch dimension input.shape[0]
         g.reshape(input.shape[2], -1).sum(0)
     ]
@@ -265,15 +261,9 @@ class SketchedLinearFunction_triton(Function):
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
         hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
-        grads = backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
-        return (
-            grads[0],
-            grads[1],
-            grads[2],
-            grads[3],
-            grads[4],
-            grads[5],
-        )
+        grads : List[torch.tensor] = backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
+        return grads[0], grads[1], grads[2], None, None, grads[3]
+        
 
 
 class SKLinear_triton(nn.Module):
