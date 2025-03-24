@@ -244,12 +244,8 @@ class SketchedLinearFunction_triton(Function):
         U1s: torch.Tensor,
         U2s: torch.Tensor,
         bias: torch.Tensor,
-    ):  
-        print("in forward")
-        forward_out = forward_op(input, S1s, S2s, U1s, U2s, bias)
-        # DEBUGGING PRINTS
-        print("forward_out: ", forward_out, "shape: ", forward_out.shape, "type: ", forward_out.dtype)
-        return forward_out
+    ): 
+        return forward_op(input, S1s, S2s, U1s, U2s, bias)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
