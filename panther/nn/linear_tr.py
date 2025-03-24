@@ -199,14 +199,14 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
         stride_out_l, stride_out_K, stride_out_d1
     )
 
-    return (
+    return [
         grad,
         grad_S1s,
         grad_S2s,
         None,
         None,
-        g.sum(0) / (2 * num_terms),
-    )
+        g.sum(0) / (2 * num_terms)
+    ]
     
 @backward_op.register_kernel("cpu")
 def _(input, S1s, S2s, U1s, U2s, grad_output):
@@ -228,15 +228,15 @@ def _(input, S1s, S2s, U1s, U2s, grad_output):
     grad_S1s = input.bmm(g.bmm(U1s))
 
     g = g[0]
-    return (
+    return [
         grad,
         grad_S1s,
         grad_S2s,
         None,
         None,
         # sum g on batch dimension input.shape[0]
-        g.reshape(input.shape[2], -1).sum(0),
-    )
+        g.reshape(input.shape[2], -1).sum(0)
+    ]
     
 class SketchedLinearFunction_triton(Function):
     # Note that forward, setup_context, and backward are @staticmethods
@@ -265,7 +265,15 @@ class SketchedLinearFunction_triton(Function):
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
         hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
-        return backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
+        grads = backward_op(hin, S1s, S2s, U1s, U2s, grad_output[0])
+        return (
+            grads[0],
+            grads[1],
+            grads[2],
+            grads[3],
+            grads[4],
+            grads[5],
+        )
 
 
 class SKLinear_triton(nn.Module):
