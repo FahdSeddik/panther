@@ -3,16 +3,132 @@ import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
 
-def causal_numerator(
-    query_prime: torch.Tensor, key_prime: torch.Tensor, value: torch.Tensor
-) -> torch.Tensor:
-    return torch.tensor([0])
+class CausalNumeratorFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, qs, ks, vs):
+        L, B, H, M = qs.shape
+        D = vs.shape[-1]
+
+        result = []
+        sums = torch.zeros(B, H, M, D, device=qs.device, dtype=qs.dtype)
+        # all = torch.matmul(ks.unsqueeze(-1), vs.unsqueeze(-2))
+
+        for index in range(L):
+            sums += torch.einsum("ijk,ijl->ijkl", ks[index], vs[index])
+            result.append(torch.einsum("ijkl,ijk->ijl", sums, qs[index]).unsqueeze(0))
+            # sums += all[index]
+            # result.append(
+            #     torch.matmul(sums.transpose(-2, -1), qs[index].unsqueeze(-1))
+            #     .squeeze(-1)
+            #     .unsqueeze(0)
+            # )
+
+        result = torch.cat(result, dim=0)
+
+        # Save tensors for backward pass
+        ctx.save_for_backward(qs, ks, vs, sums)
+
+        return result
+
+    @staticmethod
+    def backward(ctx, res_grad):
+        qs, ks, vs, sums = ctx.saved_tensors
+        L, B, H, M = qs.shape
+
+        grads = torch.zeros_like(sums)
+        gr_sums = torch.zeros_like(sums)
+        all = torch.matmul(ks.unsqueeze(-1), vs.unsqueeze(-2))
+        allgrads = torch.matmul(qs.unsqueeze(-1), res_grad.unsqueeze(-2))
+        q_grads, k_grads, v_grads = [], [], []
+
+        for index in range(L - 1, -1, -1):
+            q_grads.append(
+                torch.einsum("ijkl,ijl->ijk", gr_sums, res_grad[index]).unsqueeze(0)
+            )
+            grads += allgrads[index]
+            k_grads.append(torch.einsum("ijkl,ijl->ijk", grads, vs[index]).unsqueeze(0))
+            v_grads.append(torch.einsum("ijkl,ijk->ijl", grads, ks[index]).unsqueeze(0))
+
+            gr_sums -= all[index]
+
+        q_grads = torch.cat(q_grads[::-1], dim=0)
+        k_grads = torch.cat(k_grads[::-1], dim=0)
+        v_grads = torch.cat(v_grads[::-1], dim=0)
+        # q_grads, k_grads, v_grads = [], [], []
+
+        # for index in range(L - 1, -1, -1):
+        #     q_grads.append(
+        #         torch.einsum("ijkl,ijl->ijk", gr_sums, res_grad[index]).unsqueeze(0)
+        #     )
+
+        #     grads += torch.einsum("ijk,ijl->ijkl", qs[index], res_grad[index])
+        #     k_grads.append(torch.einsum("ijkl,ijl->ijk", grads, vs[index]).unsqueeze(0))
+        #     v_grads.append(torch.einsum("ijkl,ijk->ijl", grads, ks[index]).unsqueeze(0))
+
+        #     gr_sums -= torch.einsum("ijk,ijl->ijkl", ks[index], vs[index])
+
+        # q_grads = torch.cat(q_grads[::-1], dim=0)
+        # k_grads = torch.cat(k_grads[::-1], dim=0)
+        # v_grads = torch.cat(v_grads[::-1], dim=0)
+
+        return q_grads, k_grads, v_grads
+
+
+class CausalDenominator(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, qs, ks):
+        L, B, H, M = qs.shape
+
+        result = []
+        sums = torch.zeros_like(ks[0])  # Initialize sum accumulator
+
+        for index in range(L):
+            sums = sums + ks[index]  # Cumulative sum
+            result.append(
+                torch.einsum("ijk,ijk->ij", qs[index], sums).unsqueeze(0)
+            )  # Compute sum(qs * sums)
+
+        result = torch.cat(result, dim=0)  # Stack results over sequence length
+        ctx.save_for_backward(qs, ks, sums)  # Save tensors for backward
+
+        return result
+
+    @staticmethod
+    def backward(ctx, res_grad):
+        qs, ks, sums = ctx.saved_tensors  # Retrieve saved tensors
+        L, B, H, M = qs.shape
+
+        k_grad = torch.zeros_like(ks[0])  # Initialize key gradient accumulator
+        gr_sums = sums  # Start with final sum
+
+        q_grads = []
+        k_grads = []
+
+        for index in range(L - 1, -1, -1):  # Reverse order for backprop
+            q_grads.append(
+                torch.einsum("ijk,ij->ijk", gr_sums, res_grad[index]).unsqueeze(0)
+            )  # q_grad = gr_sums * res_grad
+            k_grad = k_grad + torch.einsum(
+                "ijk,ij->ijk", qs[index], res_grad[index]
+            )  # Update key gradients
+            k_grads.append(k_grad.unsqueeze(0))
+            gr_sums -= ks[index]  # Subtract key contributions
+
+        q_grads = torch.cat(q_grads[::-1], dim=0)
+        k_grads = torch.cat(k_grads[::-1], dim=0)
+
+        return q_grads, k_grads  # Return gradients for qs and ks
+
+
+# Define a wrapper function for ease of use
+def causal_numerator(qs, ks, vs):
+    return CausalNumeratorFunction.apply(qs, ks, vs)
 
 
 def causal_denominator(
     query_prime: torch.Tensor, key_prime: torch.Tensor
 ) -> torch.Tensor:
-    return torch.tensor([0])
+    return CausalDenominator.apply(query_prime, key_prime)
 
 
 def noncausal_numerator(
@@ -133,8 +249,33 @@ def favor_attention(query, key, value, kernel_fn: str, causal, projection_matrix
     return av_attention / attention_normalizer
 
 
-# TODO: backpropagation is not implemented yet
+def verify_performers_inputs(
+    embed_dim,
+    num_heads,
+    dropout,
+    bias,
+    kernel_fn,
+    iscausal,
+):  # verfies all the performers inputs
+    if embed_dim % num_heads != 0:
+        raise ValueError("embed_dim must be divisible by num_heads")
+    if embed_dim <= 0:
+        raise ValueError("embed_dim must be positive")
+    if num_heads <= 0:
+        raise ValueError("num_heads must be positive")
+    if dropout < 0.0 or dropout >= 1.0:
+        raise ValueError("dropout must be in the range [0, 1)")
+    if not isinstance(bias, bool):
+        raise ValueError("bias must be a boolean value")
+    if kernel_fn not in ["softmax", "relu"]:
+        raise ValueError("kernel_fn must be either 'softmax' or 'relu'")
+    if not isinstance(iscausal, bool):
+        raise ValueError("iscausal must be a boolean value")
+
+
 class Performers(nn.Module):
+    projection_matrix: torch.Tensor
+
     def __init__(
         self,
         embed_dim,
@@ -142,26 +283,19 @@ class Performers(nn.Module):
         num_random_features,
         dropout=0.0,
         bias=True,
-        add_bias_kv=False,
-        add_zero_attn=False,
-        kdim=None,
-        vdim=None,
-        batch_first=False,
+        kernel_fn="softmax",
+        iscausal=False,
         device=None,
         dtype=None,
     ):
+        verify_performers_inputs(
+            embed_dim, num_heads, dropout, bias, kernel_fn, iscausal
+        )
         super(Performers, self).__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
-        if embed_dim % num_heads != 0:
-            raise ValueError("embed_dim must be divisible by num_heads")
         self.dropout = dropout
         self.bias = bias
-        self.add_bias_kv = add_bias_kv
-        self.add_zero_attn = add_zero_attn
-        self.kdim = kdim
-        self.vdim = vdim
-        self.batch_first = batch_first
         self.device = device
         self.dtype = dtype
         self.Wq = nn.Parameter(torch.randn(embed_dim, embed_dim))
@@ -178,8 +312,8 @@ class Performers(nn.Module):
             self.bv = nn.Parameter(torch.randn(embed_dim))
             self.b0 = nn.Parameter(torch.randn(embed_dim))
         self.training = True
-        self.kernel_fn = "softmax"
-        self.causal = False
+        self.kernel_fn = kernel_fn
+        self.causal = iscausal
         self.register_buffer(
             "projection_matrix",
             create_projection_matrix(num_random_features, embed_dim // num_heads),
