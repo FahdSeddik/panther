@@ -12,7 +12,7 @@ from .linear_kernels.forward import first_pass_kernel, second_pass_kernel
 from .linear_kernels.backward import first_pass_gU1s_g_S2s_kernel, second_pass_gUS11_22_kernel, calc_grad_S1s_kernel, first_pass_U2s_hin_d2ernel, calc_grad_S2s_BSIZEernel
 
 @triton_op("mylib::forward_op", mutates_args={})
-def forward_op(hin, S1s, S2s, U1s, U2s, bias):
+def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: torch.Tensor, U2s: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
     device = 'cuda'
     
     # first pass
@@ -26,7 +26,7 @@ def forward_op(hin, S1s, S2s, U1s, U2s, bias):
     
     stride_hin_bsize, stride_hin_d2 = hin.shape[1] , 1
     stride_su_l, stride_su_d2, stride_su_k = S1s.shape[1] * S1s.shape[2], S1s.shape[2], 1
-    stride_out_l, stride_out_bsize, stride_out_k = in1.shape[1] * in1.shape[2], out1.shape[2], 1
+    stride_out_l, stride_out_bsize, stride_out_k = in1.shape[1] * in1.shape[2], in1.shape[2], 1
     
     grid = lambda META: (L, triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"]) * triton.cdiv(K, META["BLOCK_SIZE_K"]), )
     
@@ -75,7 +75,7 @@ def _(input, S1s, S2s, U1s, U2s, bias):
     )
     
 @triton_op("mylib::backward_op", mutates_args={})
-def backward_op(ctx: Any, *grad_output: Any) -> Any:
+def backward_op(ctx: Any, *grad_output: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, torch.Tensor]:
     device = 'cuda'
     
     hin, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
