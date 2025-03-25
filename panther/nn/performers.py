@@ -105,7 +105,7 @@ def create_projection_matrix(m: int, d, seed=42, scaling=False) -> torch.Tensor:
 
     if scaling:
         # If scaling is enabled, normalize rows to sqrt(d)
-        multiplier = torch.full((m,), torch.sqrt(torch.tensor(d)))
+        multiplier = torch.full((m,), torch.sqrt(torch.tensor(d)).item())
     else:
         # Otherwise, scale each row using chi(d) distribution
         multiplier = torch.norm(torch.randn(m, d), dim=1)
