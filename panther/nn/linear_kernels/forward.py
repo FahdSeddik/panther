@@ -2,42 +2,42 @@ import torch
 import triton
 import triton.language as tl
 
-def getConfigs(names, ranges, num_stages_range, num_warps_range):
-    configs = [
-        triton.Config({f'{names[0]}': x0, f'{names[1]}': x1, f'{names[2]}': x2, f'{names[3]}': x3}, num_stages=s, num_warps=w) \
-        for x0 in ranges[0]\
-        for x1 in ranges[1]\
-        for x2 in ranges[2]\
-        for x3 in ranges[3]\
-        for s in num_stages_range\
-        for w in num_warps_range\
-    ]  
-    return configs
+# def getConfigs(names, ranges, num_stages_range, num_warps_range):
+#     configs = [
+#         triton.Config({f'{names[0]}': x0, f'{names[1]}': x1, f'{names[2]}': x2, f'{names[3]}': x3}, num_stages=s, num_warps=w) \
+#         for x0 in ranges[0]\
+#         for x1 in ranges[1]\
+#         for x2 in ranges[2]\
+#         for x3 in ranges[3]\
+#         for s in num_stages_range\
+#         for w in num_warps_range\
+#     ]  
+#     return configs
 
-ranges = [[32, 64, 128, 256, 512, 1024], [32, 64, 128, 256, 512, 1024], [32, 64, 128, 256, 512, 1024], [2,4,8]]
-num_stages_range = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-num_warps_range = [2, 4, 8, 16, 32]
+# ranges = [[32, 64, 128, 256, 512, 1024], [32, 64, 128, 256, 512, 1024], [32, 64, 128, 256, 512, 1024], [2,4,8]]
+# num_stages_range = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+# num_warps_range = [2, 4, 8, 16, 32]
 
 @triton.autotune(
-#     configs=[
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=1, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 32, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 32, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=5, num_warps=2),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 32, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=5, num_warps=2),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=3, num_warps=8),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 256, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=3, num_warps=8),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 256, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
-#     triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 32, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4)
-# ],
-    configs=getConfigs(['BLOCK_SIZE_BSIZE', 'BLOCK_SIZE_K', 'BLOCK_SIZE_D2', 'GROUP_SIZE_BSIZE'], ranges, num_stages_range, num_warps_range),
+    configs=[
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=1, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 32, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 32, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=5, num_warps=2),
+    triton.Config({'BLOCK_SIZE_BSIZE': 32, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 32, 'GROUP_SIZE_BSIZE': 8}, num_stages=5, num_warps=2),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=3, num_warps=8),
+    triton.Config({'BLOCK_SIZE_BSIZE': 256, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=3, num_warps=8),
+    triton.Config({'BLOCK_SIZE_BSIZE': 256, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 256, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 128, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 64, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 64, 'BLOCK_SIZE_K': 128, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4),
+    triton.Config({'BLOCK_SIZE_BSIZE': 128, 'BLOCK_SIZE_K': 32, 'BLOCK_SIZE_D2': 64, 'GROUP_SIZE_BSIZE': 8}, num_stages=4, num_warps=4)
+],
+    # configs=getConfigs(['BLOCK_SIZE_BSIZE', 'BLOCK_SIZE_K', 'BLOCK_SIZE_D2', 'GROUP_SIZE_BSIZE'], ranges, num_stages_range, num_warps_range),
     key=['BSIZE', 'K', 'd2', 'L'],
 )
 @triton.jit
