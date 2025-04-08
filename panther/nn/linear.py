@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.autograd import Function
 from torch.nn import init
 
-from pawX import scaled_sign_sketch as gen_U
+from panther.sketch import scaled_sign_sketch as gen_U
 from pawX import sketched_linear_backward, sketched_linear_forward
 
 
@@ -108,7 +108,7 @@ class SKLinear(nn.Module):
             "U2s",
             torch.stack(
                 [
-                    gen_U(in_features, low_rank, **factory_kwargs)
+                    gen_U(low_rank, in_features, **factory_kwargs).T
                     for _ in range(num_terms)
                 ]
             ),

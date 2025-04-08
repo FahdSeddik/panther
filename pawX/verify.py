@@ -1,6 +1,63 @@
 import sys
 
 
+def ensure_load():
+    import ctypes
+    import ctypes.util
+    import os
+    import platform
+    import subprocess
+
+    if platform.system() == "Windows":
+        # Determine the path to the shared library relative to this file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        lib_name = "libopenblas.dll"
+        lib_path = os.path.join(current_dir, "OpenBLAS", "bin", lib_name)
+
+        # Load the shared library
+        if os.path.exists(lib_path):
+            ctypes.CDLL(lib_path)
+        else:
+            raise FileNotFoundError(
+                f"OpenBLAS library not found at {lib_path}. Please ensure it is installed."
+            )
+
+    elif platform.system() == "Linux":
+        try:
+            result = subprocess.run(
+                ["ldconfig", "-p"], capture_output=True, text=True, check=True
+            )
+            lines = result.stdout.splitlines()
+            found = False
+            for line in lines:
+                if "libopenblas.so" in line:
+                    lib_path = line.split("=>")[-1].strip()
+                    ctypes.CDLL(lib_path)
+                    found = True
+                    break
+
+            if not found:
+                raise FileNotFoundError(
+                    "OpenBLAS library not found in ldconfig output."
+                )
+
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                "OpenBLAS library not found. Please ensure it is installed and available in the system paths."
+            )
+        except OSError:
+            raise OSError(
+                "OpenBLAS library not found. Please install OpenBLAS on your system."
+            )
+
+    elif platform.system() == "Darwin":  # macOS
+        lib_path2 = ctypes.util.find_library("openblas")
+        if lib_path2:
+            ctypes.CDLL(lib_path2)
+        else:
+            raise FileNotFoundError("OpenBLAS library not found on macOS.")
+
+
 def verify_pawX():
     try:
         # Import torch first to prevent DLL issues
@@ -63,5 +120,6 @@ def verify_pawX():
 
 
 if __name__ == "__main__":
+    ensure_load()
     success = verify_pawX()
     sys.exit(0 if success else 1)  # Exit with error code 1 if verification fails

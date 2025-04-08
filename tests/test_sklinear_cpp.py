@@ -7,30 +7,32 @@ from pawX import sketched_linear_backward, sketched_linear_forward
 torch.manual_seed(42)
 
 # Test parameters
-BATCH_SIZE = 16
-FEATURE_DIM = 32
-NUM_TERMS = 4
+BATCH_SIZE = 8
+IN_FEATURES = 500
+OUT_FEATURES = 500
+LOW_RANK_DIM = 50
+NUM_TERMS = 10
 
 
 @pytest.fixture
 def test_tensors():
     """Fixture to provide test tensors with reproducible random values."""
     input_tensor = torch.randn(
-        BATCH_SIZE, FEATURE_DIM, dtype=torch.double, requires_grad=True
+        BATCH_SIZE, IN_FEATURES, dtype=torch.float, requires_grad=True
     )
     S1s = torch.randn(
-        NUM_TERMS, FEATURE_DIM, FEATURE_DIM, dtype=torch.double, requires_grad=True
+        NUM_TERMS, IN_FEATURES, LOW_RANK_DIM, dtype=torch.float, requires_grad=True
     )
     S2s = torch.randn(
-        NUM_TERMS, FEATURE_DIM, FEATURE_DIM, dtype=torch.double, requires_grad=True
+        NUM_TERMS, LOW_RANK_DIM, OUT_FEATURES, dtype=torch.float, requires_grad=True
     )
     U1s = torch.randn(
-        NUM_TERMS, FEATURE_DIM, FEATURE_DIM, dtype=torch.double, requires_grad=False
+        NUM_TERMS, LOW_RANK_DIM, OUT_FEATURES, dtype=torch.float, requires_grad=False
     )
     U2s = torch.randn(
-        NUM_TERMS, FEATURE_DIM, FEATURE_DIM, dtype=torch.double, requires_grad=False
+        NUM_TERMS, IN_FEATURES, LOW_RANK_DIM, dtype=torch.float, requires_grad=False
     )
-    bias = torch.randn(FEATURE_DIM, dtype=torch.double, requires_grad=True)
+    bias = torch.randn(OUT_FEATURES, dtype=torch.float, requires_grad=True)
 
     return input_tensor, S1s, S2s, U1s, U2s, bias
 
@@ -40,7 +42,7 @@ def test_forward_output_shape(test_tensors):
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
 
-    assert output.shape == (BATCH_SIZE, FEATURE_DIM), "Output shape mismatch."
+    assert output.shape == (BATCH_SIZE, OUT_FEATURES), "Output shape mismatch."
 
 
 def test_forward_deterministic(test_tensors):
@@ -86,6 +88,31 @@ def test_backward_deterministic(test_tensors):
         assert torch.allclose(g1, g2), "Backward pass is not deterministic."
 
 
+def test_forward_gpu_vs_cpu(test_tensors):
+    """Ensure forward pass produces the same output on CPU and GPU."""
+    # skip test anyway
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA is not available.")
+
+    input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
+
+    input_tensor_gpu = input_tensor.to("cuda")
+    S1s_gpu = S1s.to("cuda")
+    S2s_gpu = S2s.to("cuda")
+    U1s_gpu = U1s.to("cuda")
+    U2s_gpu = U2s.to("cuda")
+    bias_gpu = bias.to("cuda")
+
+    output_cpu = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
+    output_gpu = sketched_linear_forward(
+        input_tensor_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu
+    ).cpu()
+
+    assert torch.allclose(
+        output_cpu, output_gpu, atol=1e-4, rtol=1e-3
+    ), "Forward pass differs between CPU and GPU."
+
+
 def test_backward_vs_autograd(test_tensors):
     """Ensure gradients computed by sketched_linear_backward match autograd."""
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
@@ -115,7 +142,7 @@ def test_backward_vs_autograd(test_tensors):
     for i, (custom, reference) in enumerate(zip(custom_grads, autograd_grads)):
         assert custom.shape == reference.shape, f"Gradient shape mismatch at index {i}"
         assert torch.allclose(
-            custom, reference, atol=1e-6, rtol=1e-4
+            custom, reference, atol=1e-4, rtol=1e-3
         ), f"Gradient mismatch at index {i}"
 
 

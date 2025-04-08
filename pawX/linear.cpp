@@ -7,6 +7,20 @@ torch::Tensor sketched_linear_forward(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     const torch::Tensor& bias) {
+    if (input.device().is_cuda()) {
+        return sketched_linear_forward_cuda(input, S1s, S2s, U1s, U2s, bias);
+    } else {
+        return sketched_linear_forward_cpu(input, S1s, S2s, U1s, U2s, bias);
+    }
+}
+
+torch::Tensor sketched_linear_forward_cpu(
+    const torch::Tensor& input,
+    const torch::Tensor& S1s,
+    const torch::Tensor& S2s,
+    const torch::Tensor& U1s,
+    const torch::Tensor& U2s,
+    const torch::Tensor& bias) {
     int64_t num_terms = S2s.size(0);
     auto input_expanded = input.unsqueeze(0).expand({num_terms, input.size(0), input.size(1)});
 
