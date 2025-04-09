@@ -6,7 +6,8 @@ import torch.nn as nn
 from torch.autograd import Function
 from torch.nn import init
 
-from panther.random import scaled_sign_sketch as gen_U
+from panther.sketch import scaled_sign_sketch as gen_U
+from pawX import sketched_linear_backward, sketched_linear_forward
 
 
 class SketchedLinearFunction(Function):
@@ -20,14 +21,7 @@ class SketchedLinearFunction(Function):
         U2s: torch.Tensor,
         bias: torch.Tensor,
     ):
-        num_terms = S2s.shape[0]
-        # Efficiently perform the sum over all l terms
-        input = input.unsqueeze(0).expand(num_terms, input.shape[0], input.shape[1])
-        return (
-            ((input.bmm(S1s)).bmm(U1s)).mean(0) / 2
-            + ((input.bmm(U2s)).bmm(S2s)).mean(0) / 2
-            + bias
-        )
+        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
@@ -43,32 +37,21 @@ class SketchedLinearFunction(Function):
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
         input, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
-        num_terms = S2s.shape[0]
-        g = grad_output[0] / (2 * num_terms)
-        g = g.unsqueeze(0).expand(num_terms, g.shape[0], g.shape[1])
-        input = (
-            input.unsqueeze(0)
-            .expand(num_terms, input.shape[0], input.shape[1])
-            .transpose(1, 2)
+        grads = sketched_linear_backward(
+            grad_output=grad_output[0],
+            input=input,
+            S1s=S1s,
+            S2s=S2s,
+            U1s=U1s,
+            U2s=U2s,
         )
-        U1s = U1s.transpose(1, 2)
-        S1s = S1s.transpose(1, 2)
-        U2s = U2s.transpose(1, 2)
-        S2s = S2s.transpose(1, 2)
-        t1 = g.bmm(U1s)
-        grad = t1.bmm(S1s).sum(0) + g.bmm(S2s).bmm(U2s).sum(0)
-        grad_S2s = (U2s.bmm(input)).bmm(g)
-        grad_S1s = input.bmm(g.bmm(U1s))
-
-        g = g[0]
         return (
-            grad,
-            grad_S1s,
-            grad_S2s,
-            None,
-            None,
-            # sum g on batch dimension input.shape[0]
-            g.reshape(input.shape[2], -1).sum(0),
+            grads[0],  # h_in
+            grads[1],  # S1s
+            grads[2],  # S2s
+            None,  # U1s
+            None,  # U2s
+            grads[3],  # bias
         )
 
 
@@ -125,7 +108,7 @@ class SKLinear(nn.Module):
             "U2s",
             torch.stack(
                 [
-                    gen_U(in_features, low_rank, **factory_kwargs)
+                    gen_U(low_rank, in_features, **factory_kwargs).T
                     for _ in range(num_terms)
                 ]
             ),
@@ -159,3 +142,18 @@ class SKLinear(nn.Module):
         return SketchedLinearFunction.apply(
             h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias
         )
+
+
+if __name__ == "__main__":
+    linear = SKLinear(
+        in_features=10,
+        out_features=10,
+        num_terms=1,
+        low_rank=1,
+        dtype=torch.float32,
+        device=torch.device("cuda:0"),
+    )
+    input = torch.randn(1, 10, dtype=torch.float32, device=torch.device("cuda:0"))
+    output = linear(input)
+    print(output)
+    print(output.shape)

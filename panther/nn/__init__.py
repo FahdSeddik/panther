@@ -1,4 +1,4 @@
+from .attention import RandMultiHeadAttention
 from .linear import SKLinear
-from .performers import Performers
 
-__all__ = ["SKLinear", "Performers"]
+__all__ = ["SKLinear", "RandMultiHeadAttention"]

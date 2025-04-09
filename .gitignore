@@ -14,7 +14,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+
+# Do not ignore all lib folders
+*/lib/
+!OpenBLAS/lib/
+
 lib64/
 parts/
 sdist/
