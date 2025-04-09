@@ -61,3 +61,38 @@ def sketch_tensor(
     device: Optional[torch.device] = None,
     dtype: Optional[torch.dtype] = None,
 ) -> torch.Tensor: ...
+def causal_numerator_apply(
+    query_prime: torch.Tensor,
+    key_prime: torch.Tensor,
+    value_prime: torch.Tensor,
+) -> torch.Tensor: ...
+def causal_denominator_apply(
+    query_prime: torch.Tensor,
+    key_prime: torch.Tensor,
+) -> torch.Tensor: ...
+def rmha_forward(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    Wq: torch.Tensor,
+    Wk: torch.Tensor,
+    Wv: torch.Tensor,
+    W0: torch.Tensor,
+    num_heads: int,
+    embed_dim: int,
+    kernel_fn: str,
+    causal: bool,
+    bq: Optional[torch.Tensor] = None,
+    bk: Optional[torch.Tensor] = None,
+    bv: Optional[torch.Tensor] = None,
+    b0: Optional[torch.Tensor] = None,
+    projection_matrix: Optional[torch.Tensor] = None,
+) -> torch.Tensor: ...
+def create_projection_matrix(
+    m: int,
+    d: int,
+    seed: int = 42,
+    scaling: bool = False,
+    dtype: Optional[torch.dtype] = None,
+    device: Optional[torch.device] = None,
+) -> torch.Tensor: ...

@@ -18,6 +18,7 @@ setup(
                 "linear_cuda.cu",
                 "cqrrpt.cpp",
                 "rsvd.cpp",
+                "attention.cpp",
             ],
             include_dirs=[os.path.join(openblas_path, "include")],
             library_dirs=[os.path.join(openblas_path, "lib")],

@@ -1,3 +1,4 @@
+#include "attention.h"
 #include "cqrrpt.h"
 #include "linear.h"
 #include "rsvd.h"
@@ -44,4 +45,23 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           "Sketch Tensor with Sketch Matrix",
           py::arg("input"), py::arg("axis"), py::arg("new_size"), py::arg("sketch_matrix"),
           py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
+
+    m.def("causal_numerator_apply", &causal_numerator_apply,
+          py::arg("query_prime"), py::arg("key_prime"), py::arg("value_prime"));
+
+    m.def("causal_denominator_apply", &causal_denominator_apply,
+          py::arg("query_prime"), py::arg("key_prime"));
+
+    m.def("rmha_forward", &rmha_forward,
+          py::arg("query"), py::arg("key"), py::arg("value"),
+          py::arg("Wq"), py::arg("Wk"), py::arg("Wv"), py::arg("W0"),
+          py::arg("num_heads"), py::arg("embed_dim"), py::arg("kernel_fn"),
+          py::arg("causal"),
+          py::arg("bq") = c10::nullopt, py::arg("bk") = c10::nullopt,
+          py::arg("bv") = c10::nullopt, py::arg("b0") = c10::nullopt,
+          py::arg("projection_matrix") = c10::nullopt);
+
+    m.def("create_projection_matrix", &create_projection_matrix,
+          py::arg("m"), py::arg("d"), py::arg("seed") = 42, py::arg("scaling") = false,
+          py::arg("dtype") = c10::nullopt, py::arg("device") = c10::nullopt);
 }

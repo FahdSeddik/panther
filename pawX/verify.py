@@ -8,54 +8,148 @@ def ensure_load():
     import platform
     import subprocess
 
-    if platform.system() == "Windows":
-        # Determine the path to the shared library relative to this file
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        lib_name = "libopenblas.dll"
-        lib_path = os.path.join(current_dir, "OpenBLAS", "bin", lib_name)
+    # Directory containing this file (adjust if your OpenBLAS folder is elsewhere):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    openblas_dir = os.path.join(current_dir, "OpenBLAS")
 
-        # Load the shared library
-        if os.path.exists(lib_path):
-            ctypes.CDLL(lib_path)
-        else:
-            raise FileNotFoundError(
-                f"OpenBLAS library not found at {lib_path}. Please ensure it is installed."
-            )
+    if not os.path.isdir(openblas_dir):
+        raise FileNotFoundError(f"OpenBLAS directory not found at: {openblas_dir}")
 
-    elif platform.system() == "Linux":
+    system_name = platform.system()
+
+    if system_name == "Windows":
+        # On Windows, libopenblas.dll should be in openblas_dir/bin
+        bin_dir = os.path.join(openblas_dir, "bin")
+        dll_name = "libopenblas.dll"
+        dll_path = os.path.join(bin_dir, dll_name)
+
+        if not os.path.exists(dll_path):
+            raise FileNotFoundError(f"Could not find {dll_path}")
+
+        # Python 3.8+ allows adding a DLL directory:
         try:
-            result = subprocess.run(
-                ["ldconfig", "-p"], capture_output=True, text=True, check=True
-            )
-            lines = result.stdout.splitlines()
-            found = False
-            for line in lines:
-                if "libopenblas.so" in line:
-                    lib_path = line.split("=>")[-1].strip()
-                    ctypes.CDLL(lib_path)
-                    found = True
+            os.add_dll_directory(bin_dir)
+        except (AttributeError, NotImplementedError):
+            # For older Python versions, fallback to modifying PATH
+            pass
+
+        # Always ensure bin_dir is on PATH
+        os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
+
+        # Load the DLL explicitly
+        ctypes.CDLL(dll_path)
+
+    elif system_name == "Linux":
+        # On Linux, libopenblas.so is usually in openblas_dir/lib
+        # We’ll attempt to load it from there; if that fails, we fallback to ldconfig or find_library
+        lib_dir = os.path.join(openblas_dir, "lib")
+
+        if os.path.isdir(lib_dir):
+            # Potential shared object names that might exist
+            candidate_files = [
+                "libopenblas.so",
+                "libopenblas.so.0",
+            ]
+            loaded = False
+            for file_name in candidate_files:
+                so_path = os.path.join(lib_dir, file_name)
+                if os.path.exists(so_path):
+                    # Prepend lib_dir to LD_LIBRARY_PATH so the loader can find dependencies
+                    old_path = os.environ.get("LD_LIBRARY_PATH", "")
+                    if lib_dir not in old_path.split(os.pathsep):
+                        os.environ["LD_LIBRARY_PATH"] = lib_dir + os.pathsep + old_path
+
+                    # Try to load the .so directly
+                    ctypes.CDLL(so_path)
+                    loaded = True
                     break
 
-            if not found:
-                raise FileNotFoundError(
-                    "OpenBLAS library not found in ldconfig output."
+            # Fallback: if not loaded from the bundle, try the system’s ldconfig or find_library
+            if not loaded:
+                # 1) Attempt ldconfig-based approach
+                try:
+                    result = subprocess.run(
+                        ["ldconfig", "-p"], capture_output=True, text=True, check=True
+                    )
+                    lines = result.stdout.splitlines()
+                    for line in lines:
+                        if "libopenblas.so" in line:
+                            so_system_path = line.split("=>")[-1].strip()
+                            ctypes.CDLL(so_system_path)
+                            loaded = True
+                            break
+                except (FileNotFoundError, subprocess.CalledProcessError):
+                    pass
+
+                # 2) Attempt ctypes.util.find_library if still not loaded
+                if not loaded:
+                    so_name = ctypes.util.find_library("openblas")
+                    if so_name:
+                        ctypes.CDLL(so_name)
+                        loaded = True
+
+            if not loaded:
+                raise OSError(
+                    f"Could not load OpenBLAS on Linux. Checked {lib_dir}, ldconfig, and find_library."
+                )
+        else:
+            # No local 'lib' directory; fallback to system
+            so_name = ctypes.util.find_library("openblas")
+            if so_name:
+                ctypes.CDLL(so_name)
+            else:
+                raise OSError(
+                    "OpenBLAS library not found locally or in system paths on Linux."
                 )
 
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                "OpenBLAS library not found. Please ensure it is installed and available in the system paths."
-            )
-        except OSError:
-            raise OSError(
-                "OpenBLAS library not found. Please install OpenBLAS on your system."
-            )
+    elif system_name == "Darwin":
+        # On macOS, libopenblas.dylib is typically in openblas_dir/lib
+        lib_dir = os.path.join(openblas_dir, "lib")
+        if os.path.isdir(lib_dir):
+            # We might see libopenblas.dylib or similar
+            candidate_files = [
+                "libopenblas.dylib",
+                "libopenblas.0.dylib",
+            ]
+            loaded = False
+            for file_name in candidate_files:
+                dy_path = os.path.join(lib_dir, file_name)
+                if os.path.exists(dy_path):
+                    # Prepend lib_dir to DYLD_LIBRARY_PATH
+                    old_path = os.environ.get("DYLD_LIBRARY_PATH", "")
+                    if lib_dir not in old_path.split(os.pathsep):
+                        os.environ["DYLD_LIBRARY_PATH"] = (
+                            lib_dir + os.pathsep + old_path
+                        )
 
-    elif platform.system() == "Darwin":  # macOS
-        lib_path2 = ctypes.util.find_library("openblas")
-        if lib_path2:
-            ctypes.CDLL(lib_path2)
+                    ctypes.CDLL(dy_path)
+                    loaded = True
+                    break
+
+            if not loaded:
+                # Fallback: find_library
+                lib_name = ctypes.util.find_library("openblas")
+                if lib_name:
+                    ctypes.CDLL(lib_name)
+                    loaded = True
+                else:
+                    raise OSError(
+                        f"Could not load OpenBLAS from local {lib_dir} or system paths on macOS."
+                    )
         else:
-            raise FileNotFoundError("OpenBLAS library not found on macOS.")
+            # No local 'lib' directory; fallback to system
+            lib_name = ctypes.util.find_library("openblas")
+            if lib_name:
+                ctypes.CDLL(lib_name)
+            else:
+                raise OSError(
+                    "OpenBLAS library not found locally or in system paths on macOS."
+                )
+
+    else:
+        raise NotImplementedError(
+            f"Unsupported platform: {system_name}. Please install OpenBLAS manually."
+        )
 
 
 def verify_pawX():
