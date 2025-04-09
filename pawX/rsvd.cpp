@@ -12,8 +12,7 @@ extern "C" {
 #include <lapack.h>
 }
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
-randomized_svd(torch::Tensor A, int64_t k, double tol) {
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> randomized_svd(const torch::Tensor& A, int64_t k, double tol) {
     // Check input properties: A must be a double 2D tensor.
     TORCH_CHECK(A.dtype() == torch::kFloat64, "A must be a double tensor");
     TORCH_CHECK(A.dim() == 2, "A must be a 2D matrix");
