@@ -132,3 +132,39 @@ class RandMultiHeadAttention(nn.Module):
             b0=self.b0,
             projection_matrix=self.projection_matrix,
         ), None
+
+
+def make_performer(
+    mha: torch.nn.MultiheadAttention,
+    num_random_features: int,
+    kernel_fn: str,
+    iscausal: bool,
+) -> RandMultiHeadAttention:
+    """
+    Converts a MultiheadAttention layer into a Performers layer.
+    """
+    embed_dim = mha.embed_dim
+    num_heads = mha.num_heads
+    dropout = mha.dropout
+    bias = mha.in_proj_bias is not None
+    performer = RandMultiHeadAttention(
+        embed_dim,
+        num_heads,
+        num_random_features,
+        dropout,
+        bias,
+        kernel_fn,
+        iscausal,
+    )
+    performer.Wq = nn.Parameter(mha.in_proj_weight[:embed_dim, :])
+    performer.Wk = nn.Parameter(mha.in_proj_weight[embed_dim : 2 * embed_dim, :])
+    performer.Wv = nn.Parameter(mha.in_proj_weight[2 * embed_dim : 3 * embed_dim, :])
+    performer.W0 = nn.Parameter(mha.out_proj.weight)
+
+    if performer.bias:
+        performer.bq = nn.Parameter(mha.in_proj_bias[:embed_dim])
+        performer.bk = nn.Parameter(mha.in_proj_bias[embed_dim : 2 * embed_dim])
+        performer.bv = nn.Parameter(mha.in_proj_bias[2 * embed_dim : 3 * embed_dim])
+        performer.b0 = nn.Parameter(mha.out_proj.bias)
+
+    return performer
