@@ -7,9 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-torch = {version = "^2.5.1+cu124", source = "pytorch"}
-torchvision = {version = "^0.20.1+cu124", source = "pytorch"}
-torchaudio = {version = "^2.5.1+cu124", source = "pytorch"}
+torch = {version = "2.6.0+cu124", source = "pytorch"}
+torchvision = {version = "0.21.0+cu124", source = "pytorch"}
+torchaudio = {version = "2.6.0+cu124", source = "pytorch"}
 
 
 [tool.poetry.group.dev.dependencies]
