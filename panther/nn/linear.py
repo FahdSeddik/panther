@@ -20,14 +20,15 @@ class SketchedLinearFunction(Function):
         U1s: torch.Tensor,
         U2s: torch.Tensor,
         bias: torch.Tensor,
+        mode: int,
     ):
-        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias)
+        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, mode)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
     # output is the output of the forward().
     def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
-        input, S1s, S2s, U1s, U2s, bias = inputs
+        input, S1s, S2s, U1s, U2s, bias, mode = inputs
         ctx.save_for_backward(input, S1s, S2s, U1s, U2s, bias)
 
     @staticmethod
@@ -52,6 +53,7 @@ class SketchedLinearFunction(Function):
             None,  # U1s
             None,  # U2s
             grads[3],  # bias
+            None,
         )
 
 
@@ -72,6 +74,7 @@ class SKLinear(nn.Module):
         out_features: int,
         num_terms: int,
         low_rank: int,
+        mode: int,
         W_init=None,
         bias: bool = True,
         dtype=None,
@@ -88,7 +91,7 @@ class SKLinear(nn.Module):
         #         "The number of parameters in the sketching layer is larger "
         #         + "than the number of parameters in the fully connected layer."
         #     )
-
+        self.mode = mode
         self.num_terms = num_terms
         self.low_rank = low_rank
         self.out_features = out_features
@@ -140,7 +143,7 @@ class SKLinear(nn.Module):
 
     def forward(self, h_in):
         return SketchedLinearFunction.apply(
-            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias
+            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, self.mode
         )
 
 
@@ -150,6 +153,7 @@ if __name__ == "__main__":
         out_features=10,
         num_terms=1,
         low_rank=1,
+        mode=0,
         dtype=torch.float32,
         device=torch.device("cuda:0"),
     )

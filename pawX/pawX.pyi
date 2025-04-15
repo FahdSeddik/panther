@@ -16,6 +16,7 @@ def sketched_linear_forward(
     U1s: torch.Tensor,
     U2s: torch.Tensor,
     bias: torch.Tensor,
+    mode: int,
 ) -> torch.Tensor: ...
 def sketched_linear_backward(
     grad_output: torch.Tensor,
