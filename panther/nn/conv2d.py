@@ -4,6 +4,7 @@ from typing import Any, Tuple
 import torch
 import torch.nn as nn
 from torch.autograd import Function
+from torch.nn import functional as F
 from torch.nn import init
 
 from panther.random import scaled_sign_sketch as gen_U
@@ -190,23 +191,51 @@ class SKConv2d(nn.Module):
 
         # Register U1s and U2s as buffers since they are not learnable
 
-    def forward(self, h_in):
-        unfold = nn.Unfold(
-            kernel_size=(self.kernel_size[0], self.kernel_size[1]),
-            stride=self.stride,
-            padding=self.padding,
+    def forward(self, x):
+        """Forward pass of the SKConv2d layer."""
+        # padd x
+        B, C, H, W = x.shape
+        if self.padding[0] > 0 or self.padding[1] > 0:
+            x = F.pad(
+                x, (self.padding[1], self.padding[1], self.padding[0], self.padding[0])
+            )
+        H_out = (x.shape[2] - self.kernel_size[0]) // self.stride[0] + 1
+        W_out = (x.shape[3] - self.kernel_size[1]) // self.stride[1] + 1
+        x_strided = x.as_strided(
+            size=(
+                x.shape[0],
+                x.shape[1],
+                H_out,
+                W_out,
+                self.kernel_size[0],
+                self.kernel_size[1],
+            ),
+            stride=(
+                x.stride(0),
+                x.stride(1),
+                x.stride(2) * self.stride[0],
+                x.stride(3) * self.stride[1],
+                x.stride(2),
+                x.stride(3),
+            ),
         )
-        inshape = h_in.shape
-        inn = unfold(h_in)
-        return SketchedConv2dFunction.apply(
-            inn,
-            self.S1s,
-            self.S2s,
-            self.U1s,
-            self.U2s,
-            self.stride,
-            self.padding,
-            self.kernel_size,
-            inshape,
-            self.bias,
+        x_windows = x_strided.permute(0, 2, 3, 1, 4, 5)
+
+        x_windows = x_windows.reshape(
+            -1, self.kernel_size[0] * self.kernel_size[1] * self.in_channels
+        )
+        out1 = (
+            torch.einsum("nd,tdr,tro->no", x_windows, self.S1s, self.U1s)
+            / self.num_terms
+        ) + self.bias
+        out2 = (
+            torch.einsum(
+                "nd,tdr,tro->no", x_windows, self.U2s.transpose(1, 2), self.S2s
+            )
+            / self.num_terms
+        )
+        return (
+            (out1 + out2 + self.bias)
+            .view(B, H_out, W_out, self.out_channels)
+            .permute(0, 3, 1, 2)
         )
