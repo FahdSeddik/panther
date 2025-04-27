@@ -193,8 +193,8 @@ torch::Tensor sketched_linear_forward_cuda(
     int device = input.device().index();
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device);
-    int chosenBlockSize = findSuitableBlockSize(prop, input.element_size(), low_rank_dim, num_terms);
-    // int chosenBlockSize = 512;
+    // int chosenBlockSize = findSuitableBlockSize(prop, input.element_size(), low_rank_dim, num_terms);
+    int chosenBlockSize = 256;
 
     // Define grid dimensions: one block per (batch, output) pair.
     dim3 grid(batch_size, output_dim);
