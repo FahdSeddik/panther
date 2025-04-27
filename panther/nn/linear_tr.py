@@ -28,8 +28,8 @@ def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: tor
     BSIZE, d2 = hin.shape
     L, _, K = S1s.shape
     
-    in1 = torch.empty((L, BSIZE, K), dtype=torch.float16, device=device)
-    in2 = torch.empty((L, BSIZE, K), dtype=torch.float16, device=device)
+    in1 = torch.empty((L, BSIZE, K), dtype=torch.float32, device=device)
+    in2 = torch.empty((L, BSIZE, K), dtype=torch.float32, device=device)
     
     stride_hin_bsize, stride_hin_d2 = hin.stride(0), hin.stride(1)
     stride_su_l, stride_su_d2, stride_su_k = S1s.stride(0), S1s.stride(1), S1s.stride(2)
@@ -51,7 +51,7 @@ def forward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: tor
     L, BSIZE, K = in1.shape
     _, _, d1 = U1s.shape
     
-    out = torch.empty((BSIZE, d1), dtype=torch.float16, device=device)
+    out = torch.empty((BSIZE, d1), dtype=torch.float32, device=device)
 
     stride_in12_l, stride_in12_bsize, stride_in12_k = in1.stride(0), in1.stride(1), in1.stride(2)
     stride_us_l, stride_us_k, stride_us_d1 = U1s.stride(0), U1s.stride(1), U1s.stride(2)
@@ -98,8 +98,8 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
     BSIZE, d1 = g.shape
     L, _, K = U1s.shape
     
-    g_U1s = torch.empty((L, BSIZE, K), dtype=torch.float16, device='cuda')
-    g_S2s = torch.empty((L, BSIZE, K), dtype=torch.float16, device='cuda')
+    g_U1s = torch.empty((L, BSIZE, K), dtype=torch.float32, device='cuda')
+    g_S2s = torch.empty((L, BSIZE, K), dtype=torch.float32, device='cuda')
 
     stride_g_bsize, stride_g_d1 = g.stride(0), g.stride(1)
     stride_su_l, stride_su_d1, stride_su_k = U1s.stride(0), U1s.stride(1), U1s.stride(2)
@@ -120,7 +120,7 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
     L, BSIZE, K = g_U1s.shape
     _, _, d2 = S1s.shape
     
-    grad = torch.empty((BSIZE, d2), dtype=torch.float16, device='cuda')
+    grad = torch.empty((BSIZE, d2), dtype=torch.float32, device='cuda')
 
     stride_g_U1s2_l, stride_g_U1s2_bsize, stride_g_U1s2_k = g_U1s.stride(0), g_U1s.stride(1), g_U1s.stride(2)
     stride_us_l, stride_us_k, stride_us_d2 = S1s.stride(0), S1s.stride(1), S1s.stride(2)
@@ -141,7 +141,7 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
     d2, BSIZE = hin.shape
     L, _, k = g_U1s.shape
     
-    grad_S1s = torch.empty((L, d2, k), dtype=torch.float16, device=device)
+    grad_S1s = torch.empty((L, d2, k), dtype=torch.float32, device=device)
 
     stride_hin_bsize, stride_hin_BSIZE = hin.stride(0), hin.stride(1)
     stride_su_l, stride_su_BSIZE, stride_su_k = g_U1s.stride(0), g_U1s.stride(1), g_U1s.stride(2)
@@ -162,7 +162,7 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
     L, K, d2 = U2s.shape
     _, BSIZE = hin.shape
     
-    U2s_hin = torch.empty((L, K, BSIZE), dtype=torch.float16, device=device)
+    U2s_hin = torch.empty((L, K, BSIZE), dtype=torch.float32, device=device)
 
     stride_hin_d2, stride_hin_BSIZE = hin.stride(0), hin.stride(1)
     stride_su_l, stride_su_K, stride_su_d2 = U2s.stride(0), U2s.stride(1), U2s.stride(2)
@@ -183,7 +183,7 @@ def backward_op(hin: torch.Tensor, S1s: torch.Tensor, S2s: torch.Tensor, U1s: to
     L, K, BSIZE = U2s_hin.shape
     _, d1 = g.shape
     
-    grad_S2s = torch.empty((L, K, d1), dtype=torch.float16, device=device)
+    grad_S2s = torch.empty((L, K, d1), dtype=torch.float32, device=device)
 
     stride_g_BSIZE, stride_g_d1 = g.stride(0), g.stride(1)
     stride_su_l, stride_su_K, stride_su_BSIZE = U2s_hin.stride(0), U2s_hin.stride(1), U2s_hin.stride(2)

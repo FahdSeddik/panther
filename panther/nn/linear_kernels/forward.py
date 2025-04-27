@@ -87,15 +87,12 @@ def first_pass_kernel(
         S1s = tl.load(S1s_ptrs, mask=su_mask, other=0.0)
         U2s = tl.load(U2s_ptrs, mask=su_mask, other=0.0)
         
-        accumulator1 += tl.dot(hin, S1s)
-        accumulator2 += tl.dot(hin, U2s)
+        accumulator1 += tl.dot(hin, S1s, input_precision="ieee")
+        accumulator2 += tl.dot(hin, U2s, input_precision="ieee")
         
         hin_ptrs += BLOCK_SIZE_D2 * stride_hin_d2
         S1s_ptrs += BLOCK_SIZE_D2 * stride_su_d2
         U2s_ptrs += BLOCK_SIZE_D2 * stride_su_d2
-
-    accumulator1 = accumulator1.to(tl.float16)
-    accumulator2 = accumulator2.to(tl.float16)
 
     out_tmp = batch_id * stride_out_l + stride_out_bsize * offs_bsize[:, None] + stride_out_k * offs_k[None, :]
     out1_ptrs = out1_ptr + out_tmp
@@ -118,8 +115,8 @@ def first_pass(hin, S1s, U2s):
     BSIZE, d2 = hin.shape
     L, _, K = S1s.shape
     
-    out1 = torch.empty((L, BSIZE, K), dtype=torch.float16, device=device)
-    out2 = torch.empty((L, BSIZE, K), dtype=torch.float16, device=device)
+    out1 = torch.empty((L, BSIZE, K), dtype=torch.float32, device=device)
+    out2 = torch.empty((L, BSIZE, K), dtype=torch.float32, device=device)
 
     # stride_hin_bsize, stride_hin_d2 = hin.stride()
     # stride_su_l, stride_su_d2, stride_su_k = S1s.stride()
@@ -216,8 +213,8 @@ def second_pass_kernel(
             U1s = tl.load(U1s_ptrs, mask=us_mask, other=0.0)
             S2s = tl.load(S2s_ptrs, mask=us_mask, other=0.0)
             
-            accumulator += tl.dot(in1, U1s)
-            accumulator += tl.dot(in2, S2s)
+            accumulator += tl.dot(in1, U1s, input_precision="ieee")
+            accumulator += tl.dot(in2, S2s, input_precision="ieee")
 
             in_inc = BLOCK_SIZE_K * stride_in12_k
             in1_ptrs += in_inc
@@ -226,8 +223,6 @@ def second_pass_kernel(
             us_inc = BLOCK_SIZE_K * stride_us_k
             U1s_ptrs += us_inc
             S2s_ptrs += us_inc
-
-    accumulator = accumulator.to(tl.float16)
     
     bias_ptrs = bias_ptr + offs_d1[None, :] * stride_bias_d1
     bias_mask = (offs_d1[None, :] < d1)
@@ -255,7 +250,7 @@ def second_pass(in1, in2, U1s, S2s, bias):
     L, BSIZE, K = in1.shape
     _, _, d1 = U1s.shape
     
-    out = torch.empty((BSIZE, d1), dtype=torch.float16, device=device)
+    out = torch.empty((BSIZE, d1), dtype=torch.float32, device=device)
 
     # stride_in12_l, stride_in12_bsize, stride_in12_k = in1.stride()
     # stride_us_l, stride_us_k, stride_us_d1 = U1s.stride()
