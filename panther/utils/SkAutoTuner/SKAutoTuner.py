@@ -1,317 +1,14 @@
 import copy
-import json
-import os
 import pickle
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Tuple, Type
 
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 
-from panther.nn.linear import SKLinear
-from panther.nn.conv2d import SKConv2d
-from panther.nn.attention import RandMultiHeadAttention
-
-
-# Layer type mapping to their sketched versions and parameters
-LAYER_TYPE_MAPPING = {
-    nn.Linear: {
-        "class": SKLinear,
-        "params": ["num_terms", "low_rank"],
-    },
-    nn.Conv2d: {
-        "class": SKConv2d,
-        "params": ["num_terms", "low_rank"],
-    },
-    nn.MultiheadAttention: {
-        "class": RandMultiHeadAttention,
-        "params": ["num_random_features", "kernel_fn"],
-    }
-}
-
-
-class LayerConfig:
-    """
-    Configuration object for a single layer or group of layers.
-    Contains the layer names, parameters to tune and whether these layers should be tuned separately.
-    """
-    def __init__(
-        self, 
-        layer_names: List[str], 
-        params: Dict[str, List], 
-        separate: bool = True
-    ):
-        """
-        Initialize a layer configuration.
-        
-        Args:
-            layer_names: List of names of layers to configure (dot notation for nested modules)
-            params: Dictionary of parameter names and their possible values to try
-            separate: Whether these layers should be tuned separately or together
-        """
-        self.layer_names = layer_names
-        self.params = params
-        self.separate = separate
-    
-    def __repr__(self):
-        return f"LayerConfig(layer_names={self.layer_names}, params={self.params}, separate={self.separate})"
-
-
-class TuningConfigs:
-    """
-    Collection of LayerConfig objects for tuning multiple layer groups.
-    """
-    def __init__(self, configs: List[LayerConfig]):
-        """
-        Initialize with a list of layer configurations.
-        
-        Args:
-            configs: List of LayerConfig objects
-        """
-        self.configs = configs
-    
-    def __repr__(self):
-        return f"TuningConfigs(configs={self.configs})"
-
-
-class SearchAlgorithm(ABC):
-    """
-    Abstract base class for search algorithms to use in autotuning.
-    """
-    @abstractmethod
-    def initialize(self, param_space: Dict[str, List]):
-        """
-        Initialize the search algorithm with the parameter space.
-        
-        Args:
-            param_space: Dictionary of parameter names and their possible values
-        """
-        pass
-    
-    @abstractmethod
-    def get_next_params(self) -> Dict[str, Any]:
-        """
-        Get the next set of parameters to try.
-        
-        Returns:
-            Dictionary of parameter names and values to try
-        """
-        pass
-    
-    @abstractmethod
-    def update(self, params: Dict[str, Any], score: float):
-        """
-        Update the search algorithm with the results of the latest trial.
-        
-        Args:
-            params: Dictionary of parameter names and values that were tried
-            score: The evaluation score for the parameters
-        """
-        pass
-    
-    @abstractmethod
-    def get_best_params(self) -> Dict[str, Any]:
-        """
-        Get the best parameters found so far.
-        
-        Returns:
-            Dictionary of parameter names and their best values
-        """
-        pass
-
-
-class GridSearch(SearchAlgorithm):
-    """
-    Grid search algorithm that tries all combinations of parameters.
-    """
-    def __init__(self):
-        self.param_space = {}
-        self.param_combinations = []
-        self.current_idx = 0
-        self.results = []
-        self.best_score = float('-inf')
-        self.best_params = {}
-    
-    def initialize(self, param_space: Dict[str, List]):
-        self.param_space = param_space
-        self._generate_combinations()
-    
-    def _generate_combinations(self):
-        """Generate all combinations of parameters."""
-        from itertools import product
-        
-        keys = list(self.param_space.keys())
-        values = list(self.param_space.values())
-        
-        for combination in product(*values):
-            self.param_combinations.append(dict(zip(keys, combination)))
-    
-    def get_next_params(self) -> Dict[str, Any]:
-        if self.current_idx >= len(self.param_combinations):
-            return None  # All combinations tried
-        
-        params = self.param_combinations[self.current_idx]
-        self.current_idx += 1
-        return params
-    
-    def update(self, params: Dict[str, Any], score: float):
-        self.results.append((params, score))
-        
-        if score > self.best_score:
-            self.best_score = score
-            self.best_params = params
-    
-    def get_best_params(self) -> Dict[str, Any]:
-        return self.best_params
-
-
-class RandomSearch(SearchAlgorithm):
-    """
-    Random search algorithm that randomly samples from the parameter space.
-    """
-    def __init__(self, max_trials: int = 20):
-        self.param_space = {}
-        self.max_trials = max_trials
-        self.current_trial = 0
-        self.results = []
-        self.best_score = float('-inf')
-        self.best_params = {}
-    
-    def initialize(self, param_space: Dict[str, List]):
-        self.param_space = param_space
-    
-    def get_next_params(self) -> Dict[str, Any]:
-        if self.current_trial >= self.max_trials:
-            return None  # All trials completed
-        
-        self.current_trial += 1
-        return {
-            param: np.random.choice(values) 
-            for param, values in self.param_space.items()
-        }
-    
-    def update(self, params: Dict[str, Any], score: float):
-        self.results.append((params, score))
-        
-        if score > self.best_score:
-            self.best_score = score
-            self.best_params = params
-    
-    def get_best_params(self) -> Dict[str, Any]:
-        return self.best_params
-
-
-class BayesianOptimization(SearchAlgorithm):
-    """
-    Bayesian optimization search algorithm.
-    """
-    def __init__(self, max_trials: int = 20):
-        self.param_space = {}
-        self.max_trials = max_trials
-        self.current_trial = 0
-        self.results = []
-        self.best_score = float('-inf')
-        self.best_params = {}
-        self._param_mapping = {}  # Maps parameter names to indices
-        self._param_inv_mapping = {}  # Maps indices to parameter names
-        self.observed_X = []
-        self.observed_y = []
-    
-    def initialize(self, param_space: Dict[str, List]):
-        self.param_space = param_space
-        
-        # Create mappings for parameters to make them numeric
-        for i, (param, values) in enumerate(self.param_space.items()):
-            self._param_mapping[param] = i
-            self._param_inv_mapping[i] = param
-    
-    def _params_to_point(self, params: Dict[str, Any]) -> List[int]:
-        """Convert a parameter dictionary to a point in the search space."""
-        point = [0] * len(self._param_mapping)
-        for param, value in params.items():
-            idx = self._param_mapping[param]
-            options = self.param_space[param]
-            value_idx = options.index(value)
-            point[idx] = value_idx
-        return point
-    
-    def _point_to_params(self, point: List[int]) -> Dict[str, Any]:
-        """Convert a point in the search space to a parameter dictionary."""
-        params = {}
-        for i, value_idx in enumerate(point):
-            param = self._param_inv_mapping[i]
-            options = self.param_space[param]
-            params[param] = options[value_idx % len(options)]
-        return params
-    
-    def _acquisition_function(self, x: np.ndarray) -> float:
-        """
-        Upper Confidence Bound (UCB) acquisition function.
-        This is a simple implementation; a real-world one would use Gaussian processes.
-        """
-        if not self.observed_X:
-            return 0.0
-        
-        # Distance to closest observed point
-        distances = [np.sum(np.abs(x - obs_x)) for obs_x in self.observed_X]
-        closest_idx = np.argmin(distances)
-        min_distance = distances[closest_idx]
-        
-        # UCB value: exploit + explore
-        exploit = self.observed_y[closest_idx]
-        explore = np.sqrt(min_distance)
-        
-        return exploit + 0.1 * explore
-    
-    def get_next_params(self) -> Dict[str, Any]:
-        if self.current_trial >= self.max_trials:
-            return None  # All trials completed
-        
-        self.current_trial += 1
-        
-        # If we have fewer than 3 observations, use random sampling
-        if len(self.observed_X) < 3:
-            return {
-                param: np.random.choice(values) 
-                for param, values in self.param_space.items()
-            }
-        
-        # Otherwise, use Bayesian Optimization
-        # For simplicity, we'll just try 100 random candidates and pick the best
-        # A real implementation would use more sophisticated methods
-        best_acq_value = float('-inf')
-        best_point = None
-        
-        for _ in range(100):
-            candidate = [
-                np.random.randint(0, len(self.param_space[self._param_inv_mapping[i]]))
-                for i in range(len(self._param_mapping))
-            ]
-            acq_value = self._acquisition_function(np.array(candidate))
-            
-            if acq_value > best_acq_value:
-                best_acq_value = acq_value
-                best_point = candidate
-        
-        return self._point_to_params(best_point)
-    
-    def update(self, params: Dict[str, Any], score: float):
-        self.results.append((params, score))
-        
-        # Convert params to point
-        point = self._params_to_point(params)
-        self.observed_X.append(np.array(point))
-        self.observed_y.append(score)
-        
-        if score > self.best_score:
-            self.best_score = score
-            self.best_params = params
-    
-    def get_best_params(self) -> Dict[str, Any]:
-        return self.best_params
-
+from .Searching import SearchAlgorithm, GridSearch
+from .layer_type_mapping import LAYER_TYPE_MAPPING
+from .Configs import TuningConfigs, LayerConfig
 
 class SKAutoTuner:
     """
@@ -353,6 +50,61 @@ class SKAutoTuner:
         # Map from layer name to layer object
         self.layer_map = {}
         self._build_layer_map(model)
+        self._check_configs()
+
+    def _check_configs(self):
+        """
+        Validate configuration settings before tuning.
+        Checks:
+        1. No empty layer groups
+        2. No empty parameter spaces
+        3. Parameters are valid for layer types
+        4. Grouped layers (if not separate) have compatible parameters
+        
+        Raises:
+            ValueError: If any configuration issue is found
+        """
+        for i, config in enumerate(self.configs.configs):
+            # Check for empty layer groups
+            if not config.layer_names:
+                raise ValueError(f"Config {i} has no layer names specified")
+            
+            # Check for empty parameter spaces
+            if not config.params:
+                raise ValueError(f"Config {i} for layers {config.layer_names} has no parameters to tune")
+            
+            # Get actual layer objects and check compatibility
+            layers = []
+            for layer_name in config.layer_names:
+                try:
+                    layer = self._get_layer_by_name(layer_name)
+                    layers.append(layer)
+                except ValueError as e:
+                    raise ValueError(f"Layer '{layer_name}' in config {i} not found in model: {e}")
+            
+            # Check each parameter is valid for the layer types
+            for layer in layers:
+                layer_type = type(layer)
+                if layer_type not in LAYER_TYPE_MAPPING:
+                    raise ValueError(f"Layer '{layer_name}' is of type {layer_type.__name__}, which is not supported for sketching")
+                
+                valid_params = LAYER_TYPE_MAPPING[layer_type]["params"]
+                for param in config.params:
+                    if param not in valid_params:
+                        raise ValueError(f"Parameter '{param}' is not valid for layer type {layer_type.__name__}. Valid parameters are: {valid_params}")
+            
+            # Check parameter compatibility across layers in the group
+            if len(config.layer_names) > 1:
+                param_sets = [set(LAYER_TYPE_MAPPING[type(layer)]["params"]) for layer in layers]
+                common_params = set.intersection(*param_sets)
+                
+                # Check that all parameters in the config are valid for all layers
+                for param in config.params:
+                    if param not in common_params:
+                        raise ValueError(
+                            f"Parameter '{param}' in config {i} is not compatible with all layers in the group. "
+                            f"For joint tuning, all layers must support the same parameters."
+                        )
     
     def _build_layer_map(self, model: nn.Module, prefix: str = ""):
         """Build a mapping from layer names to layer objects."""
@@ -387,7 +139,7 @@ class SKAutoTuner:
         
         raise ValueError(f"Module {name} not found in the model")
     
-    def replace_layer(self, layer_name: str, layer_type: Type[nn.Module], params: Dict[str, Any]) -> bool:
+    def replace_layer(self, layer_name: str, layer_type: Type[nn.Module], params: Dict[str, Any], copy_weights: bool = False) -> bool:
         """
         Replace a layer with its sketched version.
         
@@ -395,6 +147,7 @@ class SKAutoTuner:
             layer_name: Name of the layer to replace
             layer_type: Type of the layer
             params: Parameters for the sketched layer
+            copy_weights: Whether to copy the learnable parameters from the original
             
         Returns:
             True if layer was replaced, False otherwise
@@ -417,26 +170,75 @@ class SKAutoTuner:
                 in_features=original_layer.in_features,
                 out_features=original_layer.out_features,
                 bias=original_layer.bias is not None,
-                W_init=original_layer.weight,
+                W_init=original_layer.weight if copy_weights else None,
+                device=original_layer.weight.device,
+                dtype=original_layer.weight.dtype,
                 **params
             )
+    
+            # Copy bias if needed
+            if copy_weights and original_layer.bias is not None and sketched_layer.bias is not None:
+                sketched_layer.bias.data.copy_(original_layer.bias.data)
+            # for the weights its handled in the SKLinear constructor
+
         elif isinstance(original_layer, nn.Conv2d):
+            # Create a new sketched convolution layer
             sketched_layer = sketched_class(
                 in_channels=original_layer.in_channels,
                 out_channels=original_layer.out_channels,
                 kernel_size=original_layer.kernel_size,
                 stride=original_layer.stride,
                 padding=original_layer.padding,
+                device=original_layer.weight.device,
+                dtype=original_layer.weight.dtype,
                 **params
             )
+            
+            if copy_weights:
+                # Initialize S1s and S2s based on original weights
+                kernels = original_layer.weight.detach().clone()
+                kernels = kernels.permute(1, 2, 3, 0)  # Convert to expected shape
+                
+                for i in range(sketched_layer.num_terms):
+                    sketched_layer.S1s.data[i] = torch.matmul(
+                        kernels.reshape(-1, kernels.shape[-1]), 
+                        sketched_layer.U1s[i].T
+                    )
+                    
+                    K_mat4 = kernels.reshape(-1, kernels.shape[-1])
+                    sketched_layer.S2s.data[i] = torch.matmul(
+                        sketched_layer.U2s[i], 
+                        K_mat4
+                    ).reshape(sketched_layer.low_rank, -1)
+                
+                # Copy bias
+                if original_layer.bias is not None:
+                    sketched_layer.bias.data.copy_(original_layer.bias.data)
+                
         elif isinstance(original_layer, nn.MultiheadAttention):
+            # Create a new sketched attention layer
             sketched_layer = sketched_class(
                 embed_dim=original_layer.embed_dim,
                 num_heads=original_layer.num_heads,
                 dropout=original_layer.dropout,
                 bias=original_layer.in_proj_bias is not None,
+                device=original_layer.in_proj_weight.device,
+                dtype=original_layer.in_proj_weight.dtype,
                 **params
             )
+            
+            if copy_weights:
+                # Transfer learnable parameters from the original attention layer
+                sketched_layer.Wq.data.copy_(original_layer.in_proj_weight[:original_layer.embed_dim, :])
+                sketched_layer.Wk.data.copy_(original_layer.in_proj_weight[original_layer.embed_dim:2*original_layer.embed_dim, :])
+                sketched_layer.Wv.data.copy_(original_layer.in_proj_weight[2*original_layer.embed_dim:3*original_layer.embed_dim, :])
+                sketched_layer.W0.data.copy_(original_layer.out_proj.weight)
+                
+                if original_layer.in_proj_bias is not None and sketched_layer.bias:
+                    sketched_layer.bq.data.copy_(original_layer.in_proj_bias[:original_layer.embed_dim])
+                    sketched_layer.bk.data.copy_(original_layer.in_proj_bias[original_layer.embed_dim:2*original_layer.embed_dim])
+                    sketched_layer.bv.data.copy_(original_layer.in_proj_bias[2*original_layer.embed_dim:3*original_layer.embed_dim])
+                    sketched_layer.b0.data.copy_(original_layer.out_proj.bias)
         else:
             return False
         
