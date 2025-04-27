@@ -79,8 +79,8 @@ def first_pass_gU1s_g_S2s_kernel(
         U1s = tl.load(U1s_ptrs, mask=su_mask, other=0.0)
         S2s = tl.load(S2s_ptrs, mask=su_mask, other=0.0)
         
-        accumulator1 += tl.dot(g, U1s)
-        accumulator2 += tl.dot(g, S2s)
+        accumulator1 += tl.dot(g, U1s, input_precision="ieee")
+        accumulator2 += tl.dot(g, S2s, input_precision="ieee")
         
         g_ptrs += BLOCK_SIZE_d1 * stride_g_d1
         U1s_ptrs += BLOCK_SIZE_d1 * stride_su_d1
@@ -106,8 +106,8 @@ def first_pass_gU1s_g_S2s(g, U1s, S2s):
     BSIZE, d1 = g.shape
     L, _, K = U1s.shape
     
-    g_U1s = torch.empty((L, BSIZE, K), dtype=torch.float16, device='cuda')
-    g_S2s = torch.empty((L, BSIZE, K), dtype=torch.float16, device='cuda')
+    g_U1s = torch.empty((L, BSIZE, K), dtype=torch.float32, device='cuda')
+    g_S2s = torch.empty((L, BSIZE, K), dtype=torch.float32, device='cuda')
 
     # stride_g_bsize, stride_g_d1 = g.stride()
     # stride_su_l, stride_su_d1, stride_su_k = U1s.stride()
@@ -215,8 +215,8 @@ def second_pass_gUS11_22_kernel(
             S1s = tl.load(S1s_ptrs, mask=us_mask, other=0.0)
             U2s = tl.load(U2s_ptrs, mask=us_mask, other=0.0)
             
-            accumulator += tl.dot(g_U1s, S1s)
-            accumulator += tl.dot(g_S2s, U2s)
+            accumulator += tl.dot(g_U1s, S1s, input_precision="ieee")
+            accumulator += tl.dot(g_S2s, U2s, input_precision="ieee")
 
             in_inc = BLOCK_SIZE_K * stride_g_U1s2_k
             g_U1s_ptrs += in_inc
@@ -246,7 +246,7 @@ def second_pass_gUS11_22(g_U1s, g_S2s, S1s, U2s):
     L, BSIZE, K = g_U1s.shape
     _, _, d2 = S1s.shape
     
-    out = torch.empty((BSIZE, d2), dtype=torch.float16, device='cuda')
+    out = torch.empty((BSIZE, d2), dtype=torch.float32, device='cuda')
 
     # stride_g_U1s2_l, stride_g_U1s2_bsize, stride_g_U1s2_k = g_U1s.stride()
     # stride_us_l, stride_us_k, stride_us_d2 = S1s.stride()
@@ -333,13 +333,10 @@ def calc_grad_S1s_kernel(
         su_mask = (offs_BSIZE[:, None] < BSIZE - BSIZE_i * BLOCK_SIZE_BSIZE) & (offs_k[None, :] < k)
         g_U1s = tl.load(g_U1s_ptrs, mask=su_mask, other=0.0)
         
-        accumulator1 += tl.dot(hin, g_U1s)
+        accumulator1 += tl.dot(hin, g_U1s, input_precision="ieee")
         
         hin_ptrs += BLOCK_SIZE_BSIZE * stride_hin_BSIZE
         g_U1s_ptrs += BLOCK_SIZE_BSIZE * stride_su_BSIZE
-
-    accumulator1 = accumulator1.to(tl.float16)
-    accumulator2 = accumulator2.to(tl.float16)
 
     out_tmp = batch_id * stride_out_l + stride_out_bsize * offs_bsize[:, None] + stride_out_k * offs_k[None, :]
     grad_g_S1s_ptrs = grad_g_S1s_ptr + out_tmp
@@ -357,7 +354,7 @@ def calc_grad_S1s(hin, g_U1s):
     d2, BSIZE = hin.shape
     L, _, k = g_U1s.shape
     
-    grad_g_S1s = torch.empty((L, d2, k), dtype=torch.float16, device=device)
+    grad_g_S1s = torch.empty((L, d2, k), dtype=torch.float32, device=device)
 
     # stride_hin_bsize, stride_hin_BSIZE = hin.stride()
     # stride_su_l, stride_su_BSIZE, stride_su_k = g_U1s.stride()
@@ -443,12 +440,10 @@ def first_pass_U2s_hin_kernel(
         su_mask = (offs_K[:, None] < K) & (offs_d2[None, :] < d2 - d2_i * BLOCK_SIZE_d2)
         U2s = tl.load(U2s_ptrs, mask=su_mask, other=0.0)
         
-        accumulator1 += tl.dot(U2s, hin)
+        accumulator1 += tl.dot(U2s, hin, input_precision="ieee")
         
         hin_ptrs += BLOCK_SIZE_d2 * stride_hin_d2
         U2s_ptrs += BLOCK_SIZE_d2 * stride_su_d2
-
-    accumulator1 = accumulator1.to(tl.float16)
 
     out_tmp = batch_id * stride_out_l + stride_out_K * offs_K[:, None] + stride_out_BSIZE * offs_BSIZE[None, :]
     U2s_h_in_ptrs = U2s_h_in_ptr + out_tmp
@@ -466,7 +461,7 @@ def first_pass_U2s_hin(U2s, hin):
     L, K, d2 = U2s.shape
     _, BSIZE = hin.shape
     
-    U2s_h_in = torch.empty((L, K, BSIZE), dtype=torch.float16, device=device)
+    U2s_h_in = torch.empty((L, K, BSIZE), dtype=torch.float32, device=device)
 
     # stride_hin_d2, stride_hin_BSIZE = hin.stride()
     # stride_su_l, stride_su_K, stride_su_d2 = U2s.stride()
@@ -555,12 +550,10 @@ def calc_grad_S2s_kernel(
         su_mask = (offs_K[:, None] < K) & (offs_BSIZE[None, :] < BSIZE - BSIZE_i * BLOCK_SIZE_BSIZE)
         U2s_hin = tl.load(U2s_hin_ptrs, mask=su_mask, other=0.0)
         
-        accumulator1 += tl.dot(U2s_hin, g)
+        accumulator1 += tl.dot(U2s_hin, g, input_precision="ieee")
         
         g_ptrs += BLOCK_SIZE_BSIZE * stride_g_BSIZE
         U2s_hin_ptrs += BLOCK_SIZE_BSIZE * stride_su_BSIZE
-
-    accumulator1 = accumulator1.to(tl.float16)
 
     out_tmp = batch_id * stride_out_l + stride_out_K * offs_K[:, None] + stride_out_d1 * offs_d1[None, :]
     grad_S2s_ptrs = grad_S2s_ptr + out_tmp
@@ -578,7 +571,7 @@ def calc_grad_S2s(U2s_hin, g):
     L, K, BSIZE = U2s_hin.shape
     _, d1 = g.shape
     
-    grad_S2s = torch.empty((L, K, d1), dtype=torch.float16, device=device)
+    grad_S2s = torch.empty((L, K, d1), dtype=torch.float32, device=device)
 
     # stride_g_BSIZE, stride_g_d1 = g.stride()
     # stride_su_l, stride_su_K, stride_su_BSIZE = U2s_hin.stride()
