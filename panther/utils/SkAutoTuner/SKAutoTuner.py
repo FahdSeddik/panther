@@ -20,11 +20,11 @@ class SKAutoTuner:
         self, 
         model: nn.Module, 
         configs: TuningConfigs,
-        eval_func: Callable[[nn.Module], float],
+        accuracy_eval_func: Callable[[nn.Module], float],
         search_algorithm: SearchAlgorithm = None,
         verbose: bool = False,
         accuracy_threshold: float = None,
-        speed_eval_func: Callable[[nn.Module], float] = None
+        optmization_eval_func: Callable[[nn.Module], float] = None
     ):
         """
         Initialize the autotuner.
@@ -32,20 +32,18 @@ class SKAutoTuner:
         Args:
             model: The neural network model to tune
             configs: Configuration for the layers to tune
-            eval_func: Evaluation function that takes a model and returns an accuracy score (higher is better)
+            accuracy_eval_func: Evaluation function that takes a model and returns an accuracy score (higher is better)
             search_algorithm: Search algorithm to use for finding optimal parameters
             verbose: Whether to print progress during tuning
-            accuracy_threshold: Minimum acceptable accuracy (if None, will use eval_func for optimization)
-            speed_eval_func: Function to evaluate model speed (returns higher value for faster models)
-                             If provided with accuracy_threshold, speed will be optimized while maintaining
-                             accuracy above the threshold.
+            accuracy_threshold: Minimum acceptable accuracy (if None, will use accuracy_eval_func for optimization)
+            optmization_eval_func: Function to maxmimize (e.g., speed) after reaching the accuracy threshold
         """
         self.model = model
-        self.eval_func = eval_func
+        self.accuracy_eval_func = accuracy_eval_func
         self.search_algorithm = search_algorithm or GridSearch()
         self.verbose = verbose
         self.accuracy_threshold = accuracy_threshold
-        self.speed_eval_func = speed_eval_func
+        self.optmization_eval_func = optmization_eval_func
         # Dictionary to store results for each layer
         self.results = {}
         # Dictionary to store best parameters for each layer
@@ -343,10 +341,10 @@ class SKAutoTuner:
                     self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
                 
                 # Evaluate
-                accuracy_score = self.eval_func(self.model)
-                if self.accuracy_threshold is not None and self.speed_eval_func is not None:
+                accuracy_score = self.accuracy_eval_func(self.model)
+                if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
                     if accuracy_score >= self.accuracy_threshold:
-                        speed_score = self.speed_eval_func(self.model)
+                        speed_score = self.optmization_eval_func(self.model)
                         score = speed_score
                     else:
                         score = float('-inf')
@@ -407,10 +405,10 @@ class SKAutoTuner:
                     self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
                     
                     # Evaluate
-                    accuracy_score = self.eval_func(self.model)
-                    if self.accuracy_threshold is not None and self.speed_eval_func is not None:
+                    accuracy_score = self.accuracy_eval_func(self.model)
+                    if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
                         if accuracy_score >= self.accuracy_threshold:
-                            speed_score = self.speed_eval_func(self.model)
+                            speed_score = self.optmization_eval_func(self.model)
                             score = speed_score
                         else:
                             score = float('-inf')
