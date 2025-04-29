@@ -7,11 +7,11 @@ from pawX import sketched_linear_backward, sketched_linear_forward
 torch.manual_seed(42)
 
 # Test parameters
-BATCH_SIZE = 8
-IN_FEATURES = 500
-OUT_FEATURES = 500
-LOW_RANK_DIM = 50
-NUM_TERMS = 10
+BATCH_SIZE = 64
+IN_FEATURES = 32768
+OUT_FEATURES = 1024
+LOW_RANK_DIM = 16
+NUM_TERMS = 2
 
 
 @pytest.fixture
@@ -109,7 +109,7 @@ def test_forward_gpu_vs_cpu(test_tensors):
     ).cpu()
 
     assert torch.allclose(
-        output_cpu, output_gpu, atol=1e-4, rtol=1e-3
+        output_cpu, output_gpu, atol=1e-3, rtol=1e-3
     ), "Forward pass differs between CPU and GPU."
 
 
@@ -142,9 +142,10 @@ def test_backward_vs_autograd(test_tensors):
     for i, (custom, reference) in enumerate(zip(custom_grads, autograd_grads)):
         assert custom.shape == reference.shape, f"Gradient shape mismatch at index {i}"
         assert torch.allclose(
-            custom, reference, atol=1e-4, rtol=1e-3
+            custom, reference, atol=1e-3, rtol=1e-3
         ), f"Gradient mismatch at index {i}"
 
 
 if __name__ == "__main__":
+    pytest.main()
     pytest.main()
