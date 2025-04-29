@@ -5,10 +5,9 @@ from .SkAutoTuner import (
     SearchAlgorithm,
     GridSearch,
     RandomSearch,
-    BayesianOptimization
+    BayesianOptimization,
+    ModelVisualizer,
 )
-
-from .ModelVisualizer import ModelVisualizer
 
 __all__ = [
     "SKAutoTuner",
@@ -17,5 +16,6 @@ __all__ = [
     "SearchAlgorithm",
     "GridSearch",
     "RandomSearch",
-    "BayesianOptimization"
+    "BayesianOptimization",
+    "ModelVisualizer",
 ]
