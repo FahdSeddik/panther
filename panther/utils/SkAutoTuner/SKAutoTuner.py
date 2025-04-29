@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from .Searching import SearchAlgorithm, GridSearch
 from .layer_type_mapping import LAYER_TYPE_MAPPING
-from .Configs import TuningConfigs, LayerConfig
+from .Configs import TuningConfigs, LayerConfig, LayerNameResolver
 
 class SKAutoTuner:
     """
@@ -41,33 +41,53 @@ class SKAutoTuner:
                              accuracy above the threshold.
         """
         self.model = model
-        self.configs = configs
         self.eval_func = eval_func
         self.search_algorithm = search_algorithm or GridSearch()
         self.verbose = verbose
         self.accuracy_threshold = accuracy_threshold
         self.speed_eval_func = speed_eval_func
-        
-        # Store original model architecture (before any layer replacements)
-        self.original_model = copy.deepcopy(model)
-        
-        # Store original model state dictionary (before any layer replacements)
-        self.original_model_state = copy.deepcopy(model.state_dict())
-        
         # Dictionary to store results for each layer
         self.results = {}
-        
         # Dictionary to store best parameters for each layer
         self.best_params = {}
-        
         # Map from layer name to layer object
         self.layer_map = {}
+         # Initialize the layer name resolver
         self._build_layer_map(model)
+        self.resolver = LayerNameResolver(model, self.layer_map)
+        # Resolve layer names in configs
+        self.configs = self._resolve_configs(configs)
+
         if self.verbose:
             # print the layer map
             print(f"Total layers found: {len(self.layer_map)}")
             print(f"Layer map: {self.layer_map}")
         self._check_configs()
+
+    
+    def _resolve_configs(self, configs: TuningConfigs) -> TuningConfigs:
+        """
+        Resolve layer names in configs to actual layer names in the model.
+        
+        Args:
+            configs: Configuration for the layers to tune
+            
+        Returns:
+            Updated configuration with resolved layer names
+        """
+        resolved_configs = TuningConfigs([])
+        
+        for config in configs.configs:
+            # Make a deep copy of the config to avoid modifying the original
+            resolved_config = LayerConfig(
+                layer_names=self.resolver.resolve(config.layer_names),
+                params=config.params,
+                separate=config.separate,
+                copy_weights=config.copy_weights
+            )
+            resolved_configs.configs.append(resolved_config)
+        
+        return resolved_configs
 
     def _check_configs(self):
         """

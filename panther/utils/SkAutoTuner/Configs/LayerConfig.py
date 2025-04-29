@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union, Any
 
 class LayerConfig:
     """
@@ -7,7 +7,7 @@ class LayerConfig:
     """
     def __init__(
         self, 
-        layer_names: List[str], 
+        layer_names: Union[str, List[str], Dict[str, Any]], 
         params: Dict[str, List], 
         separate: bool = True,
         copy_weights: bool = True,
@@ -16,7 +16,10 @@ class LayerConfig:
         Initialize a layer configuration.
         
         Args:
-            layer_names: List of names of layers to configure (dot notation for nested modules)
+            layer_names: Layer selector, can be:
+                - A string (regex pattern or substring)
+                - A list of strings (patterns or exact layer names)
+                - A dictionary with selection criteria (pattern, type, indices, etc.)
             params: Dictionary of parameter names and their possible values to try
             separate: Whether these layers should be tuned separately or together
             copy_weights: Whether to copy weights when replacing layers
