@@ -12,12 +12,10 @@ class RandomSearch(SearchAlgorithm):
         self.param_space = {}
         self.max_trials = max_trials
         self.current_trial = 0
-        self.results = []
-        self.best_score = float('-inf')
-        self.best_params = {}
     
     def initialize(self, param_space: Dict[str, List]):
         self.param_space = param_space
+        self.current_trial = 0
     
     def get_next_params(self) -> Dict[str, Any]:
         if self.current_trial >= self.max_trials:
@@ -30,11 +28,5 @@ class RandomSearch(SearchAlgorithm):
         }
     
     def update(self, params: Dict[str, Any], score: float):
-        self.results.append((params, score))
-        
-        if score > self.best_score:
-            self.best_score = score
-            self.best_params = params
-    
-    def get_best_params(self) -> Dict[str, Any]:
-        return self.best_params
+        # no need to do anything
+        pass

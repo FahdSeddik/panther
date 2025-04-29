@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from panther.utils.SkAutoTuner.Searching import SearchAlgorithm
 from scipy.optimize import minimize
-
+from scipy.stats import norm
 
 class BayesianOptimization(SearchAlgorithm):
     """
@@ -24,9 +24,6 @@ class BayesianOptimization(SearchAlgorithm):
         self.random_trials = random_trials
         self.exploration_weight = exploration_weight
         self.current_trial = 0
-        self.results = []
-        self.best_score = float('-inf')
-        self.best_params = {}
         self._param_mapping = {}  # Maps parameter names to indices
         self._param_inv_mapping = {}  # Maps indices to parameter names
         self.observed_X = []  # Normalized parameter values
@@ -45,7 +42,19 @@ class BayesianOptimization(SearchAlgorithm):
         Args:
             param_space: Dictionary of parameter names and their possible values
         """
+        # Reset state
         self.param_space = param_space
+        self.current_trial = 0
+        self._param_mapping = {}  # Maps parameter names to indices
+        self._param_inv_mapping = {}  # Maps indices to parameter names
+        self.observed_X = []  # Normalized parameter values
+        self.observed_y = []  # Observed scores
+        self.normalized_y = []  # Normalized scores
+        
+        # Reset GP kernel hyperparameters
+        self.length_scale = 1.0
+        self.signal_variance = 1.0
+        self.noise_variance = 1e-6
         
         # Create mappings for parameters to make them numeric
         for i, (param, values) in enumerate(self.param_space.items()):
@@ -319,8 +328,6 @@ class BayesianOptimization(SearchAlgorithm):
             params: Dictionary of parameter names and values that were tried
             score: The evaluation score for the parameters
         """
-        self.results.append((params, score))
-        
         # Convert params to normalized point
         point = self._params_to_point(params)
         self.observed_X.append(point)
@@ -328,17 +335,3 @@ class BayesianOptimization(SearchAlgorithm):
         
         # Update normalized y values
         self.normalized_y = self._normalize_y(self.observed_y)
-        
-        # Update best parameters if needed
-        if score > self.best_score:
-            self.best_score = score
-            self.best_params = params
-    
-    def get_best_params(self) -> Dict[str, Any]:
-        """
-        Get the best parameters found so far.
-        
-        Returns:
-            Dictionary of parameter names and their best values
-        """
-        return self.best_params
