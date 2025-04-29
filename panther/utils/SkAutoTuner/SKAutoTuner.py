@@ -419,7 +419,7 @@ class SKAutoTuner:
                 self.results[layer_name] = layer_results
                 
                 # Save best parameters for this layer
-                layer_params[layer_name] = best_params
+                layer_params[layer_name] = {"params": best_params, "copy_weights": config.copy_weights}
                 
                 if self.verbose:
                     print(f"  Best parameters for {layer_name}: {best_params}, score: {best_score}")
