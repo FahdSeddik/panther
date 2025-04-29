@@ -4,49 +4,52 @@
 
 template <typename scalar_t>
 __global__ void sklinear_forward_intermediate(
-    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,  // gets loaded once
+    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,  // gets loaded term number of times
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,    // gets loaded batch / TILE times
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,
     torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> output,  // 2 * num * batch * low_rank
     int batch_size, int input_dim, int low_rank_dim) {
-    int tx = threadIdx.x;
-    int ty = threadIdx.y;
-    int term = blockIdx.y;
-    int batch = ty + blockIdx.x * TILE_DIM;  // Batch index.
-    // if (batch >= batch_size) return;
-    extern __shared__ float shData[];  // 2 * TILE_DIM * low_rank_dim
-    scalar_t* sharedIntermediate = (scalar_t*)shData;
+    int tx = threadIdx.x, ty = threadIdx.y;
+    int termIdx = blockIdx.z;
+    int batchIdx = blockIdx.y * TILE_DIM + ty;    // row
+    int lowRankIdx = blockIdx.x * TILE_DIM + tx;  // col
+    extern __shared__ float shData[];
+    scalar_t* sharedS1 = (scalar_t*)shData;
+    scalar_t* sharedU2 = sharedS1 + TILE_DIM * TILE_DIM;
+    scalar_t* sharedInput = sharedU2 + TILE_DIM * TILE_DIM;
 
-    // set all intermediate to 0
-    for (int i = tx + ty * TILE_DIM; i < TILE_DIM * low_rank_dim * 2; i += TILE_DIM * TILE_DIM) {
-        sharedIntermediate[i] = 0;
-    }
-    __syncthreads();
-    for (int i = tx; i < input_dim; i += TILE_DIM) {
-        scalar_t input_val = batch < batch_size ? input[batch][i] : 0;
-        for (int j = 0; j < low_rank_dim; j++) {
-            auto s1_val = S1s[term][i][j], u2_val = U2s[term][i][j];
-            auto intermediate1 = input_val * s1_val, intermediate2 = input_val * u2_val;
-            for (int offset = 8; offset > 0; offset >>= 1) {
-                intermediate1 += __shfl_down_sync(0xFFFFFFFF, intermediate1, offset);
-                intermediate2 += __shfl_down_sync(0xFFFFFFFF, intermediate2, offset);
-            }
-            if (tx == 0) {  // first and 16 thread in each warp
-                sharedIntermediate[ty * low_rank_dim + j] += intermediate1;
-                sharedIntermediate[TILE_DIM * low_rank_dim + ty * low_rank_dim + j] += intermediate2;
+    scalar_t sum1 = 0, sum2 = 0;
+    for (int stride = 0; stride < input_dim; stride += TILE_DIM) {
+        if (lowRankIdx < low_rank_dim && stride + ty < input_dim) {
+            sharedS1[ty * TILE_DIM + tx] = S1s[termIdx][stride + ty][lowRankIdx];
+            sharedU2[ty * TILE_DIM + tx] = U2s[termIdx][stride + ty][lowRankIdx];
+        } else {
+            sharedS1[ty * TILE_DIM + tx] = 0;
+            sharedU2[ty * TILE_DIM + tx] = 0;
+        }
+        // Load intermediate results into shared memory.
+        if (batchIdx < batch_size && stride + tx < input_dim) {
+            sharedInput[ty * TILE_DIM + tx] = input[batchIdx][stride + tx];
+        } else {
+            sharedInput[ty * TILE_DIM + tx] = 0;
+        }
+        __syncthreads();
+        if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
+            for (int i = 0; i < TILE_DIM; i++) {
+                auto s1_val = sharedS1[i * TILE_DIM + tx];
+                auto u2_val = sharedU2[i * TILE_DIM + tx];
+                auto input_val = sharedInput[ty * TILE_DIM + i];
+                sum1 += s1_val * input_val;
+                sum2 += u2_val * input_val;
             }
         }
+        __syncthreads();
     }
-    __syncthreads();
-    // write output
-    for (int i = tx + ty * TILE_DIM; i < TILE_DIM * low_rank_dim; i += TILE_DIM * TILE_DIM) {
-        int localBatch = i / low_rank_dim;
-        int localDim = i % low_rank_dim;
-        int batchIdx = localBatch + blockIdx.x * TILE_DIM;
-        if (batchIdx < batch_size) {
-            output[0][term][batchIdx][localDim] = sharedIntermediate[localBatch * low_rank_dim + localDim];
-            output[1][term][batchIdx][localDim] = sharedIntermediate[TILE_DIM * low_rank_dim + localBatch * low_rank_dim + localDim];
-        }
+
+    if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
+        // Write the result to the output tensor.
+        output[0][termIdx][batchIdx][lowRankIdx] = sum1;
+        output[1][termIdx][batchIdx][lowRankIdx] = sum2;
     }
 }
 
@@ -129,10 +132,9 @@ torch::Tensor sketched_linear_forward_cuda(
     // Create output tensor.
     auto output = torch::zeros({batch_size, output_dim}, input.options());
 
-    // Define grid dimensions: one block per (batch, output) pair.
-    dim3 grid((batch_size + TILE_DIM - 1) / TILE_DIM, num_terms);
+    dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, num_terms);
     dim3 block(TILE_DIM, TILE_DIM);
-    int shared_mem_size = 2 * TILE_DIM * low_rank_dim * input.element_size();
+    int shared_mem_size = 3 * TILE_DIM * TILE_DIM * input.element_size();
 
     // allocate intermediate output tensor contigously
     auto output_intermediate = torch::zeros({2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();

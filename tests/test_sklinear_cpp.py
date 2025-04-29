@@ -7,11 +7,11 @@ from pawX import sketched_linear_backward, sketched_linear_forward
 torch.manual_seed(42)
 
 # Test parameters
-BATCH_SIZE = 64
-IN_FEATURES = 32768
-OUT_FEATURES = 1024
-LOW_RANK_DIM = 16
-NUM_TERMS = 2
+BATCH_SIZE = 32
+IN_FEATURES = 1024
+OUT_FEATURES = 2048
+LOW_RANK_DIM = 64
+NUM_TERMS = 3
 
 
 @pytest.fixture
