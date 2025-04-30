@@ -1,14 +1,26 @@
-from typing import Any, Dict, List, Tuple
-
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
-from panther.utils.SkAutoTuner.Searching import SearchAlgorithm
-from scipy.optimize import minimize
-from scipy.stats import norm
+import torch
+from panther.utils.SkAutoTuner.Searching.SearchAlgorithm import SearchAlgorithm
+
+try:
+    import botorch
+    from botorch.models import SingleTaskGP
+    from botorch.fit import fit_gpytorch_model
+    from botorch.acquisition import ExpectedImprovement
+    from botorch.optim import optimize_acqf
+    from gpytorch.mlls import ExactMarginalLogLikelihood
+    from botorch.utils.transforms import normalize, standardize
+    BOTORCH_AVAILABLE = True
+except ImportError:
+    BOTORCH_AVAILABLE = False
+    print("Warning: botorch is not available. Install with: pip install botorch")
 
 class BayesianOptimization(SearchAlgorithm):
     """
-    Bayesian optimization search algorithm using Gaussian Process regression.
-    This is a production-ready implementation for hyperparameter optimization.
+    Bayesian optimization search algorithm using botorch and GPyTorch.
+    This implementation leverages the efficient and robust implementations
+    from the botorch library for Bayesian Optimization.
     """
     def __init__(self, max_trials: int = 20, random_trials: int = 3, exploration_weight: float = 0.01):
         """
@@ -19,21 +31,29 @@ class BayesianOptimization(SearchAlgorithm):
             random_trials: Number of initial random trials before using GP
             exploration_weight: Weight for exploration in acquisition function (higher = more exploration)
         """
+        if not BOTORCH_AVAILABLE:
+            raise ImportError("botorch is required for this implementation. Install with: pip install botorch")
+        
         self.param_space = {}
         self.max_trials = max_trials
         self.random_trials = random_trials
         self.exploration_weight = exploration_weight
         self.current_trial = 0
+        
+        # Parameter mapping
         self._param_mapping = {}  # Maps parameter names to indices
         self._param_inv_mapping = {}  # Maps indices to parameter names
-        self.observed_X = []  # Normalized parameter values
-        self.observed_y = []  # Observed scores
-        self.normalized_y = []  # Normalized scores
         
-        # GP kernel hyperparameters
-        self.length_scale = 1.0
-        self.signal_variance = 1.0
-        self.noise_variance = 1e-6
+        # Observation history
+        self.train_x = None  # Normalized tensor of parameter values
+        self.train_y = None  # Tensor of observed scores
+        
+        # Best observed value so far
+        self.best_value = None
+        
+        # GP model
+        self.model = None
+        self.bounds = None
     
     def initialize(self, param_space: Dict[str, List]):
         """
@@ -45,23 +65,31 @@ class BayesianOptimization(SearchAlgorithm):
         # Reset state
         self.param_space = param_space
         self.current_trial = 0
-        self._param_mapping = {}  # Maps parameter names to indices
-        self._param_inv_mapping = {}  # Maps indices to parameter names
-        self.observed_X = []  # Normalized parameter values
-        self.observed_y = []  # Observed scores
-        self.normalized_y = []  # Normalized scores
-        
-        # Reset GP kernel hyperparameters
-        self.length_scale = 1.0
-        self.signal_variance = 1.0
-        self.noise_variance = 1e-6
+        self._param_mapping = {}
+        self._param_inv_mapping = {}
         
         # Create mappings for parameters to make them numeric
         for i, (param, values) in enumerate(self.param_space.items()):
             self._param_mapping[param] = i
             self._param_inv_mapping[i] = param
+        
+        # Initialize tensors for observations
+        self.train_x = torch.zeros((0, len(self._param_mapping)), dtype=torch.float64)
+        self.train_y = torch.zeros((0, 1), dtype=torch.float64)
+        
+        # Setup optimization bounds (normalized to [0, 1])
+        self.bounds = torch.stack([
+            torch.zeros(len(self._param_mapping), dtype=torch.float64),
+            torch.ones(len(self._param_mapping), dtype=torch.float64)
+        ])
+        
+        # Reset best observed value
+        self.best_value = None
+        
+        # Reset model
+        self.model = None
     
-    def _params_to_point(self, params: Dict[str, Any]) -> np.ndarray:
+    def _params_to_point(self, params: Dict[str, Any]) -> torch.Tensor:
         """
         Convert a parameter dictionary to a normalized point in the search space.
         
@@ -69,27 +97,32 @@ class BayesianOptimization(SearchAlgorithm):
             params: Dictionary of parameter values
             
         Returns:
-            Numpy array of normalized parameter values
+            Tensor of normalized parameter values
         """
-        point = np.zeros(len(self._param_mapping))
+        point = torch.zeros(len(self._param_mapping), dtype=torch.float64)
         for param, value in params.items():
             idx = self._param_mapping[param]
             options = self.param_space[param]
             value_idx = options.index(value)
             # Normalize to [0, 1]
             point[idx] = value_idx / (len(options) - 1) if len(options) > 1 else 0.5
-        return point
+        return point.unsqueeze(0)  # Add batch dimension
     
-    def _point_to_params(self, point: np.ndarray) -> Dict[str, Any]:
+    def _point_to_params(self, point: torch.Tensor) -> Dict[str, Any]:
         """
         Convert a normalized point in the search space to a parameter dictionary.
         
         Args:
-            point: Numpy array of normalized parameter values
+            point: Tensor of normalized parameter values
             
         Returns:
             Dictionary of parameter values
         """
+        # Remove batch dimension if present
+        if point.ndim > 1:
+            point = point.squeeze(0)
+            
+        point = point.detach().numpy()
         params = {}
         for i, norm_value in enumerate(point):
             param = self._param_inv_mapping[i]
@@ -105,179 +138,19 @@ class BayesianOptimization(SearchAlgorithm):
             params[param] = options[idx]
         return params
     
-    def _rbf_kernel(self, x1: np.ndarray, x2: np.ndarray) -> float:
+    def _update_model(self):
         """
-        Radial Basis Function (RBF) kernel.
-        
-        Args:
-            x1: First point
-            x2: Second point
-            
-        Returns:
-            Kernel value
+        Update the GP model with the current observations.
         """
-        dist = np.sum(((x1 - x2) / self.length_scale) ** 2)
-        return self.signal_variance * np.exp(-0.5 * dist)
-    
-    def _kernel_matrix(self, X1: np.ndarray, X2: np.ndarray = None) -> np.ndarray:
-        """
-        Compute the kernel matrix between two sets of points.
-        
-        Args:
-            X1: First set of points (n_points1, n_dims)
-            X2: Second set of points (n_points2, n_dims), or None to use X1
-            
-        Returns:
-            Kernel matrix (n_points1, n_points2)
-        """
-        if X2 is None:
-            X2 = X1
-            
-        n1 = X1.shape[0]
-        n2 = X2.shape[0]
-        K = np.zeros((n1, n2))
-        
-        for i in range(n1):
-            for j in range(n2):
-                K[i, j] = self._rbf_kernel(X1[i], X2[j])
-        
-        return K
-    
-    def _gp_predict(self, X_test: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Make predictions using Gaussian Process regression.
-        
-        Args:
-            X_test: Test points (n_points, n_dims)
-            
-        Returns:
-            Tuple of (mean, variance) for predictions
-        """
-        if not self.observed_X:
-            return np.zeros(X_test.shape[0]), np.ones(X_test.shape[0])
-        
-        X_train = np.array(self.observed_X)
-        y_train = np.array(self.normalized_y)
-        
-        # Compute kernel matrices
-        K = self._kernel_matrix(X_train, X_train)
-        K += np.eye(len(X_train)) * self.noise_variance  # Add noise
-        K_s = self._kernel_matrix(X_train, X_test)
-        K_ss = self._kernel_matrix(X_test, X_test)
-        
-        # Compute mean and variance
-        K_inv = np.linalg.inv(K)
-        mean = K_s.T @ K_inv @ y_train
-        var = np.diag(K_ss - K_s.T @ K_inv @ K_s)
-        
-        return mean, var
-    
-    def _negative_log_likelihood(self, params: np.ndarray) -> float:
-        """
-        Negative log likelihood function for GP hyperparameter optimization.
-        
-        Args:
-            params: Hyperparameters [log_length_scale, log_signal_variance, log_noise_variance]
-            
-        Returns:
-            Negative log likelihood
-        """
-        if not self.observed_X:
-            return 0.0
-            
-        # Extract hyperparameters
-        self.length_scale = np.exp(params[0])
-        self.signal_variance = np.exp(params[1])
-        self.noise_variance = np.exp(params[2])
-        
-        X = np.array(self.observed_X)
-        y = np.array(self.normalized_y)
-        n = len(y)
-        
-        # Compute kernel matrix
-        K = self._kernel_matrix(X)
-        K += np.eye(n) * self.noise_variance
-        
-        try:
-            # Compute negative log likelihood
-            L = np.linalg.cholesky(K)
-            alpha = np.linalg.solve(L.T, np.linalg.solve(L, y))
-            nll = 0.5 * (y @ alpha + np.sum(np.log(np.diag(L))) + n * np.log(2 * np.pi))
-            return nll
-        except np.linalg.LinAlgError:
-            # If cholesky decomposition fails, return a large value
-            return 1e10
-    
-    def _optimize_hyperparameters(self):
-        """
-        Optimize the GP hyperparameters using maximum likelihood estimation.
-        """
-        if len(self.observed_X) < 2:
+        if len(self.train_y) < 2:
             return
-            
-        # Initial hyperparameters: [log_length_scale, log_signal_variance, log_noise_variance]
-        initial_params = np.log(np.array([self.length_scale, self.signal_variance, self.noise_variance]))
         
-        # Run optimization
-        bounds = [(np.log(1e-3), np.log(10.0)), (np.log(1e-3), np.log(10.0)), (np.log(1e-6), np.log(1.0))]
-        result = minimize(self._negative_log_likelihood, initial_params, bounds=bounds, method='L-BFGS-B')
+        # Initialize a GP model
+        self.model = SingleTaskGP(self.train_x, self.train_y)
         
-        # Update hyperparameters
-        optimized_params = result.x
-        self.length_scale = np.exp(optimized_params[0])
-        self.signal_variance = np.exp(optimized_params[1])
-        self.noise_variance = np.exp(optimized_params[2])
-    
-    def _expected_improvement(self, mean: np.ndarray, var: np.ndarray) -> np.ndarray:
-        """
-        Expected Improvement acquisition function.
-        
-        Args:
-            mean: Predicted mean values
-            var: Predicted variance values
-            
-        Returns:
-            Expected improvement values
-        """
-        # Get the best observed value
-        if not self.normalized_y:
-            return np.ones_like(mean)
-            
-        f_best = np.max(self.normalized_y)
-        std = np.sqrt(var)
-        
-        # Compute z for normal CDF
-        with np.errstate(divide='ignore', invalid='ignore'):
-            z = (mean - f_best - self.exploration_weight) / std
-            
-        # Compute expected improvement
-        ei = (mean - f_best - self.exploration_weight) * norm.cdf(z) + std * norm.pdf(z)
-        
-        # Handle numerical issues
-        ei[std < 1e-10] = 0.0
-        return ei
-    
-    def _normalize_y(self, y: List[float]) -> List[float]:
-        """
-        Normalize the observed scores for better GP performance.
-        
-        Args:
-            y: List of scores
-            
-        Returns:
-            List of normalized scores
-        """
-        if not y:
-            return []
-            
-        y = np.array(y)
-        y_min = np.min(y)
-        y_max = np.max(y)
-        
-        if y_max > y_min:
-            return list((y - y_min) / (y_max - y_min))
-        else:
-            return list(y - y_min)
+        # Fit the model
+        mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
+        fit_gpytorch_model(mll)
     
     def get_next_params(self) -> Dict[str, Any]:
         """
@@ -292,31 +165,33 @@ class BayesianOptimization(SearchAlgorithm):
         self.current_trial += 1
         
         # Use random search for the first few trials
-        if len(self.observed_X) < self.random_trials:
+        if len(self.train_y) < self.random_trials:
             random_params = {}
             for param, values in self.param_space.items():
                 random_params[param] = np.random.choice(values)
             return random_params
         
-        # Optimize GP hyperparameters
-        self._optimize_hyperparameters()
+        # Update the GP model
+        self._update_model()
         
-        # Generate candidate points
-        num_candidates = 1000
-        candidates = np.random.random((num_candidates, len(self._param_mapping)))
+        # Define the acquisition function
+        acq_func = ExpectedImprovement(
+            model=self.model, 
+            best_f=self.best_value,
+            maximize=True
+        )
         
-        # Predict mean and variance for candidates
-        mean, var = self._gp_predict(candidates)
+        # Optimize the acquisition function
+        candidates, _ = optimize_acqf(
+            acq_function=acq_func,
+            bounds=self.bounds,
+            q=1,  # Batch size
+            num_restarts=10,  # Number of restarts for optimization
+            raw_samples=100,  # Number of raw samples for initialization
+        )
         
-        # Compute acquisition function values
-        acq_values = self._expected_improvement(mean, var)
-        
-        # Find the best candidate
-        best_idx = np.argmax(acq_values)
-        best_candidate = candidates[best_idx]
-        
-        # Convert to parameters
-        next_params = self._point_to_params(best_candidate)
+        # Convert the candidate to parameters
+        next_params = self._point_to_params(candidates)
         
         return next_params
     
@@ -330,8 +205,14 @@ class BayesianOptimization(SearchAlgorithm):
         """
         # Convert params to normalized point
         point = self._params_to_point(params)
-        self.observed_X.append(point)
-        self.observed_y.append(score)
         
-        # Update normalized y values
-        self.normalized_y = self._normalize_y(self.observed_y)
+        # Update the best observed value
+        if self.best_value is None or score > self.best_value:
+            self.best_value = torch.tensor(score, dtype=torch.float64)
+        
+        # Add to observations
+        score_tensor = torch.tensor([[score]], dtype=torch.float64)
+        
+        # Update training data
+        self.train_x = torch.cat([self.train_x, point], dim=0)
+        self.train_y = torch.cat([self.train_y, score_tensor], dim=0)
