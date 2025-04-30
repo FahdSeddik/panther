@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.autograd import Function
 from torch.nn import init
 
-from panther.sketch import scaled_sign_sketch as gen_U
+from pawX import scaled_sign_sketch as gen_U
 from pawX import sketched_linear_backward, sketched_linear_forward
 
 
@@ -102,7 +102,7 @@ class SKLinear(nn.Module):
                     gen_U(low_rank, out_features, **factory_kwargs)
                     for _ in range(num_terms)
                 ]
-            ),
+            ).contiguous(),
         )  # kxd1
         self.register_buffer(
             "U2s",
@@ -111,7 +111,7 @@ class SKLinear(nn.Module):
                     gen_U(low_rank, in_features, **factory_kwargs).T
                     for _ in range(num_terms)
                 ]
-            ),
+            ).contiguous(),
         )  # d2xk
 
         # W is used to only initialize S
@@ -124,14 +124,16 @@ class SKLinear(nn.Module):
         # S1s and S2s are precomputed but not updated in the backward pass
         self.S1s = nn.Parameter(
             torch.stack([torch.matmul(W, self.U1s[i].T) for i in range(num_terms)])
-        )  # d2xk
+        ).contiguous()  # d2xk
         self.S2s = nn.Parameter(
             torch.stack([torch.matmul(self.U2s[i].T, W) for i in range(num_terms)])
-        )  # kxd1
+        ).contiguous()  # kxd1
 
         # Bias term initialized with a small standard deviation
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+            self.bias = nn.Parameter(
+                torch.empty(out_features, **factory_kwargs)
+            ).contiguous()
             fan_in, _ = init._calculate_fan_in_and_fan_out(W)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             init.uniform_(self.bias, -bound, bound)
@@ -145,15 +147,39 @@ class SKLinear(nn.Module):
 
 
 if __name__ == "__main__":
+    # torch.manual_seed(42)
+    # num_terms = 2
+    # input_dim = 16
+    # output_dim = 16
+    # batch_size = 16
+    # low_rank = 16
+
+    # S1s = torch.randn((num_terms, input_dim, low_rank), device="cuda:0")
+    # U2s = torch.randn((num_terms, input_dim, low_rank), device="cuda:0")
+
+    # S2s = torch.randn((num_terms, low_rank, output_dim), device="cuda:0")
+    # U1s = torch.randn((num_terms, low_rank, output_dim), device="cuda:0")
+    # bias = torch.randn(output_dim, device="cuda:0")
+
+    # x = torch.randn((batch_size, input_dim), device="cuda:0")
+
+    # y = sketched_linear_forward(x, S1s, S2s, U1s, U2s, bias)
+    # print(y)
+
+    # y = torch.zeros((batch_size, output_dim))
+    # for term in range(num_terms):
+    #     y += x.mm(S1s[term]).mm(U1s[term]) + x.mm(U2s[term]).mm(S2s[term])
+    # y *= 1 / (2 * num_terms)
+    # y += bias
     linear = SKLinear(
-        in_features=10,
-        out_features=10,
-        num_terms=1,
-        low_rank=1,
+        in_features=16,
+        out_features=16,
+        num_terms=16,
+        low_rank=16,
         dtype=torch.float32,
         device=torch.device("cuda:0"),
     )
-    input = torch.randn(1, 10, dtype=torch.float32, device=torch.device("cuda:0"))
+    input = torch.randn(16, 16, dtype=torch.float32, device=torch.device("cuda:0"))
     output = linear(input)
     print(output)
     print(output.shape)
