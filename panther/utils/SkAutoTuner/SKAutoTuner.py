@@ -56,10 +56,6 @@ class SKAutoTuner:
         # Resolve layer names in configs
         self.configs = self._resolve_configs(configs)
 
-        if self.verbose:
-            # print the layer map
-            print(f"Total layers found: {len(self.layer_map)}")
-            print(f"Layer map: {self.layer_map}")
         self._check_configs()
 
     
@@ -341,6 +337,7 @@ class SKAutoTuner:
                     self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
                 
                 # Evaluate
+                speed_score = None
                 accuracy_score = self.accuracy_eval_func(self.model)
                 if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
                     if accuracy_score >= self.accuracy_threshold:
@@ -350,7 +347,7 @@ class SKAutoTuner:
                         score = float('-inf')
                 else:
                     score = accuracy_score
-                
+
                 # Update search algorithm
                 self.search_algorithm.update(params, score)
                 
@@ -369,7 +366,8 @@ class SKAutoTuner:
                     setattr(parent, name, original_layer)
                 
                 if self.verbose:
-                    print(f"Tried parameters: {params}, score: {score}")
+                    print(f"Tried parameters: {params}, accuracy_score: {accuracy_score}, speed_score: {speed_score}\
+                          final score: {score}")
             
             # Store results
             group_key = "_".join(config.layer_names)
@@ -406,6 +404,7 @@ class SKAutoTuner:
                     
                     # Evaluate
                     accuracy_score = self.accuracy_eval_func(self.model)
+                    speed_score = None
                     if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
                         if accuracy_score >= self.accuracy_threshold:
                             speed_score = self.optmization_eval_func(self.model)
@@ -431,7 +430,8 @@ class SKAutoTuner:
                     setattr(parent, name, layer)
                     
                     if self.verbose:
-                        print(f"  Tried parameters: {params}, score: {score}")
+                        print(f"Tried parameters: {params}, accuracy_score: {accuracy_score}, speed_score: {speed_score}\
+                          final score: {score}")
                 
                 # Store results for this layer
                 self.results[layer_name] = layer_results
@@ -471,6 +471,11 @@ class SKAutoTuner:
         # Apply best parameters to each layer
         for layer_name, data in self.best_params.items():
             if data is not None:
+                if data["params"] is None:
+                    # If no parameters were found, skip this layer
+                    if self.verbose:
+                        print(f"No parameters found for layer {layer_name}. Skipping.")
+                    continue
                 layer = self._get_layer_by_name(layer_name)
                 self._replace_layer(layer_name, type(layer), data["params"], 
                                 copy_weights=data.get("copy_weights", True))

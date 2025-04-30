@@ -1,78 +1,3 @@
-""" USAGE
-The LayerNameResolver provides intuitive ways to select layers for tuning.
-It supports several types of selectors:
-
-1. Single String Pattern
-   - Regex pattern: "encoder.*attention"
-   - Simple substring: "linear"
-   
-   Example:
-   resolver.resolve("encoder")  # All layers with "encoder" in their name
-
-2. List of String Patterns
-   - Combines results from multiple patterns
-   
-   Example:
-   resolver.resolve(["encoder", "decoder"])  # All encoder and decoder layers
-
-3. Dictionary with Selection Criteria
-   - Most flexible option
-
-   a. Pattern-based Selection:
-      resolver.resolve({"pattern": "encoder.*"})  # All encoder layers
-      resolver.resolve({"pattern": ["encoder.*", "decoder.*"]})  # All encoder and decoder layers
-
-   b. Type-based Selection:
-      resolver.resolve({"type": "Linear"})  # All linear layers
-      resolver.resolve({"type": ["Conv2d", "ConvTranspose2d"]})  # All Conv2d and ConvTranspose2d layers
-
-   c. Contains-based Selection:
-      resolver.resolve({"contains": "attention"})  # All layers with "attention" in their name
-
-   d. Index-based Selection:
-      resolver.resolve({"pattern": "encoder.*", "indices": [0, 2, 4]})  # First, third, and fifth encoder layers
-
-   e. Range-based Selection:
-      resolver.resolve({"pattern": "encoder.layer.*", "range": [0, 6]})  # First 6 encoder layers
-      resolver.resolve({"pattern": "encoder.layer.*", "range": [0, 12, 2]})  # Even-indexed encoder layers
-
-   f. Combined Criteria:
-      resolver.resolve({
-          "pattern": "encoder.*",
-          "type": "Linear",
-          "range": [0, 4]
-      })  # First 4 linear layers in the encoder
-
-In SKAutoTuner usage, these selectors are passed directly to the LayerConfig:
-
-# Example configurations using different selector types
-configs = TuningConfigs([
-    # Select all linear layers
-    LayerConfig(
-        layer_names={"type": "Linear"},
-        params={"low_rank": [16, 32], "num_terms": [2, 3]},
-        separate=True
-    ),
-    
-    # Select attention layers in encoder
-    LayerConfig(
-        layer_names={"pattern": "encoder.*attention"},
-        params={"low_rank": [32, 64], "num_terms": [2]},
-        separate=False
-    ),
-    
-    # Select even-indexed transformer layers
-    LayerConfig(
-        layer_names={"pattern": "transformer.layers.*", "range": [0, 12, 2]},
-        params={"low_rank": [64], "num_terms": [2]},
-        separate=True
-    )
-])
-
-# Create autotuner with these configurations
-tuner = SKAutoTuner(model, configs, eval_func)
-"""
-
 import re
 from typing import List, Union, Dict, Set, Optional
 import torch.nn as nn
@@ -94,6 +19,52 @@ class LayerNameResolver:
         """
         self.model = model
         self.layer_map = layer_map if layer_map is not None else {}
+    
+    def _check_selectors(self, selectors: Dict[str, Union[str, List[str], int, List[int]]]) -> None:
+        """
+        Validate selector configurations before processing.
+        
+        Args:
+            selectors: Dictionary with selection criteria
+            
+        Raises:
+            ValueError: If conflicting or invalid selectors are detected
+        """
+        # Check if both 'indices' and 'range' are used together
+        if 'indices' in selectors and 'range' in selectors:
+            raise ValueError("Cannot use both 'indices' and 'range' selectors together")
+            
+        # Validate range format if present
+        if 'range' in selectors:
+            range_val = selectors['range']
+            if not isinstance(range_val, list):
+                raise ValueError("'range' must be a list of [start, end] or [start, end, step]")
+            
+            if len(range_val) < 2 or len(range_val) > 3:
+                raise ValueError("'range' must contain 2 or 3 elements: [start, end] or [start, end, step]")
+                
+            if not all(isinstance(v, int) for v in range_val):
+                raise ValueError("All 'range' values must be integers")
+                
+            start, end, *step = range_val
+            if start < 0:
+                raise ValueError("'range' start value must be non-negative")
+            if end <= start:
+                raise ValueError("'range' end value must be greater than start value")
+                
+        # Validate indices format if present
+        if 'indices' in selectors:
+            indices = selectors['indices']
+            if isinstance(indices, int):
+                if indices < 0:
+                    raise ValueError("Index values must be non-negative")
+            elif isinstance(indices, list):
+                if not all(isinstance(idx, int) for idx in indices):
+                    raise ValueError("All 'indices' must be integers")
+                if any(idx < 0 for idx in indices):
+                    raise ValueError("All 'indices' must be non-negative")
+            else:
+                raise ValueError("'indices' must be an integer or list of integers")
     
     def resolve(self, selectors: Union[str, List[str], Dict[str, Union[str, List[str], int, List[int]]]]) -> List[str]:
         """
@@ -127,6 +98,9 @@ class LayerNameResolver:
             
         # Handle dictionary case with advanced options
         elif isinstance(selectors, dict):
+            # Validate selectors before processing
+            self._check_selectors(selectors)
+            
             matched_layers = set(self.layer_map.keys())
             
             # Filter by pattern
@@ -141,43 +115,61 @@ class LayerNameResolver:
                 
                 matched_layers = matched_layers.intersection(pattern_matches)
             
-            # Filter by type
+            # Filter by containing string
+            if 'contains' in selectors:
+                contains = selectors['contains']
+                if isinstance(contains, str):
+                    contains = [contains]
+                matched_layers = {name for name in matched_layers if any(c in name for c in contains)}
+            
+            # Filter by type - optimized to only check already matched layers
             if 'type' in selectors:
                 types = selectors['type']
                 if isinstance(types, str):
                     types = [types]
                 
                 type_matches = set()
-                for layer_name, layer in self.layer_map.items():
+                for layer_name in matched_layers:
+                    layer = self.layer_map[layer_name]
                     layer_type = type(layer).__name__
                     if layer_type in types:
                         type_matches.add(layer_name)
                 
-                matched_layers = matched_layers.intersection(type_matches)
-            
-            # Filter by containing string
-            if 'contains' in selectors:
-                contains = selectors['contains']
-                contains_matches = {name for name in matched_layers if contains in name}
-                matched_layers = matched_layers.intersection(contains_matches)
+                matched_layers = type_matches
             
             # Convert to list for indexing operations
             matched_list = sorted(list(matched_layers))
+            
+            if not matched_list:
+                return []
             
             # Apply indices filter
             if 'indices' in selectors:
                 indices = selectors['indices']
                 if isinstance(indices, int):
                     indices = [indices]
-                selected_layers = [matched_list[i] for i in indices if i < len(matched_list)]
+                    
+                # Validate indices are within bounds
+                if max(indices) >= len(matched_list):
+                    raise ValueError(f"Index {max(indices)} is out of bounds for {len(matched_list)} matched layers")
+                    
+                selected_layers = [matched_list[i] for i in indices]
                 return selected_layers
             
             # Apply range filter
             if 'range' in selectors:
                 start, end, *step = selectors['range']
                 step = step[0] if step else 1
+                
+                # Validate end is within bounds
+                if end > len(matched_list):
+                    raise ValueError(f"Range end {end} exceeds the number of matched layers ({len(matched_list)})")
+                
                 selected_layers = matched_list[start:end:step]
                 return selected_layers
+            
+            if len(matched_list) == 0: 
+                raise ValueError("No layers matched the provided selectors")
             
             return matched_list
         
@@ -200,27 +192,3 @@ class LayerNameResolver:
         except re.error:
             # If not a valid regex, try simple substring matching
             return [name for name in self.layer_map.keys() if pattern in name]
-    
-    def get_layer_info(self, include_parameters: bool = False) -> Dict:
-        """
-        Get information about layers in the model.
-        
-        Args:
-            include_parameters: Whether to include parameter counts
-            
-        Returns:
-            Dictionary with layer types and counts
-        """
-        layer_types = {}
-        for name, module in self.layer_map.items():
-            layer_type = type(module).__name__
-            if layer_type not in layer_types:
-                layer_types[layer_type] = []
-            
-            if include_parameters:
-                param_count = sum(p.numel() for p in module.parameters())
-                layer_types[layer_type].append((name, param_count))
-            else:
-                layer_types[layer_type].append(name)
-        
-        return layer_types
