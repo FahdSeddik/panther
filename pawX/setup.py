@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 from setuptools import setup
+from torch.cuda import get_device_capability, is_available
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 
@@ -72,6 +73,32 @@ def get_platform_config():
 
 config = get_platform_config()
 
+
+def has_tensor_core_support():
+    if not is_available():
+        print("❌ CUDA is not available on this system.")
+        return False
+    major, minor = get_device_capability()
+    print(f"✅ CUDA is available. Detected device capability: {major}.{minor}")
+    if (major > 7) or (major == 7 and minor >= 0):
+        print("✅ Tensor Core support detected based on device capability.")
+        return True
+    else:
+        print("❌ Tensor Core support not detected based on device capability.")
+        return False
+
+
+cuda_no_tensor_core = ["linear_cuda.cu"]
+cuda_tensor_core = [
+    "linear_tc.cu",
+]
+
+# Dynamically choose the appropriate CUDA file
+use_tensor_core = has_tensor_core_support()
+cuda_file = cuda_tensor_core if use_tensor_core else cuda_no_tensor_core
+print(f"ℹ️ Using CUDA source file: {cuda_file}")
+
+
 setup(
     name="pawX",
     ext_modules=[
@@ -81,10 +108,10 @@ setup(
                 "skops.cpp",
                 "bindings.cpp",
                 "linear.cpp",
-                "linear_cuda.cu",
                 "cqrrpt.cpp",
                 "rsvd.cpp",
                 "attention.cpp",
+                *cuda_file,
             ],
             include_dirs=config["include_dirs"],
             library_dirs=config["library_dirs"],

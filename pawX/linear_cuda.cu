@@ -137,7 +137,7 @@ torch::Tensor sketched_linear_forward_cuda(
     int shared_mem_size = 3 * TILE_DIM * TILE_DIM * input.element_size();
 
     // allocate intermediate output tensor contigously
-    auto output_intermediate = torch::zeros({2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();
+    auto output_intermediate = torch::zeros({2, num_terms, batch_size, low_rank_dim}, input.options().memory_format(torch::MemoryFormat::Contiguous));
     AT_DISPATCH_FLOATING_TYPES(
         input.scalar_type(),
         "sklinear_forward_intermediate",
