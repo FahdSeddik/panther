@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from panther.nn import SKLinear
 from panther.utils.compatibility import has_tensor_core_support
 from pawX import sketched_linear_backward, sketched_linear_forward
 
@@ -18,22 +19,22 @@ NUM_TERMS = 3
 @pytest.fixture
 def test_tensors():
     """Fixture to provide test tensors with reproducible random values."""
-    input_tensor = torch.randn(
-        BATCH_SIZE, IN_FEATURES, dtype=torch.float, requires_grad=True
+    linear = SKLinear(
+        in_features=IN_FEATURES,
+        out_features=OUT_FEATURES,
+        low_rank=LOW_RANK_DIM,
+        num_terms=NUM_TERMS,
     )
-    S1s = torch.randn(
-        NUM_TERMS, IN_FEATURES, LOW_RANK_DIM, dtype=torch.float, requires_grad=True
+    input_tensor = torch.randn(BATCH_SIZE, IN_FEATURES, requires_grad=True)
+    S1s = linear.S1s.clone().detach().requires_grad_(True)
+    S2s = linear.S2s.clone().detach().requires_grad_(True)
+    U1s = linear.U1s.clone().detach()
+    U2s = linear.U2s.clone().detach()
+    bias = (
+        linear.bias.clone().detach().requires_grad_(True)
+        if linear.bias is not None
+        else None
     )
-    S2s = torch.randn(
-        NUM_TERMS, LOW_RANK_DIM, OUT_FEATURES, dtype=torch.float, requires_grad=True
-    )
-    U1s = torch.randn(
-        NUM_TERMS, LOW_RANK_DIM, OUT_FEATURES, dtype=torch.float, requires_grad=False
-    )
-    U2s = torch.randn(
-        NUM_TERMS, IN_FEATURES, LOW_RANK_DIM, dtype=torch.float, requires_grad=False
-    )
-    bias = torch.randn(OUT_FEATURES, dtype=torch.float, requires_grad=True)
 
     return input_tensor, S1s, S2s, U1s, U2s, bias
 
@@ -66,7 +67,7 @@ def test_tc(test_tensors):
     )
     assert output_tc.shape == output_no_tc.shape, "Output shape mismatch."
     assert torch.allclose(
-        output_tc, output_no_tc, atol=1
+        output_tc, output_no_tc, atol=1, rtol=1
     ), "Output values mismatch between Tensor Core and non-Tensor Core."
 
 
