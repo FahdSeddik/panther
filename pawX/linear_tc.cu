@@ -26,8 +26,8 @@ __global__ void sklinear_forward_intermediate_wmma(
     const torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> input,  // [B,I]
     const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> S1s,    // [T,I,R]
     const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U2s,    // [T,I,R]
-    torch::PackedTensorAccessor32<float_t, 4, torch::RestrictPtrTraits> inter,        // [2,T,B,R]
-    int B, int I, int R, const float_t DIVISOR) {
+    torch::PackedTensorAccessor32<float_t, 5, torch::RestrictPtrTraits> partial,      // [numTilesK,2,T,B,R]
+    int B, int I, int R, int T, const float_t DIVISOR) {
     // Dynamic shared memory buffer:
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
@@ -37,7 +37,7 @@ __global__ void sklinear_forward_intermediate_wmma(
     int ty = threadIdx.y;
     int tid = ty * blockDim.x + tx;
 
-    int term = blockIdx.z;
+    int k = blockIdx.z * TILE_WIDTH_K;
     int aRow = blockIdx.x * TILE_WIDTH_M;  // aRow
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol
 
@@ -45,22 +45,23 @@ __global__ void sklinear_forward_intermediate_wmma(
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
     wmma::fragment<wmma::accumulator, M, N, K, float_t> acc1, acc2;
-    wmma::fill_fragment(acc1, 0.0f);
-    wmma::fill_fragment(acc2, 0.0f);
 
-    for (int k = 0; k < I; k += TILE_WIDTH_K) {
+    for (int term = 0; term < T; term++) {
+        wmma::fill_fragment(acc1, 0.0f);
+        wmma::fill_fragment(acc2, 0.0f);
+#pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
             int aX = idx % TILE_WIDTH_M;
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(static_cast<float>(input[aRow + aX][k + aY]) * DIVISOR) : __float2half(0.0f);
+            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(static_cast<float>(input[aRow + aX][k + aY]) * DIVISOR) : __float2half(0.0f);
             subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(S1s[term][k + bX][bCol + bY])) : __float2half(0.0f);
             subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(U2s[term][k + bX][bCol + bY])) : __float2half(0.0f);
         }
         __syncthreads();
-
+#pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_K; i += K) {
             int subtileARow = M * (tx / warpSize);
             int subtileACol = i;
@@ -73,16 +74,16 @@ __global__ void sklinear_forward_intermediate_wmma(
             wmma::mma_sync(acc1, fA, fB1, acc1);
             wmma::mma_sync(acc2, fA, fB2, acc2);
         }
-    }
 
-    int warpM = (blockIdx.x * blockDim.x + tx) / warpSize;
-    int warpN = blockIdx.y * blockDim.y + ty;
-    int cRow = warpM * M;
-    int cCol = warpN * N;
+        int warpM = (blockIdx.x * blockDim.x + tx) / warpSize;
+        int warpN = blockIdx.y * blockDim.y + ty;
+        int cRow = warpM * M;
+        int cCol = warpN * N;
 
-    if (cRow < B && cCol < R) {
-        wmma::store_matrix_sync(&inter[0][term][cRow][cCol], acc1, R, wmma::mem_row_major);
-        wmma::store_matrix_sync(&inter[1][term][cRow][cCol], acc2, R, wmma::mem_row_major);
+        if (cRow < B && cCol < R) {
+            wmma::store_matrix_sync(&partial[blockIdx.z][0][term][cRow][cCol], acc1, R, wmma::mem_row_major);
+            wmma::store_matrix_sync(&partial[blockIdx.z][1][term][cRow][cCol], acc2, R, wmma::mem_row_major);
+        }
     }
 }
 
@@ -177,32 +178,37 @@ torch::Tensor sketched_linear_forward_cuda(
     int B = input.size(0), I = input.size(1);
     int T = S1s.size(0), R = S1s.size(2), O = S2s.size(2);
 
-    auto interm = torch::zeros({2, T, B, R}, input.options());
-    auto out = torch::zeros({B, O}, input.options());
-
+    // auto interm = torch::zeros({2, T, B, R}, input.options());
+    int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
+    auto partial = torch::zeros({numTilesI, 2, T, B, R}, input.options());
     dim3 block(BLOCK_ROW_WARPS * 32, BLOCK_COL_WARPS);
     dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
-               T);
+               numTilesI);
 
     sklinear_forward_intermediate_wmma<<<grid1, block>>>(
         input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
         S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
-        B, I, R, (1.0f / (2.0f * T)));
+        partial.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
+        B, I, R, T, (1.0f / (2.0f * T)));
 
-    dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
-               (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
+    auto interm = partial.sum(0);
 
-    sklinear_forward_output_wmma<<<grid2, block>>>(
-        interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
-        U1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        S2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        bias.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
-        out.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        B, R, T, O);
+    if (R <= 64) {
+        auto out = torch::zeros({B, O}, input.options());
+        dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
+                   (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
 
-    // return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).sum(0) + bias;
-    return out;
+        sklinear_forward_output_wmma<<<grid2, block>>>(
+            interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
+            U1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+            S2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+            bias.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+            out.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
+            B, R, T, O);
+        return out;
+    } else {
+        return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).sum(0) + bias;
+    }
 }

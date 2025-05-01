@@ -185,11 +185,11 @@ class SKLinear(nn.Module):
 
 
 if __name__ == "__main__":
-    in_features = 15
+    in_features = 16
     out_features = 16
-    num_terms = 16
+    num_terms = 1
     low_rank = 16
-    batch_size = 31
+    batch_size = 16
     linear = SKLinear(
         in_features=in_features,
         out_features=out_features,
