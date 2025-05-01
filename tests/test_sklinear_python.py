@@ -1,4 +1,5 @@
 import warnings
+from contextlib import nullcontext as does_not_raise
 
 import pytest
 import torch
@@ -115,18 +116,25 @@ def test_sklinear_tc_and_batch(in_f, out_f, num_terms, low_rank, batch_size):
 
 
 @pytest.mark.parametrize(
-    "input_dim, output_dim, num_terms, low_rank, expectation",
+    "input_dim, output_dim, num_terms, low_rank, samples, scale_rng",
     [
-        (30, 10, 2, 3, pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC)),
-        (100, 200, 3, 15, pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC)),
-        (100, 200, 3, 30, pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC)),
+        (128, 64, 1, 16, 100, 0.1),
+        (128, 256, 2, 16, 100, 0.1),
+        (512, 768, 3, 32, 100, 0.1),
     ],
 )
 def test_network_output_variance(
-    input_dim, output_dim, num_terms, low_rank, expectation, samples=100, scale_rng=0.1
+    input_dim, output_dim, num_terms, low_rank, samples, scale_rng
 ):
     W = torch.randn(output_dim, input_dim) * scale_rng
     bias = torch.randn(output_dim) * scale_rng
+
+    # determine context for TC warning
+    tc_ctx = (
+        pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_TC)
+        if has_tensor_core_support()
+        else does_not_raise()
+    )
 
     input = torch.randn(1, input_dim) * scale_rng
     ground_truth = input @ W.T + bias
@@ -135,7 +143,7 @@ def test_network_output_variance(
     output_term1s = []
     output_term2s = []
     for _ in range(samples):
-        with expectation:
+        with tc_ctx:
             sklinear = SKLinear(
                 in_features=input_dim,
                 out_features=output_dim,
