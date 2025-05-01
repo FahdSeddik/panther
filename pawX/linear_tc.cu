@@ -182,8 +182,6 @@ torch::Tensor sketched_linear_forward_cuda(
 
     auto interm = torch::zeros({2, T, B, R}, input.options());
 
-    auto out = torch::zeros({B, O}, input.options());
-
     dim3 block(BLOCK_ROW_WARPS * 32, BLOCK_COL_WARPS);
     dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
