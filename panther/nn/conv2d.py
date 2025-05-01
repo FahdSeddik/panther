@@ -7,7 +7,7 @@ from torch.autograd import Function
 from torch.nn import functional as F
 from torch.nn import init
 
-from panther.random import scaled_sign_sketch as gen_U
+from panther.sketch import scaled_sign_sketch as gen_U
 
 
 def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
