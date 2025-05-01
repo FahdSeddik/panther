@@ -1,19 +1,24 @@
+import warnings
+
 import pytest
 import torch
 from torch.nn import Linear
 
 from panther.nn import SKLinear
+from panther.utils.compatibility import has_tensor_core_support
 
 
 def test_sklinear_vs_linear():
-    linear = Linear(in_features=30, out_features=5)
-    sklinear = SKLinear(
-        in_features=30,
-        out_features=5,
-        num_terms=1,
-        low_rank=1,
-        W_init=linear.weight,
-    )
+    linear = Linear(in_features=32, out_features=16)
+    # Capture FC warning during SKLinear initialization
+    with pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC):
+        sklinear = SKLinear(
+            in_features=32,
+            out_features=16,
+            num_terms=1,
+            low_rank=16,
+            W_init=linear.weight,
+        )
 
     sklinear_bias = sklinear.bias.detach().numpy()
     linear_bias = linear.bias.detach().numpy()
@@ -22,7 +27,7 @@ def test_sklinear_vs_linear():
     assert sklinear_bias.dtype == linear_bias.dtype, "Bias data types do not match"
 
     # call the forward method of the linear layer
-    input = torch.randn(1, 30)
+    input = torch.randn(16, 32)
     linear_output = linear(input)
     sklinear_output = sklinear(input)
 
@@ -38,24 +43,75 @@ def test_sklinear_vs_linear():
     assert not torch.allclose(sklinear_output, linear_output), "Outputs are equal"
 
 
-def test_backward():
-    with pytest.warns(
-        UserWarning,
-        match=SKLinear.WARNING_MSG_FC,
-    ):
+def test_backward_warnings_and_grad():
+    input_data = torch.randn(1, 30)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always", UserWarning)
         sklinear = SKLinear(
             in_features=30,
             out_features=5,
             num_terms=1,
             low_rank=3,
         )
+        _ = sklinear(input_data)
 
-    # call the forward method of the linear layer
-    input = torch.randn(1, 30)
-    sklinear_output = sklinear(input)
+    # Assert baseline FC warning
+    msgs = [str(w.message) for w in record]
+    assert any(SKLinear.WARNING_MSG_FC in m for m in msgs), "FC warning not raised"
+    # Assert BATCH warning if supported and batch size not divisible by 16
+    assert not any(
+        SKLinear.WARNING_MSG_BATCH in m for m in msgs
+    ), "Unexpected batch warning"
 
-    # call the backward method of the linear layer
-    sklinear_output.backward(torch.ones_like(sklinear_output))
+    # Grad check
+    out = sklinear(torch.randn(16, 30))
+    out.backward(torch.ones_like(out))
+
+
+@pytest.mark.parametrize(
+    "in_f,out_f,num_terms,low_rank,batch_size",
+    [
+        (30, 32, 1, 16, 16),  # TC in_f
+        (32, 30, 1, 16, 16),  # TC out_f
+        (32, 32, 1, 16, 16),  # no TC or BATCH
+        (32, 32, 1, 16, 15),  # BATCH
+        (32, 32, 1, 16, 16),  # no warnings
+    ],
+)
+def test_sklinear_tc_and_batch(in_f, out_f, num_terms, low_rank, batch_size):
+    can_tc = has_tensor_core_support()
+    device = torch.device("cuda" if can_tc else "cpu")
+    # Prepare input
+    input_data = torch.randn(batch_size, in_f, device=device)
+
+    # Capture warnings during init and forward
+    with pytest.warns(UserWarning) as record:
+        sk = SKLinear(
+            in_features=in_f,
+            out_features=out_f,
+            num_terms=num_terms,
+            low_rank=low_rank,
+            device=device,
+            dtype=torch.float32,
+        ).to(device)
+        _ = sk(input_data)
+
+    # Base FC warning always
+    expected = 1
+    # TC warning if supported and any dim not divisible by 16 (excluding num_terms)
+    tc_cond = ((in_f % 16 != 0) or (out_f % 16 != 0) or (low_rank % 16 != 0)) and can_tc
+    # Batch warning if supported and batch size not divisible by 16
+    batch_cond = (batch_size % 16 != 0) and can_tc
+    expected += tc_cond + batch_cond
+
+    assert len(record) == expected, f"Expected {expected} warnings, got {len(record)}"
+
+    msgs = [str(w.message) for w in record]
+    assert any(SKLinear.WARNING_MSG_FC in m for m in msgs)
+    if tc_cond:
+        assert any(SKLinear.WARNING_MSG_TC in m for m in msgs)
+    if batch_cond:
+        assert any(SKLinear.WARNING_MSG_BATCH in m for m in msgs)
 
 
 @pytest.mark.parametrize(

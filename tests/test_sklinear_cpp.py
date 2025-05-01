@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from panther.utils.compatibility import has_tensor_core_support
 from pawX import sketched_linear_backward, sketched_linear_forward
 
 # Set random seed for reproducibility
@@ -43,6 +44,30 @@ def test_forward_output_shape(test_tensors):
     output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
 
     assert output.shape == (BATCH_SIZE, OUT_FEATURES), "Output shape mismatch."
+
+
+def test_tc(test_tensors):
+    if not has_tensor_core_support():
+        pytest.skip("Tensor Core support is not available.")
+    # all test tensors to be on GPU
+    input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
+    i_gpu = input_tensor.to("cuda")
+    S1s_gpu = S1s.to("cuda")
+    S2s_gpu = S2s.to("cuda")
+    U1s_gpu = U1s.to("cuda")
+    U2s_gpu = U2s.to("cuda")
+    bias_gpu = bias.to("cuda")
+    # check that without and with gpu is same value or close
+    output_tc = sketched_linear_forward(
+        i_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu, use_tensor_core=True
+    ).cpu()
+    output_no_tc = sketched_linear_forward(
+        input_tensor, S1s, S2s, U1s, U2s, bias, use_tensor_core=False
+    )
+    assert output_tc.shape == output_no_tc.shape, "Output shape mismatch."
+    assert torch.allclose(
+        output_tc, output_no_tc, atol=1
+    ), "Output values mismatch between Tensor Core and non-Tensor Core."
 
 
 def test_forward_deterministic(test_tensors):
