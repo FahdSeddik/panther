@@ -19,28 +19,26 @@ class SketchedConv2dFunction(Function):
     # Note that forward, setup_context, and backward are @staticmethods
     @staticmethod
     def forward(
-        input: torch.Tensor,
+        x: torch.Tensor,
         S1s: torch.Tensor,
         S2s: torch.Tensor,
         U1s: torch.Tensor,
         U2s: torch.Tensor,
         stride: Tuple[int, int],
         padding: Tuple[int, int],
-        kernelSize: Tuple[int, int],
-        inshape,
+        kernel_size: Tuple[int, int],
+        inshape: Tuple[int, int, int, int],
         bias: torch.Tensor,
     ):
-        # in_channels, height, width = input.shape
-        _, dout = U1s[0].shape
-        hout = (inshape[2] + 2 * padding[0] - kernelSize[0]) // stride[0] + 1
-        wout = (inshape[3] + 2 * padding[1] - kernelSize[1]) // stride[1] + 1
-        input.transpose_(1, 2)
-        t = (
-            torch.einsum("nab,lbc,lcd->nlad", input, S1s, U1s)
-            + torch.einsum("nab,lbc,lcd->nlad", input, U2s.transpose(1, 2), S2s)
-        ).mean(dim=1)
-        t = t.view(inshape[0], dout, hout, wout)
-        return t + bias.view(1, dout, 1, 1)
+        B, C, H, W = inshape
+        H_out = (H + 2 * padding[0] - kernel_size[0]) // stride[0] + 1
+        W_out = (W + 2 * padding[1] - kernel_size[1]) // stride[1] + 1
+        num_terms, _, out_channels = U1s.shape
+        out1 = torch.einsum("nd,tdr,tro->no", x, S1s, U1s) / num_terms
+        out2 = torch.einsum("nd,tdr,tro->no", x, U2s.transpose(1, 2), S2s) / num_terms
+        return (
+            (out1 + out2 + bias).view(B, H_out, W_out, out_channels).permute(0, 3, 1, 2)
+        )
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
@@ -57,15 +55,14 @@ class SketchedConv2dFunction(Function):
             torch.tensor(padding),
             torch.tensor(kernelSize),
             torch.tensor(inshap),
-            bias,
         )
 
     @staticmethod
     def backward(ctx: Any, *grad_output: Any) -> Any:
-        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshape, bias = (
+        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshape = (
             ctx.saved_tensors
         )
-        input.transpose_(1, 2)
+        input = input.view(inshape[0], -1, kernelSize[0] * kernelSize[1] * inshape[1])
         num_terms, _, __ = S2s.shape
         hout = grad_output[0].shape[2]
         wout = grad_output[0].shape[3]
@@ -76,12 +73,12 @@ class SketchedConv2dFunction(Function):
             grad_output[0].shape[1],
         )
         grad_output /= 2 * num_terms
-        g_S1s = torch.zeros_like(S1s)
-        g_S2s = torch.zeros_like(S2s)
         g_S1s = torch.einsum(
-            "nab,nbc,lcd->lad", input, grad_output, U1s.transpose(1, 2)
+            "nab,nbc,lcd->lad", input.transpose(1, 2), grad_output, U1s.transpose(1, 2)
         )
-        g_S2s = torch.einsum("lab,nbc,ncd->lad", U2s, input, grad_output)
+        g_S2s = torch.einsum(
+            "lab,nbc,ncd->lad", U2s, input.transpose(1, 2), grad_output
+        )
         gout = torch.einsum(
             "nab,lbc,lcd->nad", grad_output, U1s.transpose(1, 2), S1s.transpose(1, 2)
         ) + torch.einsum("nab,lbc,lcd->nad", grad_output, S2s.transpose(1, 2), U2s)
@@ -191,10 +188,9 @@ class SKConv2d(nn.Module):
 
         # Register U1s and U2s as buffers since they are not learnable
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass of the SKConv2d layer."""
-        # padd x
-        B, C, H, W = x.shape
+        inshape = x.shape
         if self.padding[0] > 0 or self.padding[1] > 0:
             x = F.pad(
                 x, (self.padding[1], self.padding[1], self.padding[0], self.padding[0])
@@ -224,18 +220,15 @@ class SKConv2d(nn.Module):
         x_windows = x_windows.reshape(
             -1, self.kernel_size[0] * self.kernel_size[1] * self.in_channels
         )
-        out1 = (
-            torch.einsum("nd,tdr,tro->no", x_windows, self.S1s, self.U1s)
-            / self.num_terms
-        ) + self.bias
-        out2 = (
-            torch.einsum(
-                "nd,tdr,tro->no", x_windows, self.U2s.transpose(1, 2), self.S2s
-            )
-            / self.num_terms
-        )
-        return (
-            (out1 + out2 + self.bias)
-            .view(B, H_out, W_out, self.out_channels)
-            .permute(0, 3, 1, 2)
+        return SketchedConv2dFunction.apply(
+            x_windows,
+            self.S1s,
+            self.S2s,
+            self.U1s,
+            self.U2s,
+            self.stride,
+            self.padding,
+            self.kernel_size,
+            inshape,
+            self.bias,
         )
