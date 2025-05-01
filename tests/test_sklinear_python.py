@@ -1,5 +1,4 @@
 import warnings
-from contextlib import nullcontext as does_not_raise
 
 import pytest
 import torch
@@ -100,19 +99,22 @@ def test_sklinear_tc_and_batch(in_f, out_f, num_terms, low_rank, batch_size):
     # Base FC warning always
     expected = 1
     # TC warning if supported and any dim not divisible by 16 (excluding num_terms)
-    tc_cond = ((in_f % 16 != 0) or (out_f % 16 != 0) or (low_rank % 16 != 0)) and can_tc
+    dim_div = (in_f % 16 == 0) and (out_f % 16 == 0) and (low_rank % 16 == 0)
+    tc_cond = not dim_div and can_tc
     # Batch warning if supported and batch size not divisible by 16
-    batch_cond = (batch_size % 16 != 0) and can_tc
+    batch_cond = (batch_size % 16 != 0) and can_tc and dim_div
     expected += tc_cond + batch_cond
+    msgs = [str(w.message) for w in record]
 
     assert len(record) == expected, f"Expected {expected} warnings, got {len(record)}"
 
-    msgs = [str(w.message) for w in record]
-    assert any(SKLinear.WARNING_MSG_FC in m for m in msgs)
+    assert any([SKLinear.WARNING_MSG_FC in m for m in msgs])
     if tc_cond:
-        assert any(SKLinear.WARNING_MSG_TC in m for m in msgs)
+        assert any(
+            [SKLinear.WARNING_MSG_TC.format(in_f, out_f, low_rank) in m for m in msgs]
+        )
     if batch_cond:
-        assert any(SKLinear.WARNING_MSG_BATCH in m for m in msgs)
+        assert any([SKLinear.WARNING_MSG_BATCH.format(batch_size) in m for m in msgs])
 
 
 @pytest.mark.parametrize(
@@ -129,13 +131,6 @@ def test_network_output_variance(
     W = torch.randn(output_dim, input_dim) * scale_rng
     bias = torch.randn(output_dim) * scale_rng
 
-    # determine context for TC warning
-    tc_ctx = (
-        pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_TC)
-        if has_tensor_core_support()
-        else does_not_raise()
-    )
-
     input = torch.randn(1, input_dim) * scale_rng
     ground_truth = input @ W.T + bias
 
@@ -143,14 +138,13 @@ def test_network_output_variance(
     output_term1s = []
     output_term2s = []
     for _ in range(samples):
-        with tc_ctx:
-            sklinear = SKLinear(
-                in_features=input_dim,
-                out_features=output_dim,
-                num_terms=num_terms,
-                low_rank=low_rank,
-                W_init=W,
-            )
+        sklinear = SKLinear(
+            in_features=input_dim,
+            out_features=output_dim,
+            num_terms=num_terms,
+            low_rank=low_rank,
+            W_init=W,
+        )
         output_term1s.append(
             ((input.bmm(sklinear.S1s)).bmm(sklinear.U1s)).mean(0) + bias
         )
