@@ -107,7 +107,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt_core(
 // Revised high-level cqrrpt function.
 //
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt(
-    const torch::Tensor& M, double gamma, const std::string& F) {
+    const torch::Tensor& M, double gamma, const DistributionFamily& F) {
     // Set d = ceil(gamma * n)
     int64_t n = M.size(1);
     int64_t d = static_cast<int64_t>(std::ceil(gamma * n));
@@ -115,7 +115,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt(
     // Generate a d x m sketching matrix S.
     int64_t m = M.size(0);
     torch::Tensor S;
-    if (F == "default") {
+    if (F == DistributionFamily::Gaussian) {
         // Default distribution: Gaussian (can be replaced with a sparse variant if desired)
         S = torch::randn({d, m}, M.options());
     } else {

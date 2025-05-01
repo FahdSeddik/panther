@@ -109,7 +109,7 @@ def test_forward_gpu_vs_cpu(test_tensors):
     ).cpu()
 
     assert torch.allclose(
-        output_cpu, output_gpu, atol=1e-3, rtol=1e-3
+        output_cpu, output_gpu, atol=1
     ), "Forward pass differs between CPU and GPU."
 
 

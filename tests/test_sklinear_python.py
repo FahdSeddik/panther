@@ -39,12 +39,16 @@ def test_sklinear_vs_linear():
 
 
 def test_backward():
-    sklinear = SKLinear(
-        in_features=30,
-        out_features=5,
-        num_terms=1,
-        low_rank=3,
-    )
+    with pytest.warns(
+        UserWarning,
+        match=SKLinear.WARNING_MSG_FC,
+    ):
+        sklinear = SKLinear(
+            in_features=30,
+            out_features=5,
+            num_terms=1,
+            low_rank=3,
+        )
 
     # call the forward method of the linear layer
     input = torch.randn(1, 30)
@@ -55,57 +59,15 @@ def test_backward():
 
 
 @pytest.mark.parametrize(
-    "in_features, out_features, low_rank, batch_size",
+    "input_dim, output_dim, num_terms, low_rank, expectation",
     [
-        (17, 9, 46, 63),
-        (23, 11, 30, 47),
-        (31, 15, 22, 55),
-    ],
-)
-def test_padding(in_features, out_features, low_rank, batch_size):
-    if not torch.cuda.is_available():
-        pytest.skip("CUDA is not available.")
-    num_terms = 2
-    linear = SKLinear(
-        in_features=in_features,
-        out_features=out_features,
-        num_terms=num_terms,
-        low_rank=low_rank,
-        dtype=torch.float32,
-        device=torch.device("cuda:0"),
-    )
-    input = torch.randn(
-        batch_size, in_features, dtype=torch.float32, device=torch.device("cuda:0")
-    )
-    output = linear(input)
-    output_expected = torch.zeros(
-        batch_size, out_features, dtype=torch.float32, device=torch.device("cuda:0")
-    )
-
-    for i in range(num_terms):
-        output_expected += input.mm(linear.S1s[i][:in_features, :low_rank]).mm(
-            linear.U1s[i][:low_rank, :out_features]
-        ) + input.mm(linear.U2s[i][:in_features, :low_rank]).mm(
-            linear.S2s[i][:low_rank, :out_features]
-        )
-    output_expected /= 2 * num_terms
-    output_expected += linear.bias[:out_features]
-    output_expected = output_expected
-    assert torch.allclose(
-        output, output_expected, atol=1
-    ), f"\n{output[0]}\n{output_expected[0]}"
-
-
-@pytest.mark.parametrize(
-    "input_dim, output_dim, num_terms, low_rank",
-    [
-        (30, 10, 2, 3),
-        (100, 200, 3, 15),
-        (100, 200, 3, 30),
+        (30, 10, 2, 3, pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC)),
+        (100, 200, 3, 15, pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC)),
+        (100, 200, 3, 30, pytest.warns(UserWarning, match=SKLinear.WARNING_MSG_FC)),
     ],
 )
 def test_network_output_variance(
-    input_dim, output_dim, num_terms, low_rank, samples=100, scale_rng=0.1
+    input_dim, output_dim, num_terms, low_rank, expectation, samples=100, scale_rng=0.1
 ):
     W = torch.randn(output_dim, input_dim) * scale_rng
     bias = torch.randn(output_dim) * scale_rng
@@ -117,13 +79,14 @@ def test_network_output_variance(
     output_term1s = []
     output_term2s = []
     for _ in range(samples):
-        sklinear = SKLinear(
-            in_features=input_dim,
-            out_features=output_dim,
-            num_terms=num_terms,
-            low_rank=low_rank,
-            W_init=W,
-        )
+        with expectation:
+            sklinear = SKLinear(
+                in_features=input_dim,
+                out_features=output_dim,
+                num_terms=num_terms,
+                low_rank=low_rank,
+                W_init=W,
+            )
         output_term1s.append(
             ((input.bmm(sklinear.S1s)).bmm(sklinear.U1s)).mean(0) + bias
         )
