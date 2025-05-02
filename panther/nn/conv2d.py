@@ -19,6 +19,7 @@ class SketchedConv2dFunction(Function):
     # Note that forward, setup_context, and backward are @staticmethods
     @staticmethod
     def forward(
+        ctx: Any,
         x: torch.Tensor,
         S1s: torch.Tensor,
         S2s: torch.Tensor,
@@ -27,34 +28,53 @@ class SketchedConv2dFunction(Function):
         stride: Tuple[int, int],
         padding: Tuple[int, int],
         kernel_size: Tuple[int, int],
-        inshape: Tuple[int, int, int, int],
         bias: torch.Tensor,
     ):
-        B, C, H, W = inshape
-        H_out = (H + 2 * padding[0] - kernel_size[0]) // stride[0] + 1
-        W_out = (W + 2 * padding[1] - kernel_size[1]) // stride[1] + 1
-        num_terms, _, out_channels = U1s.shape
-        out1 = torch.einsum("nd,tdr,tro->no", x, S1s, U1s) / num_terms
-        out2 = torch.einsum("nd,tdr,tro->no", x, U2s.transpose(1, 2), S2s) / num_terms
-        return (
-            (out1 + out2 + bias).view(B, H_out, W_out, out_channels).permute(0, 3, 1, 2)
+        B, C, H, W = x.shape
+        L, _, out_channels = U1s.shape
+        if padding[0] > 0 or padding[1] > 0:
+            x = F.pad(x, (padding[1], padding[1], padding[0], padding[0]))
+        H_out = (x.shape[2] - kernel_size[0]) // stride[0] + 1
+        W_out = (x.shape[3] - kernel_size[1]) // stride[1] + 1
+        x_strided = x.as_strided(
+            size=(
+                x.shape[0],
+                x.shape[1],
+                H_out,
+                W_out,
+                kernel_size[0],
+                kernel_size[1],
+            ),
+            stride=(
+                x.stride(0),
+                x.stride(1),
+                x.stride(2) * stride[0],
+                x.stride(3) * stride[1],
+                x.stride(2),
+                x.stride(3),
+            ),
         )
+        x_windows = x_strided.permute(0, 2, 3, 1, 4, 5)
 
-    @staticmethod
-    # inputs is a Tuple of all of the inputs passed to forward.
-    # output is the output of the forward().
-    def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
-        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshap, bias = inputs
+        x_windows = x_windows.reshape(B, -1, kernel_size[0] * kernel_size[1] * C)
+
+        out1 = torch.einsum("bnd,tdr,tro->bno", x_windows, S1s, U1s) / (2 * L)
+        out2 = torch.einsum("bnd,tdr,tro->bno", x_windows, U2s.transpose(1, 2), S2s) / (
+            2 * L
+        )
         ctx.save_for_backward(
-            input,
+            x_windows,
             S1s,
             S2s,
             U1s,
             U2s,
             torch.tensor(stride),
             torch.tensor(padding),
-            torch.tensor(kernelSize),
-            torch.tensor(inshap),
+            torch.tensor(kernel_size),
+            torch.tensor((B, C, H, W)),
+        )
+        return (
+            (out1 + out2 + bias).view(B, H_out, W_out, out_channels).permute(0, 3, 1, 2)
         )
 
     @staticmethod
@@ -62,17 +82,17 @@ class SketchedConv2dFunction(Function):
         input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshape = (
             ctx.saved_tensors
         )
-        input = input.view(inshape[0], -1, kernelSize[0] * kernelSize[1] * inshape[1])
         num_terms, _, __ = S2s.shape
         hout = grad_output[0].shape[2]
         wout = grad_output[0].shape[3]
         g_bias = grad_output[0].sum(dim=(0, 2, 3))
-        grad_output = grad_output[0].view(
+        print(grad_output[0].shape)
+        grad_output = grad_output[0].reshape(
             grad_output[0].shape[0],
             hout * wout,
             grad_output[0].shape[1],
         )
-        grad_output /= 2 * num_terms
+        grad_output = grad_output / (2 * num_terms)
         g_S1s = torch.einsum(
             "nab,nbc,lcd->lad", input.transpose(1, 2), grad_output, U1s.transpose(1, 2)
         )
@@ -91,7 +111,7 @@ class SketchedConv2dFunction(Function):
         gout = gout.transpose(1, 2)
         gout = fold(gout)
 
-        return (gout, g_S1s, g_S2s, None, None, None, None, None, None, g_bias)
+        return (gout, g_S1s, g_S2s, None, None, None, None, None, g_bias)
 
 
 class SKConv2d(nn.Module):
@@ -190,38 +210,8 @@ class SKConv2d(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass of the SKConv2d layer."""
-        inshape = x.shape
-        if self.padding[0] > 0 or self.padding[1] > 0:
-            x = F.pad(
-                x, (self.padding[1], self.padding[1], self.padding[0], self.padding[0])
-            )
-        H_out = (x.shape[2] - self.kernel_size[0]) // self.stride[0] + 1
-        W_out = (x.shape[3] - self.kernel_size[1]) // self.stride[1] + 1
-        x_strided = x.as_strided(
-            size=(
-                x.shape[0],
-                x.shape[1],
-                H_out,
-                W_out,
-                self.kernel_size[0],
-                self.kernel_size[1],
-            ),
-            stride=(
-                x.stride(0),
-                x.stride(1),
-                x.stride(2) * self.stride[0],
-                x.stride(3) * self.stride[1],
-                x.stride(2),
-                x.stride(3),
-            ),
-        )
-        x_windows = x_strided.permute(0, 2, 3, 1, 4, 5)
-
-        x_windows = x_windows.reshape(
-            -1, self.kernel_size[0] * self.kernel_size[1] * self.in_channels
-        )
         return SketchedConv2dFunction.apply(
-            x_windows,
+            x,
             self.S1s,
             self.S2s,
             self.U1s,
@@ -229,6 +219,5 @@ class SKConv2d(nn.Module):
             self.stride,
             self.padding,
             self.kernel_size,
-            inshape,
             self.bias,
         )
