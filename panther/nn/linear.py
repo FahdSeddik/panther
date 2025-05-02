@@ -7,9 +7,9 @@ import torch.nn as nn
 from torch.autograd import Function
 from torch.nn import init
 
+from panther.nn.pawXimpl import sketched_linear_backward, sketched_linear_forward
 from panther.sketch import scaled_sign_sketch as gen_U
 from panther.utils.compatibility import has_tensor_core_support
-from pawX import sketched_linear_backward, sketched_linear_forward
 
 
 class SketchedLinearFunction(Function):

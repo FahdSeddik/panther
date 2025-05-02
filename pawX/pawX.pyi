@@ -84,6 +84,7 @@ def rmha_forward(
     embed_dim: int,
     kernel_fn: str,
     causal: bool,
+    attention_mask: Optional[torch.Tensor],
     bq: Optional[torch.Tensor] = None,
     bk: Optional[torch.Tensor] = None,
     bv: Optional[torch.Tensor] = None,
