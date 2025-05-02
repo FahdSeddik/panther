@@ -28,6 +28,7 @@ torch::Tensor rmha_forward(
     int64_t embed_dim,
     const std::string& kernel_fn,
     bool causal,
+    c10::optional<torch::Tensor> attention_mask = c10::nullopt,
     c10::optional<torch::Tensor> bq = c10::nullopt,
     c10::optional<torch::Tensor> bk = c10::nullopt,
     c10::optional<torch::Tensor> bv = c10::nullopt,

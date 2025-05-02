@@ -58,6 +58,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("Wq"), py::arg("Wk"), py::arg("Wv"), py::arg("W0"),
           py::arg("num_heads"), py::arg("embed_dim"), py::arg("kernel_fn"),
           py::arg("causal"),
+          py::arg("attention_mask") = c10::nullopt,
           py::arg("bq") = c10::nullopt, py::arg("bk") = c10::nullopt,
           py::arg("bv") = c10::nullopt, py::arg("b0") = c10::nullopt,
           py::arg("projection_matrix") = c10::nullopt);
