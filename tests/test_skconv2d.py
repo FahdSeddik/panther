@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 from panther.nn import SKConv2d
-from panther.nn.conv2d import SketchedConv2dFunction
+from pawX import sketched_conv2d_backward, sketched_conv2d_forward
 
 torch.manual_seed(42)
 
@@ -92,28 +92,49 @@ def test_tensors():
     )
 
 
-def test_output_correctness():
+@pytest.mark.parametrize(
+    "batch_size, in_channels, out_channels, height, width, kernel_size, stride, padding, low_rank_dim, num_terms",
+    [
+        (1, 1, 4, 10, 10, (3, 3), (1, 1), (1, 1), 2, 3),
+        (2, 3, 8, 20, 20, (5, 5), (2, 2), (2, 2), 4, 5),
+        (1, 1, 8, 10, 20, (3, 3), (1, 1), (1, 1), 2, 5),
+        (2, 3, 4, 20, 10, (5, 5), (2, 2), (1, 1), 4, 3),
+        (1, 3, 4, 10, 10, (3, 3), (1, 1), (2, 2), 2, 3),
+    ],
+)
+def test_output_correctness(
+    batch_size,
+    in_channels,
+    out_channels,
+    height,
+    width,
+    kernel_size,
+    stride,
+    padding,
+    low_rank_dim,
+    num_terms,
+):
     """Test the output correctness of the SKConv2d layer."""
     layer = SKConv2d(
-        in_channels=IN_CHANNELS,
-        out_channels=OUT_CHANNELS,
-        kernel_size=KERNEL_SIZE,
-        low_rank=LOW_RANK_DIM,
-        num_terms=NUM_TERMS,
-        stride=STRIDE,
-        padding=PADDING,
+        in_channels=in_channels,
+        out_channels=out_channels,
+        kernel_size=kernel_size,
+        low_rank=low_rank_dim,
+        num_terms=num_terms,
+        stride=stride,
+        padding=padding,
     )
-    x = torch.randn(BATCH_SIZE, IN_CHANNELS, HEIGHT, WIDTH, requires_grad=True)
+    x = torch.randn(batch_size, in_channels, height, width, requires_grad=True)
     outputmodel = layer(x)
     S1s = (
         layer.S1s.clone()
         .detach()
-        .reshape(NUM_TERMS, IN_CHANNELS, KERNEL_SIZE[0], KERNEL_SIZE[1], LOW_RANK_DIM)
+        .reshape(num_terms, in_channels, kernel_size[0], kernel_size[1], low_rank_dim)
     )
     S2s = (
         layer.S2s.clone()
         .detach()
-        .reshape(NUM_TERMS, LOW_RANK_DIM, KERNEL_SIZE[0], KERNEL_SIZE[1], OUT_CHANNELS)
+        .reshape(num_terms, low_rank_dim, kernel_size[0], kernel_size[1], out_channels)
     )
     U1s = layer.U1s.clone().detach()
     U2s = layer.U2s.clone().detach()
@@ -121,24 +142,22 @@ def test_output_correctness():
     # S1s x4 U1s in code
     mat1 = torch.einsum("iabcd,ide->iabce", S1s, U1s)
     mat2 = []
-    for i in range(NUM_TERMS):
-        S2i_flat = S2s[i].view(-1, OUT_CHANNELS)
+    for i in range(num_terms):
+        S2i_flat = S2s[i].view(-1, out_channels)
         proj = torch.matmul(U2s[i].T, S2i_flat)
-        proj = proj.view(IN_CHANNELS, KERNEL_SIZE[0], KERNEL_SIZE[1], OUT_CHANNELS)
+        proj = proj.view(in_channels, kernel_size[0], kernel_size[1], out_channels)
         mat2.append(proj)
     mat2 = torch.stack(
         mat2, dim=0
-    )  # Shape: (NUM_TERMS, IN_CHANNELS, HEIGHT, WIDTH, OUT_CHANNELS)
+    )  # Shape: (num_terms, in_channels, height, width, out_channels)
     mat1 = mat1.permute(
         0, 4, 1, 2, 3
-    )  # Shape: (NUM_TERMS, OUT_CHANNELS, IN_CHANNELS, HEIGHT, WIDTH)
+    )  # Shape: (num_terms, out_channels, in_channels, height, width)
     mat2 = mat2.permute(
         0, 4, 1, 2, 3
-    )  # Shape: (NUM_TERMS, OUT_CHANNELS, IN_CHANNELS, HEIGHT, WIDTH)
-    stride = layer.stride
-    padding = layer.padding
+    )  # Shape: (num_terms, out_channels, in_channels, height, width)
     outputtruth = torch.zeros_like(outputmodel)
-    for i in range(NUM_TERMS):
+    for i in range(num_terms):
         outputtruth += F.conv2d(
             x,
             mat1[i],
@@ -148,7 +167,7 @@ def test_output_correctness():
             dilation=1,
             groups=1,
         )
-    for i in range(NUM_TERMS):
+    for i in range(num_terms):
         outputtruth += F.conv2d(
             x,
             mat2[i],
@@ -158,8 +177,8 @@ def test_output_correctness():
             dilation=1,
             groups=1,
         )
-    outputtruth /= NUM_TERMS * 2
-    outputtruth += bias.view(1, OUT_CHANNELS, 1, 1)
+    outputtruth /= num_terms * 2
+    outputtruth += bias.view(1, out_channels, 1, 1)
     print(f"Output model: {outputmodel.shape}, Output truth: {outputtruth.shape}")
     assert torch.allclose(
         outputmodel, outputtruth, atol=1e-3, rtol=1e-3
@@ -170,7 +189,7 @@ def test_output_shape(test_tensors):
     input_tensor, S1s, S2s, U1s, U2s, bias, stride, padding, kernel_size, inshape = (
         test_tensors
     )
-    output = SketchedConv2dFunction.apply(
+    output, _ = sketched_conv2d_forward(
         input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
     )
     H_out = (HEIGHT + 2 * padding[0] - kernel_size[0]) // stride[0] + 1
@@ -182,10 +201,10 @@ def test_forward_determinism(test_tensors):
     input_tensor, S1s, S2s, U1s, U2s, bias, stride, padding, kernel_size, inshape = (
         test_tensors
     )
-    out1 = SketchedConv2dFunction.apply(
+    out1, _ = sketched_conv2d_forward(
         input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
     )
-    out2 = SketchedConv2dFunction.apply(
+    out2, _ = sketched_conv2d_forward(
         input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
     )
     assert torch.allclose(out1, out2), "Non-deterministic forward pass."
@@ -199,45 +218,14 @@ def test_forward_gpu_vs_cpu(test_tensors):
         test_tensors
     )
 
-    out_cpu = SketchedConv2dFunction.apply(
+    out_cpu, _ = sketched_conv2d_forward(
         input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
     )
     args_gpu = [x.cuda() for x in (input_tensor, S1s, S2s, U1s, U2s)]
-    out_gpu = SketchedConv2dFunction.apply(
+    out_gpu, _ = sketched_conv2d_forward(
         *args_gpu, stride, padding, kernel_size, bias.cuda()
-    ).cpu()
-    assert torch.allclose(out_cpu, out_gpu, atol=1e-3, rtol=1e-3)
-
-
-def test_backward_shapes(test_tensors):
-    input_tensor, S1s, S2s, U1s, U2s, bias, stride, padding, kernel_size, inshape = (
-        test_tensors
     )
-
-    # Mark inputs for which gradients should be computed
-    input_tensor.requires_grad_()
-    S1s.requires_grad_()
-    S2s.requires_grad_()
-    U1s.requires_grad_()
-    U2s.requires_grad_()
-    bias.requires_grad_()
-
-    # Forward pass
-    out = SketchedConv2dFunction.apply(
-        input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
-    )
-
-    # Create a gradient output with the same shape
-    grad_output = torch.randn_like(out)
-
-    # Backward pass
-    out.backward(grad_output)
-
-    # Assert gradient shapes
-    assert input_tensor.grad.shape == input_tensor.shape
-    assert S1s.grad.shape == S1s.shape
-    assert S2s.grad.shape == S2s.shape
-    assert bias.grad.shape == bias.shape
+    assert torch.allclose(out_cpu, out_gpu.cpu(), atol=1e-3, rtol=1e-3)
 
 
 def test_backward_vs_autograd(test_tensors):
@@ -254,7 +242,7 @@ def test_backward_vs_autograd(test_tensors):
     bias.requires_grad_()
 
     # Forward pass through the custom function
-    out = SketchedConv2dFunction.apply(
+    out, x_windows = sketched_conv2d_forward(
         input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
     )
 
@@ -273,26 +261,18 @@ def test_backward_vs_autograd(test_tensors):
         create_graph=True,
     )
 
-    # Now, create the ctx object using the same data as the input tensors
-    ctx = MockCtx(
-        strid_tensor(input_tensor, kernel_size, stride, padding),
+    # Custom backward pass through the function
+    custom_grads = sketched_conv2d_backward(
+        x_windows,
         S1s,
         S2s,
         U1s,
         U2s,
-        torch.tensor(stride),
-        torch.tensor(padding),
-        torch.tensor(kernel_size),
-        torch.tensor(inshape),
-    )
-
-    # Custom backward pass through the function
-    custom_grads = SketchedConv2dFunction.backward(ctx, *(grad_output,))
-    custom_grads = (
-        custom_grads[0],
-        custom_grads[1],
-        custom_grads[2],
-        custom_grads[8],
+        stride,
+        padding,
+        kernel_size,
+        inshape[2:],
+        grad_output,
     )
     # Compare autograd and custom gradients for correctness
     for g1, g2 in zip(custom_grads, autograd_grads):

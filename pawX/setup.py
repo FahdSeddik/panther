@@ -111,6 +111,7 @@ setup(
                 "cqrrpt.cpp",
                 "rsvd.cpp",
                 "attention.cpp",
+                "conv2d.cpp",
                 *cuda_file,
             ],
             include_dirs=config["include_dirs"],

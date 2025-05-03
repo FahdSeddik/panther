@@ -13,6 +13,8 @@ from .pawX import (  # noqa: E402
     rmha_forward,
     scaled_sign_sketch,
     sketch_tensor,
+    sketched_conv2d_backward,
+    sketched_conv2d_forward,
     sketched_linear_backward,
     sketched_linear_forward,
 )
@@ -30,4 +32,6 @@ __all__ = [
     "causal_denominator_apply",
     "create_projection_matrix",
     "causal_numerator_apply",
+    "sketched_conv2d_backward",
+    "sketched_conv2d_forward",
 ]

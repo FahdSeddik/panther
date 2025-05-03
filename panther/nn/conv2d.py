@@ -4,10 +4,10 @@ from typing import Any, Tuple
 import torch
 import torch.nn as nn
 from torch.autograd import Function
-from torch.nn import functional as F
 from torch.nn import init
 
 from panther.sketch import scaled_sign_sketch as gen_U
+from pawX import sketched_conv2d_backward, sketched_conv2d_forward
 
 
 def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
@@ -30,37 +30,8 @@ class SketchedConv2dFunction(Function):
         kernel_size: Tuple[int, int],
         bias: torch.Tensor,
     ):
-        B, C, H, W = x.shape
-        L, _, out_channels = U1s.shape
-        if padding[0] > 0 or padding[1] > 0:
-            x = F.pad(x, (padding[1], padding[1], padding[0], padding[0]))
-        H_out = (x.shape[2] - kernel_size[0]) // stride[0] + 1
-        W_out = (x.shape[3] - kernel_size[1]) // stride[1] + 1
-        x_strided = x.as_strided(
-            size=(
-                x.shape[0],
-                x.shape[1],
-                H_out,
-                W_out,
-                kernel_size[0],
-                kernel_size[1],
-            ),
-            stride=(
-                x.stride(0),
-                x.stride(1),
-                x.stride(2) * stride[0],
-                x.stride(3) * stride[1],
-                x.stride(2),
-                x.stride(3),
-            ),
-        )
-        x_windows = x_strided.permute(0, 2, 3, 1, 4, 5)
-
-        x_windows = x_windows.reshape(B, -1, kernel_size[0] * kernel_size[1] * C)
-
-        out1 = torch.einsum("bnd,tdr,tro->bno", x_windows, S1s, U1s) / (2 * L)
-        out2 = torch.einsum("bnd,tdr,tro->bno", x_windows, U2s.transpose(1, 2), S2s) / (
-            2 * L
+        out, x_windows = sketched_conv2d_forward(
+            x, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
         )
         ctx.save_for_backward(
             x_windows,
@@ -68,50 +39,31 @@ class SketchedConv2dFunction(Function):
             S2s,
             U1s,
             U2s,
-            torch.tensor(stride),
-            torch.tensor(padding),
-            torch.tensor(kernel_size),
-            torch.tensor((B, C, H, W)),
+            torch.tensor(stride, dtype=torch.int64),
+            torch.tensor(padding, dtype=torch.int64),
+            torch.tensor(kernel_size, dtype=torch.int64),
+            torch.tensor([x.shape[2], x.shape[3]], dtype=torch.int64),
         )
-        return (
-            (out1 + out2 + bias).view(B, H_out, W_out, out_channels).permute(0, 3, 1, 2)
-        )
+        return out
 
     @staticmethod
     def backward(ctx: Any, *grad_output: Any) -> Any:
         input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshape = (
             ctx.saved_tensors
         )
-        num_terms, _, __ = S2s.shape
-        hout = grad_output[0].shape[2]
-        wout = grad_output[0].shape[3]
-        g_bias = grad_output[0].sum(dim=(0, 2, 3))
-        print(grad_output[0].shape)
-        grad_output = grad_output[0].reshape(
-            grad_output[0].shape[0],
-            hout * wout,
-            grad_output[0].shape[1],
+        gout, g_S1s, g_S2s, g_bias = sketched_conv2d_backward(
+            input,
+            S1s,
+            S2s,
+            U1s,
+            U2s,
+            (stride[0].item(), stride[1].item()),
+            (padding[0].item(), padding[1].item()),
+            (kernelSize[0].item(), kernelSize[1].item()),
+            (inshape[0].item(), inshape[1].item()),
+            grad_output[0],
         )
-        grad_output = grad_output / (2 * num_terms)
-        g_S1s = torch.einsum(
-            "nab,nbc,lcd->lad", input.transpose(1, 2), grad_output, U1s.transpose(1, 2)
-        )
-        g_S2s = torch.einsum(
-            "lab,nbc,ncd->lad", U2s, input.transpose(1, 2), grad_output
-        )
-        gout = torch.einsum(
-            "nab,lbc,lcd->nad", grad_output, U1s.transpose(1, 2), S1s.transpose(1, 2)
-        ) + torch.einsum("nab,lbc,lcd->nad", grad_output, S2s.transpose(1, 2), U2s)
-        fold = nn.Fold(
-            output_size=(inshape[2], inshape[3]),
-            kernel_size=(kernelSize[0], kernelSize[1]),
-            stride=stride,
-            padding=padding,
-        )
-        gout = gout.transpose(1, 2)
-        gout = fold(gout)
-
-        return (gout, g_S1s, g_S2s, None, None, None, None, None, g_bias)
+        return (gout, g_S1s, g_S2s, None, None, None, None, None, None, g_bias)
 
 
 class SKConv2d(nn.Module):
@@ -178,6 +130,11 @@ class SKConv2d(nn.Module):
             )
         )  # doutxdinxhxw
         init.kaiming_uniform_(kernels, a=math.sqrt(5))
+
+        def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
+            """Computes mode-4 matricization (unfolding along the last dimension)."""
+            return tensor.reshape(-1, tensor.shape[-1])  # (I4, I1 * I2 * I3)
+
         self.S1s = nn.Parameter(
             torch.stack(
                 [
