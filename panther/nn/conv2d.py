@@ -63,7 +63,7 @@ class SketchedConv2dFunction(Function):
             (inshape[0].item(), inshape[1].item()),
             grad_output[0],
         )
-        return (gout, g_S1s, g_S2s, None, None, None, None, None, None, g_bias)
+        return (gout, g_S1s, g_S2s, None, None, None, None, None, g_bias)
 
 
 class SKConv2d(nn.Module):
