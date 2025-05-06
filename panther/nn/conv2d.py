@@ -83,7 +83,7 @@ class SKConv2d(nn.Module):
         out_channels: int,
         kernel_size: Tuple = (3, 3),
         stride: Tuple = (1, 1),
-        padding: Tuple = (1, 1),
+        padding: str | Tuple | int = (1, 1),
         num_terms: int = 6,
         low_rank: int = 8,
         dtype=None,
@@ -96,7 +96,27 @@ class SKConv2d(nn.Module):
         self.out_channels = out_channels
         self.in_channels = in_channels
         self.stride = stride if isinstance(stride, tuple) else (stride, stride)
-        self.padding = padding if isinstance(padding, tuple) else (padding, padding)
+        if isinstance(padding, str):
+            if padding == "same":
+                padding = (
+                    (kernel_size[0] - 1) // 2,
+                    (kernel_size[1] - 1) // 2,
+                )
+            elif padding == "valid":
+                padding = (0, 0)
+            else:
+                raise ValueError(
+                    f"Invalid padding type: {padding}. Use 'same', 'valid', or a tuple."
+                )
+        else:
+            if isinstance(padding, int):
+                padding = (padding, padding)
+            elif isinstance(padding, tuple):
+                self.padding = padding
+            else:
+                raise ValueError(
+                    f"Invalid padding type: {padding}. Use 'same', 'valid', or a tuple."
+                )
         self.kernel_size = (
             kernel_size
             if isinstance(kernel_size, tuple)
@@ -178,3 +198,65 @@ class SKConv2d(nn.Module):
             self.kernel_size,
             self.bias,
         )
+
+
+def make_sketched_conv2d(
+    layer: nn.Conv2d,
+    num_terms: int = 6,
+    low_rank: int = 8,
+) -> SKConv2d:
+    """Creates a SKConv2d layer from a given layer."""
+    assert isinstance(layer, nn.Conv2d), "Layer must be a Conv2d layer"
+    assert layer.groups == 1, "Groups must be 1 for SKConv2d"
+    assert layer.dilation == (1, 1), "Dilation must be (1, 1) for SKConv2d"
+
+    sketched_conv = SKConv2d(
+        in_channels=layer.in_channels,
+        out_channels=layer.out_channels,
+        kernel_size=layer.kernel_size,
+        stride=layer.stride,
+        padding=layer.padding,
+        # bias=layer.bias is not None,
+        num_terms=num_terms,
+        low_rank=low_rank,
+    )
+
+    kernels = layer.weight.data.clone()
+    kernels = kernels.permute(1, 2, 3, 0)
+
+    def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
+        """Computes mode-4 matricization (unfolding along the last dimension)."""
+        return tensor.reshape(-1, tensor.shape[-1])  # (I4, I1 * I2 * I3)
+
+    sketched_conv.S1s = nn.Parameter(
+        torch.stack(
+            [
+                mode4_unfold(torch.matmul(kernels, sketched_conv.U1s[i].T))
+                for i in range(num_terms)
+            ]
+        )
+    )  # d2xk
+    K_mat4 = kernels.view(
+        layer.in_channels * sketched_conv.kernel_size[0] * sketched_conv.kernel_size[1],
+        layer.out_channels,
+    )
+    sketched_conv.S2s = nn.Parameter(
+        torch.stack(
+            [
+                mode4_unfold(
+                    torch.matmul(sketched_conv.U2s[i], K_mat4).view(
+                        low_rank, *sketched_conv.kernel_size, layer.out_channels
+                    )
+                )
+                for i in range(num_terms)
+            ]
+        )
+    )
+    if layer.bias is not None:
+        sketched_conv.bias = nn.Parameter(layer.bias.data.clone())
+    else:
+        raise ValueError(
+            "Layer must have a bias parameter, not implemented yet to not have it sketchedconv2d"
+        )
+
+    return sketched_conv
