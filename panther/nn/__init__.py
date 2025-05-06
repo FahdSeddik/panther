@@ -1,4 +1,5 @@
 from .attention import RandMultiHeadAttention
 from .linear import SKLinear
+from .linear_tr import SKLinear_triton
 
-__all__ = ["SKLinear", "RandMultiHeadAttention"]
+__all__ = ["SKLinear", "SKLinear_triton", "RandMultiHeadAttention"]

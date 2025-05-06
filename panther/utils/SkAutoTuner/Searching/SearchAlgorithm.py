@@ -34,14 +34,4 @@ class SearchAlgorithm(ABC):
             params: Dictionary of parameter names and values that were tried
             score: The evaluation score for the parameters
         """
-        pass
-    
-    @abstractmethod
-    def get_best_params(self) -> Dict[str, Any]:
-        """
-        Get the best parameters found so far.
-        
-        Returns:
-            Dictionary of parameter names and their best values
-        """
-        pass
+        pass 

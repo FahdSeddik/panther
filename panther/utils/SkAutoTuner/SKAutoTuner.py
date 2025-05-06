@@ -1,14 +1,16 @@
 import copy
 import pickle
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, Dict, Tuple, Type, List, Optional, Union
+import os
 
 import pandas as pd
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
 
 from .Searching import SearchAlgorithm, GridSearch
 from .layer_type_mapping import LAYER_TYPE_MAPPING
-from .Configs import TuningConfigs, LayerConfig
+from .Configs import TuningConfigs, LayerConfig, LayerNameResolver
 
 class SKAutoTuner:
     """
@@ -18,9 +20,11 @@ class SKAutoTuner:
         self, 
         model: nn.Module, 
         configs: TuningConfigs,
-        eval_func: Callable[[nn.Module], float],
+        accuracy_eval_func: Callable[[nn.Module], float],
         search_algorithm: SearchAlgorithm = None,
-        verbose: bool = False
+        verbose: bool = False,
+        accuracy_threshold: float = None,
+        optmization_eval_func: Callable[[nn.Module], float] = None
     ):
         """
         Initialize the autotuner.
@@ -28,29 +32,56 @@ class SKAutoTuner:
         Args:
             model: The neural network model to tune
             configs: Configuration for the layers to tune
-            eval_func: Evaluation function that takes a model and returns a score (higher is better)
+            accuracy_eval_func: Evaluation function that takes a model and returns an accuracy score (higher is better)
             search_algorithm: Search algorithm to use for finding optimal parameters
             verbose: Whether to print progress during tuning
+            accuracy_threshold: Minimum acceptable accuracy (if None, will use accuracy_eval_func for optimization)
+            optmization_eval_func: Function to maxmimize (e.g., speed) after reaching the accuracy threshold
         """
         self.model = model
-        self.configs = configs
-        self.eval_func = eval_func
+        self.accuracy_eval_func = accuracy_eval_func
         self.search_algorithm = search_algorithm or GridSearch()
         self.verbose = verbose
-        
-        # Store original model state
-        self.original_model_state = copy.deepcopy(model.state_dict())
-        
+        self.accuracy_threshold = accuracy_threshold
+        self.optmization_eval_func = optmization_eval_func
         # Dictionary to store results for each layer
         self.results = {}
-        
         # Dictionary to store best parameters for each layer
         self.best_params = {}
-        
         # Map from layer name to layer object
         self.layer_map = {}
+         # Initialize the layer name resolver
         self._build_layer_map(model)
+        self.resolver = LayerNameResolver(model, self.layer_map)
+        # Resolve layer names in configs
+        self.configs = self._resolve_configs(configs)
+
         self._check_configs()
+
+    
+    def _resolve_configs(self, configs: TuningConfigs) -> TuningConfigs:
+        """
+        Resolve layer names in configs to actual layer names in the model.
+        
+        Args:
+            configs: Configuration for the layers to tune
+            
+        Returns:
+            Updated configuration with resolved layer names
+        """
+        resolved_configs = TuningConfigs([])
+        
+        for config in configs.configs:
+            # Make a deep copy of the config to avoid modifying the original
+            resolved_config = LayerConfig(
+                layer_names=self.resolver.resolve(config.layer_names),
+                params=config.params,
+                separate=config.separate,
+                copy_weights=config.copy_weights
+            )
+            resolved_configs.configs.append(resolved_config)
+        
+        return resolved_configs
 
     def _check_configs(self):
         """
@@ -121,25 +152,22 @@ class SKAutoTuner:
     
     def _get_parent_module_and_name(self, layer_name: str) -> Tuple[nn.Module, str]:
         """Get the parent module and attribute name for a layer."""
+        if layer_name not in self.layer_map:
+            raise ValueError(f"Layer {layer_name} not found in the model")
+
         if "." not in layer_name:
             return self.model, layer_name
         
         parent_name, child_name = layer_name.rsplit(".", 1)
-        parent = self._get_module_by_name(parent_name)
+
+        try:
+            parent = self._get_layer_by_name(parent_name)
+        except ValueError:
+            parent = self.model
+
         return parent, child_name
     
-    def _get_module_by_name(self, name: str) -> nn.Module:
-        """Get a module by its name."""
-        if not name:
-            return self.model
-        
-        for n, m in self.model.named_modules():
-            if n == name:
-                return m
-        
-        raise ValueError(f"Module {name} not found in the model")
-    
-    def replace_layer(self, layer_name: str, layer_type: Type[nn.Module], params: Dict[str, Any], copy_weights: bool = False) -> bool:
+    def _replace_layer(self, layer_name: str, layer_type: Type[nn.Module], params: Dict[str, Any], copy_weights: bool = True) -> bool:
         """
         Replace a layer with its sketched version.
         
@@ -197,24 +225,51 @@ class SKAutoTuner:
             if copy_weights:
                 # Initialize S1s and S2s based on original weights
                 kernels = original_layer.weight.detach().clone()
-                kernels = kernels.permute(1, 2, 3, 0)  # Convert to expected shape
+                # Convert to shape expected by SKConv2d (in_channels, kernel_h, kernel_w, out_channels)
+                kernels = kernels.permute(1, 2, 3, 0).contiguous()
+                
+                # Reshape to matrix form for matrix multiplication
+                # From (in_c, kernel_h, kernel_w, out_c) to (in_c*kernel_h*kernel_w, out_c)
+                kernels_reshaped = kernels.reshape(-1, kernels.shape[-1])
                 
                 for i in range(sketched_layer.num_terms):
+                    # Check dimensions for S1s computation
+                    if sketched_layer.U1s[i].shape[1] != kernels_reshaped.shape[1]:
+                        if self.verbose:
+                            print(f"Warning: Shape mismatch for U1s[{i}]. Expected second dim {kernels_reshaped.shape[1]}, got {sketched_layer.U1s[i].shape[1]}")
+                        continue
+                        
+                    # Calculate S1s (d2 × k) from kernels (d2 × d1) and U1s (k × d1)
                     sketched_layer.S1s.data[i] = torch.matmul(
-                        kernels.reshape(-1, kernels.shape[-1]), 
-                        sketched_layer.U1s[i].T
-                    )
+                        kernels_reshaped,  # (in_c*kernel_h*kernel_w, out_c)
+                        sketched_layer.U1s[i].T  # (out_c, low_rank)
+                    )  # Result: (in_c*kernel_h*kernel_w, low_rank)
                     
-                    K_mat4 = kernels.reshape(-1, kernels.shape[-1])
-                    sketched_layer.S2s.data[i] = torch.matmul(
-                        sketched_layer.U2s[i], 
-                        K_mat4
-                    ).reshape(sketched_layer.low_rank, -1)
+                    # Check dimensions for S2s computation
+                    expected_u2_shape = (sketched_layer.low_rank * sketched_layer.kernel_size[0] * sketched_layer.kernel_size[1], 
+                                        kernels_reshaped.shape[0])
+                    if sketched_layer.U2s[i].shape != expected_u2_shape:
+                        if self.verbose:
+                            print(f"Warning: Shape mismatch for U2s[{i}]. Expected {expected_u2_shape}, got {sketched_layer.U2s[i].shape}")
+                        continue
+                        
+                    # Calculate S2s from U2s and kernels
+                    S2_temp = torch.matmul(
+                        sketched_layer.U2s[i],  # (low_rank*kernel_h*kernel_w, in_c*kernel_h*kernel_w)
+                        kernels_reshaped  # (in_c*kernel_h*kernel_w, out_c)
+                    )  # Result: (low_rank*kernel_h*kernel_w, out_c)
+                    
+                    # Reshape to match S2s tensor shape (low_rank, -1)
+                    try:
+                        sketched_layer.S2s.data[i] = S2_temp.reshape(sketched_layer.low_rank, -1)
+                    except RuntimeError:
+                        if self.verbose:
+                            print(f"Warning: Failed to reshape S2_temp from {S2_temp.shape} to {(sketched_layer.low_rank, -1)}")
                 
-                # Copy bias
-                if original_layer.bias is not None:
+                # Copy bias if present
+                if original_layer.bias is not None and sketched_layer.bias is not None:
                     sketched_layer.bias.data.copy_(original_layer.bias.data)
-                
+
         elif isinstance(original_layer, nn.MultiheadAttention):
             # Create a new sketched attention layer
             sketched_layer = sketched_class(
@@ -249,8 +304,8 @@ class SKAutoTuner:
             print(f"Replaced {layer_name} with sketched version using parameters: {params}")
         
         return True
-    
-    def tune_layer_group(self, config: LayerConfig) -> Dict[str, Dict[str, Any]]:
+
+    def _tune_layer_group(self, config: LayerConfig) -> Dict[str, Dict[str, Any]]:
         """
         Tune a group of layers according to the configuration.
         
@@ -274,14 +329,25 @@ class SKAutoTuner:
                 if params is None:
                     break  # No more parameter combinations to try
                 
+                original_layers = []
                 # Apply parameters to all layers
                 for layer_name in config.layer_names:
                     layer = self._get_layer_by_name(layer_name)
-                    self.replace_layer(layer_name, type(layer), params)
+                    original_layers.append(layer)
+                    self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
                 
                 # Evaluate
-                score = self.eval_func(self.model)
-                
+                speed_score = None
+                accuracy_score = self.accuracy_eval_func(self.model)
+                if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
+                    if accuracy_score >= self.accuracy_threshold:
+                        speed_score = self.optmization_eval_func(self.model)
+                        score = speed_score
+                    else:
+                        score = float('-inf')
+                else:
+                    score = accuracy_score
+
                 # Update search algorithm
                 self.search_algorithm.update(params, score)
                 
@@ -292,9 +358,16 @@ class SKAutoTuner:
                 if score > best_score:
                     best_score = score
                     best_params = params
+
+                # restore original layers
+                for i, layer_name in enumerate(config.layer_names):
+                    parent, name = self._get_parent_module_and_name(layer_name)
+                    original_layer = original_layers[i]
+                    setattr(parent, name, original_layer)
                 
                 if self.verbose:
-                    print(f"Tried parameters: {params}, score: {score}")
+                    print(f"Tried parameters: {params}, accuracy_score: {accuracy_score}, speed_score: {speed_score}\
+                          final score: {score}")
             
             # Store results
             group_key = "_".join(config.layer_names)
@@ -302,7 +375,7 @@ class SKAutoTuner:
             
             # Return best parameters for all layers in the group
             return {
-                layer_name: best_params for layer_name in config.layer_names
+                layer_name: {"params": best_params, "copy_weights": config.copy_weights} for layer_name in config.layer_names
             }
         
         # If separate is True, tune each layer individually
@@ -325,15 +398,21 @@ class SKAutoTuner:
                     if params is None:
                         break  # No more parameter combinations to try
                     
-                    # Reset model to original state before applying new parameters
-                    self.model.load_state_dict(self.original_model_state)
-                    
                     # Apply parameters to this layer
                     layer = self._get_layer_by_name(layer_name)
-                    self.replace_layer(layer_name, type(layer), params)
+                    self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
                     
                     # Evaluate
-                    score = self.eval_func(self.model)
+                    accuracy_score = self.accuracy_eval_func(self.model)
+                    speed_score = None
+                    if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
+                        if accuracy_score >= self.accuracy_threshold:
+                            speed_score = self.optmization_eval_func(self.model)
+                            score = speed_score
+                        else:
+                            score = float('-inf')
+                    else:
+                        score = accuracy_score
                     
                     # Update search algorithm
                     self.search_algorithm.update(params, score)
@@ -345,15 +424,20 @@ class SKAutoTuner:
                     if score > best_score:
                         best_score = score
                         best_params = params
+
+                    # restore original layer
+                    parent, name = self._get_parent_module_and_name(layer_name)
+                    setattr(parent, name, layer)
                     
                     if self.verbose:
-                        print(f"  Tried parameters: {params}, score: {score}")
+                        print(f"Tried parameters: {params}, accuracy_score: {accuracy_score}, speed_score: {speed_score}\
+                          final score: {score}")
                 
                 # Store results for this layer
                 self.results[layer_name] = layer_results
                 
                 # Save best parameters for this layer
-                layer_params[layer_name] = best_params
+                layer_params[layer_name] = {"params": best_params, "copy_weights": config.copy_weights}
                 
                 if self.verbose:
                     print(f"  Best parameters for {layer_name}: {best_params}, score: {best_score}")
@@ -367,16 +451,12 @@ class SKAutoTuner:
         Returns:
             Dictionary of best parameters for each layer
         """
-        # Store original model state
-        self.original_model_state = copy.deepcopy(self.model.state_dict())
         
         # Tune each layer group
         for config in self.configs.configs:
-            layer_params = self.tune_layer_group(config)
+            # tune the layer group
+            layer_params = self._tune_layer_group(config)
             self.best_params.update(layer_params)
-        
-        # Reset model to original state
-        self.model.load_state_dict(self.original_model_state)
         
         return self.best_params
     
@@ -387,14 +467,18 @@ class SKAutoTuner:
         Returns:
             The model with the best parameters applied
         """
-        # Reset model to original state
-        self.model.load_state_dict(self.original_model_state)
         
         # Apply best parameters to each layer
-        for layer_name, params in self.best_params.items():
-            if params is not None:
+        for layer_name, data in self.best_params.items():
+            if data is not None:
+                if data["params"] is None:
+                    # If no parameters were found, skip this layer
+                    if self.verbose:
+                        print(f"No parameters found for layer {layer_name}. Skipping.")
+                    continue
                 layer = self._get_layer_by_name(layer_name)
-                self.replace_layer(layer_name, type(layer), params)
+                self._replace_layer(layer_name, type(layer), data["params"], 
+                                copy_weights=data.get("copy_weights", True))
         
         return self.model
     
@@ -405,8 +489,6 @@ class SKAutoTuner:
         Returns:
             The model with layers replaced
         """
-        # Reset model to original state
-        self.model.load_state_dict(self.original_model_state)
         
         # Replace each layer with the first parameter values
         for config in self.configs.configs:
@@ -417,7 +499,7 @@ class SKAutoTuner:
             
             for layer_name in config.layer_names:
                 layer = self._get_layer_by_name(layer_name)
-                self.replace_layer(layer_name, type(layer), default_params)
+                self._replace_layer(layer_name, type(layer), default_params, copy_weights=config.copy_weights)
         
         return self.model
     
@@ -447,55 +529,103 @@ class SKAutoTuner:
             Dictionary of best parameters for each layer
         """
         return self.best_params
-    
-    def save(self, filepath: str):
+        
+    def visualize_tuning_results(self, 
+                                save_path: Optional[str] = None, 
+                                show_plot: bool = True,
+                                figsize: Tuple[int, int] = None,
+                                max_cols: int = 2) -> None:
         """
-        Save the model and best parameters to a file.
+        Visualize tuning results with plots showing the relationship between parameters and scores.
         
         Args:
-            filepath: Path to save the model and parameters
-        """
-        save_data = {
-            "model_state": self.model.state_dict(),
-            "best_params": self.best_params,
-            "results": self.results
-        }
-        
-        with open(filepath, "wb") as f:
-            pickle.dump(save_data, f)
-        
-        if self.verbose:
-            print(f"Model and parameters saved to {filepath}")
-    
-    @classmethod
-    def load(cls, filepath: str, model: nn.Module, eval_func: Callable = None, verbose: bool = False) -> 'SKAutoTuner':
-        """
-        Load a model and best parameters from a file.
-        
-        Args:
-            filepath: Path to load the model and parameters from
-            model: Model to apply the parameters to
-            eval_func: Evaluation function (optional)
-            verbose: Whether to print progress
+            save_path: Path to save the visualization. If None, the plot won't be saved.
+            show_plot: Whether to display the plot.
+            figsize: Figure size as (width, height). If None, it will be calculated automatically.
+            max_cols: Maximum number of columns in the subplot grid.
             
         Returns:
-            SKAutoTuner instance with the loaded model and parameters
+            None
         """
-        with open(filepath, "rb") as f:
-            save_data = pickle.load(f)
+        # Get results dataframe
+        results_df = self.get_results_dataframe()
         
-        # Create an empty configs object (not needed for loading)
-        configs = TuningConfigs([])
+        if results_df.empty:
+            print("No results to visualize. Run tune() first.")
+            return
+            
+        # Get unique layer names
+        layer_names = results_df['layer_name'].unique()
         
-        # Create a new SKAutoTuner instance
-        autotuner = cls(model, configs, eval_func or (lambda m: 0), verbose=verbose)
+        # Create dynamic subplots based on number of layers and parameters
+        param_columns = [col for col in results_df.columns if col not in ['layer_name', 'score']]
+        total_plots = 0
         
-        # Load the model state and best parameters
-        model.load_state_dict(save_data["model_state"])
-        autotuner.best_params = save_data["best_params"]
-        autotuner.results = save_data["results"]
+        # Calculate total plots needed
+        for layer in layer_names:
+            layer_df = results_df[results_df['layer_name'] == layer]
+            layer_params = [p for p in param_columns if p in layer_df.columns and len(layer_df[p].unique()) > 1]
+            total_plots += len(layer_params)
         
-        if verbose:
-            print(f"Model and parameters loaded from {filepath}")
+        if total_plots == 0:
+            print("No variable parameters found to visualize.")
+            return
+            
+        # Calculate grid dimensions
+        cols = min(max_cols, total_plots)
+        rows = (total_plots + cols - 1) // cols
         
-        return autotuner
+        # Create figure with appropriate size
+        if figsize is None:
+            figsize = (7 * cols, 4 * rows)
+        
+        plt.figure(figsize=figsize)
+        
+        # Plot counter
+        plot_num = 1
+        
+        # For each layer, plot the relationship between each parameter and score
+        for layer in layer_names:
+            layer_df = results_df[results_df['layer_name'] == layer]
+            if layer_df.empty:
+                continue
+                
+            # Find parameters with multiple values (worth plotting)
+            layer_params = [p for p in param_columns if p in layer_df.columns and len(layer_df[p].unique()) > 1]
+            
+            for param in layer_params:
+                plt.subplot(rows, cols, plot_num)
+                
+                # Check if parameter is categorical or numeric
+                unique_values = layer_df[param].unique()
+                is_categorical = any(isinstance(val, str) for val in unique_values if not pd.isna(val))
+                
+                if is_categorical:
+                    # Bar plot for categorical parameters
+                    grouped = layer_df.groupby(param)['score'].mean()
+                    grouped.plot(kind='bar', color='skyblue')
+                else:
+                    # Line plot for numeric parameters
+                    grouped = layer_df.groupby(param)['score'].mean()
+                    plt.plot(grouped.index, grouped.values, 'o-', color='blue')
+                
+                plt.xlabel(param)
+                plt.ylabel('Score (higher is better)')
+                plt.title(f'{layer}: Effect of {param}')
+                plt.grid(True)
+                plt.tight_layout()
+                
+                plot_num += 1
+        
+        plt.tight_layout()
+        
+        # Save figure if path provided
+        if save_path:
+            plt.savefig(save_path)
+            print(f"Visualization saved to {save_path}")
+            
+        # Show plot if requested
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
