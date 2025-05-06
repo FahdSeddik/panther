@@ -190,7 +190,8 @@ class SKAutoTuner:
             return False
         
         # Get the sketched layer class and its parameters
-        sketched_class = LAYER_TYPE_MAPPING[type(original_layer)]["class"]
+        from .layer_type_mapping import get_sketched_class
+        sketched_class = get_sketched_class(type(original_layer))
         
         # Create the sketched layer with original parameters and new sketching parameters
         if isinstance(original_layer, nn.Linear):
@@ -257,9 +258,10 @@ class SKAutoTuner:
                 if original_layer.bias is not None:
                     sketched_layer.bias = nn.Parameter(original_layer.bias.data.clone())
                 else:
-                    raise ValueError(
-                        "Layer must have a bias parameter, not implemented yet to not have it sketchedconv2d"
-                    )
+                    # Initialize with zeros if original layer has no bias
+                    sketched_layer.bias = nn.Parameter(torch.zeros(original_layer.out_channels, 
+                                                                device=original_layer.weight.device,
+                                                                dtype=original_layer.weight.dtype))
 
         elif isinstance(original_layer, nn.MultiheadAttention):
             # Create a new sketched attention layer
