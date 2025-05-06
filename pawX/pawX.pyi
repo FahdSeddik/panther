@@ -84,6 +84,7 @@ def rmha_forward(
     embed_dim: int,
     kernel_fn: str,
     causal: bool,
+    attention_mask: Optional[torch.Tensor],
     bq: Optional[torch.Tensor] = None,
     bk: Optional[torch.Tensor] = None,
     bv: Optional[torch.Tensor] = None,
@@ -98,3 +99,26 @@ def create_projection_matrix(
     dtype: Optional[torch.dtype] = None,
     device: Optional[torch.device] = None,
 ) -> torch.Tensor: ...
+def sketched_conv2d_forward(
+    x: torch.Tensor,
+    S1s: torch.Tensor,
+    S2s: torch.Tensor,
+    U1s: torch.Tensor,
+    U2s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    bias: torch.Tensor,
+) -> torch.Tensor: ...
+def sketched_conv2d_backward(
+    input: torch.Tensor,
+    S1s: torch.Tensor,
+    S2s: torch.Tensor,
+    U1s: torch.Tensor,
+    U2s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    in_shape: Tuple[int, int],
+    grad_out: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...

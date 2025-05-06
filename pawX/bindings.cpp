@@ -1,4 +1,5 @@
 #include "attention.h"
+#include "conv2d.h"
 #include "cqrrpt.h"
 #include "linear.h"
 #include "rsvd.h"
@@ -58,6 +59,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("Wq"), py::arg("Wk"), py::arg("Wv"), py::arg("W0"),
           py::arg("num_heads"), py::arg("embed_dim"), py::arg("kernel_fn"),
           py::arg("causal"),
+          py::arg("attention_mask") = c10::nullopt,
           py::arg("bq") = c10::nullopt, py::arg("bk") = c10::nullopt,
           py::arg("bv") = c10::nullopt, py::arg("b0") = c10::nullopt,
           py::arg("projection_matrix") = c10::nullopt);
@@ -65,4 +67,15 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("create_projection_matrix", &create_projection_matrix,
           py::arg("m"), py::arg("d"), py::arg("seed") = 42, py::arg("scaling") = false,
           py::arg("dtype") = c10::nullopt, py::arg("device") = c10::nullopt);
+
+    m.def("sketched_conv2d_forward", &sketched_conv2d_forward,
+          py::arg("x"), py::arg("S1s"), py::arg("S2s"),
+          py::arg("U1s"), py::arg("U2s"), py::arg("stride"),
+          py::arg("padding"), py::arg("kernel_size"), py::arg("bias"));
+
+    m.def("sketched_conv2d_backward", &sketched_conv2d_backward,
+          py::arg("input"), py::arg("S1s"), py::arg("S2s"),
+          py::arg("U1s"), py::arg("U2s"), py::arg("stride"),
+          py::arg("padding"), py::arg("kernel_size"), py::arg("in_shape"),
+          py::arg("grad_out"));
 }

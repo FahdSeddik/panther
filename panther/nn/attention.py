@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
-from pawX import create_projection_matrix, rmha_forward
+from panther.nn.pawXimpl import create_projection_matrix, rmha_forward
 
 
 def verify_rmha_inputs(
@@ -112,6 +112,7 @@ class RandMultiHeadAttention(nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
         value: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, None]:
         # TODO: add (causallity) a mask for normal attention
         # but here it is a different function as implemented in the original paper
@@ -128,6 +129,7 @@ class RandMultiHeadAttention(nn.Module):
             self.embed_dim,
             self.kernel_fn,
             self.causal,
+            attention_mask=attention_mask,
             bq=self.bq,
             bk=self.bk,
             bv=self.bv,
@@ -170,3 +172,30 @@ def make_performer(
         performer.b0 = nn.Parameter(mha.out_proj.bias)
 
     return performer
+
+
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model = RandMultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        num_random_features=10,
+        dropout=0.1,
+        kernel_fn="softmax",
+        iscausal=False,
+        device=device,
+        dtype=torch.float32,
+    ).to(device)
+
+    output = model(
+        query=torch.randn(1, 2, 8).to(device),
+        key=torch.randn(1, 3, 8).to(device),
+        value=torch.randn(1, 3, 8).to(device),
+        attention_mask=torch.tensor([[[0, 0, 0], [0, 0, 0]]], dtype=torch.bool).to(
+            device
+        ),
+        # attention_mask=None,
+    )
+    print(output[0].shape)
+    print(output[0])
