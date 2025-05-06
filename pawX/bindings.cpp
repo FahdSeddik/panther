@@ -12,20 +12,21 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("sketched_linear_forward", &sketched_linear_forward,
           "Sketched Linear Forward Pass",
           py::arg("input"), py::arg("S1s"), py::arg("S2s"),
-          py::arg("U1s"), py::arg("U2s"), py::arg("bias"));
+          py::arg("U1s"), py::arg("U2s"), py::arg("bias"),
+          py::arg("use_tensor_core") = false);
 
     m.def("sketched_linear_backward", &sketched_linear_backward,
           "Sketched Linear Backward Pass",
           py::arg("grad_output"), py::arg("input"), py::arg("S1s"),
-          py::arg("S2s"), py::arg("U1s"), py::arg("U2s"));
-
-    m.def("cqrrpt", &cqrrpt, py::arg("M"), py::arg("gamma") = 1.25, py::arg("F") = "default");
-    m.def("randomized_svd", &randomized_svd, py::arg("A"), py::arg("k"), py::arg("tol"));
+          py::arg("S2s"), py::arg("U1s"), py::arg("U2s"), py::arg("use_tensor_core") = false);
 
     py::enum_<DistributionFamily>(m, "DistributionFamily")
         .value("Gaussian", DistributionFamily::Gaussian)
         .value("Uniform", DistributionFamily::Uniform)
         .export_values();
+
+    m.def("cqrrpt", &cqrrpt, py::arg("M"), py::arg("gamma") = 1.25, py::arg("F") = DistributionFamily::Gaussian);
+    m.def("randomized_svd", &randomized_svd, py::arg("A"), py::arg("k"), py::arg("tol"));
 
     m.def("dense_sketch_operator", &dense_sketch_operator,
           py::arg("m"),

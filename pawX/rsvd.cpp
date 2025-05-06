@@ -16,7 +16,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> randomized_svd(const tor
     // Check input properties: A must be a double 2D tensor.
     TORCH_CHECK(A.dtype() == torch::kFloat64, "A must be a double tensor");
     TORCH_CHECK(A.dim() == 2, "A must be a 2D matrix");
-    int64_t m = A.size(0);
     int64_t n = A.size(1);
 
     // Step 1: Generate a random Gaussian matrix Omega (n x k)

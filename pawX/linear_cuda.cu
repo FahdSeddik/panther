@@ -1,174 +1,119 @@
 #include <torch/extension.h>
 
+#include "linear.h"
+
+#define TILE_DIM 16
+
 template <typename scalar_t>
-__global__ void sketched_linear_forward_kernel(
-    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S2s,
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U1s,
+__global__ void sklinear_forward_intermediate(
+    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,  // gets loaded term number of times
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,    // gets loaded batch / TILE times
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,
+    torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> output,  // 2 * num * batch * low_rank
+    int batch_size, int input_dim, int low_rank_dim) {
+    int tx = threadIdx.x, ty = threadIdx.y;
+    int termIdx = blockIdx.z;
+    int batchIdx = blockIdx.y * TILE_DIM + ty;    // row
+    int lowRankIdx = blockIdx.x * TILE_DIM + tx;  // col
+    extern __shared__ float shData[];
+    scalar_t* sharedS1 = (scalar_t*)shData;
+    scalar_t* sharedU2 = sharedS1 + TILE_DIM * TILE_DIM;
+    scalar_t* sharedInput = sharedU2 + TILE_DIM * TILE_DIM;
+
+    scalar_t sum1 = 0, sum2 = 0;
+    for (int stride = 0; stride < input_dim; stride += TILE_DIM) {
+        if (lowRankIdx < low_rank_dim && stride + ty < input_dim) {
+            sharedS1[ty * TILE_DIM + tx] = S1s[termIdx][stride + ty][lowRankIdx];
+            sharedU2[ty * TILE_DIM + tx] = U2s[termIdx][stride + ty][lowRankIdx];
+        } else {
+            sharedS1[ty * TILE_DIM + tx] = 0;
+            sharedU2[ty * TILE_DIM + tx] = 0;
+        }
+        // Load intermediate results into shared memory.
+        if (batchIdx < batch_size && stride + tx < input_dim) {
+            sharedInput[ty * TILE_DIM + tx] = input[batchIdx][stride + tx];
+        } else {
+            sharedInput[ty * TILE_DIM + tx] = 0;
+        }
+        __syncthreads();
+        if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
+            for (int i = 0; i < TILE_DIM; i++) {
+                auto s1_val = sharedS1[i * TILE_DIM + tx];
+                auto u2_val = sharedU2[i * TILE_DIM + tx];
+                auto input_val = sharedInput[ty * TILE_DIM + i];
+                sum1 += s1_val * input_val;
+                sum2 += u2_val * input_val;
+            }
+        }
+        __syncthreads();
+    }
+
+    if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
+        // Write the result to the output tensor.
+        output[0][termIdx][batchIdx][lowRankIdx] = sum1;
+        output[1][termIdx][batchIdx][lowRankIdx] = sum2;
+    }
+}
+
+template <typename scalar_t>
+__global__ void sklinear_forward_output(
+    const torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> intermediate,  // 2 x num_terms x batch_size x low_rank_dim
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S2s,           // term x low_rank_dim x output_dim
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U1s,           // term x low_rank_dim x output_dim
     const torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> bias,
-    torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> output,
+    torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> output,  // batch x output_dim
     int batch_size, int input_dim, int num_terms, int low_rank_dim, int output_dim) {
-    // Grid is organized so that each block computes one output element:
-    //   blockIdx.x -> batch index, blockIdx.y -> output index.
-    int b = blockIdx.x;  // batch index
-    int o = blockIdx.y;  // output dimension index
+    int tx = threadIdx.x, ty = threadIdx.y;
+    int batchIdx = blockIdx.y * TILE_DIM + ty;   // row
+    int outputIdx = blockIdx.x * TILE_DIM + tx;  // col
+    extern __shared__ float shData[];
+    scalar_t* sharedS2 = (scalar_t*)shData;
+    scalar_t* sharedU1 = sharedS2 + TILE_DIM * TILE_DIM;
+    scalar_t* sharedInter1 = sharedU1 + TILE_DIM * TILE_DIM;
+    scalar_t* sharedInter2 = sharedInter1 + TILE_DIM * TILE_DIM;
+    scalar_t* sharedBias = sharedInter2 + TILE_DIM * TILE_DIM;
+    scalar_t sum = 0;
 
-    // We use a 1D block to parallelize over the large input_dim reduction.
-    const int tid = threadIdx.x;
-    const int blockSize = blockDim.x;
-
-    // We'll accumulate the final result in a register (per block, only thread 0 will write out).
-    // Each term is computed by first “reducing” the product over the input_dim for every low_rank index.
-    // Then, the resulting low_rank-dim vector is dot-multiplied with the corresponding second factor.
-    // We accumulate the two terms over all num_terms.
-    scalar_t result = 0;
-
-    // Temporary shared memory buffer used to reduce partial dot products.
-    extern __shared__ float shared_data[];
-    scalar_t* sharedDataCast = (scalar_t*)shared_data;
-    int numWarps = (blockSize + warpSize - 1) / warpSize;
-    scalar_t* reduction1 = sharedDataCast;
-    scalar_t* reduction2 = sharedDataCast + numWarps;
-
-    // Allocate shared memory for U1s and S2s for the current term.
-    scalar_t* U1s_shared = reduction2 + numWarps;
-    scalar_t* S2s_shared = U1s_shared + low_rank_dim * num_terms;
-
-    // Each thread loads one element of the U1s and S2s matrices into shared memory.
-    for (int idx = tid; idx < low_rank_dim * num_terms; idx += blockSize) {
-        int k = idx / num_terms;
-        int term = idx % num_terms;
-        U1s_shared[idx] = U1s[term][k][o];
-        S2s_shared[idx] = S2s[term][k][o];
+    if (outputIdx < output_dim && ty == 0) {
+        sharedBias[tx] = bias[outputIdx];
     }
 
-    __syncthreads();
-
-    // Loop over each term (num_terms is very small)
     for (int term = 0; term < num_terms; term++) {
-        // Loop over the low_rank (hidden) dimension.
-        for (int k = 0; k < low_rank_dim; k++) {
-            // Each thread computes a partial sum for the dot product over the input dimension.
-            scalar_t partial1 = 0;  // for the first branch (input * S1s)
-            scalar_t partial2 = 0;  // for the second branch (input * U2s)
-
-            // Tile the reduction over j (input dimension)
-            for (int i = tid; i < input_dim; i += blockSize) {
-                scalar_t in_val = input[b][i];
-                // multiply by S1s and U2s (each of shape [input_dim, low_rank_dim])
-                partial1 += in_val * S1s[term][i][k];
-                partial2 += in_val * U2s[term][i][k];
+        for (int stride = 0; stride < low_rank_dim; stride += TILE_DIM) {
+            // Load S2s and U1s into shared memory.
+            if (outputIdx < output_dim && stride + ty < low_rank_dim) {
+                sharedS2[ty * TILE_DIM + tx] = S2s[term][stride + ty][outputIdx];
+                sharedU1[ty * TILE_DIM + tx] = U1s[term][stride + ty][outputIdx];
+            } else {
+                sharedS2[ty * TILE_DIM + tx] = 0;
+                sharedU1[ty * TILE_DIM + tx] = 0;
             }
-
-            // Reduce within the warp (32 threads).
-            for (int offset = warpSize / 2; offset > 0; offset >>= 1) {
-                partial1 += __shfl_down_sync(0xFFFFFFFF, partial1, offset);
-                partial2 += __shfl_down_sync(0xFFFFFFFF, partial2, offset);
+            // Load intermediate results into shared memory.
+            if (batchIdx < batch_size && stride + tx < low_rank_dim) {
+                sharedInter1[ty * TILE_DIM + tx] = intermediate[0][term][batchIdx][stride + tx];
+                sharedInter2[ty * TILE_DIM + tx] = intermediate[1][term][batchIdx][stride + tx];
+            } else {
+                sharedInter1[ty * TILE_DIM + tx] = 0;
+                sharedInter2[ty * TILE_DIM + tx] = 0;
             }
             __syncthreads();
-            // Store the reduced values in shared memory.
-            if (tid % warpSize == 0) {
-                reduction1[tid / warpSize] = partial1;
-                reduction2[tid / warpSize] = partial2;
+            if (batchIdx < batch_size && outputIdx < output_dim) {
+                for (int i = 0; i < TILE_DIM; i++) {
+                    auto inter1_val = sharedInter1[ty * TILE_DIM + i];
+                    auto inter2_val = sharedInter2[ty * TILE_DIM + i];
+                    auto s2_val = sharedS2[i * TILE_DIM + tx];
+                    auto u1_val = sharedU1[i * TILE_DIM + tx];
+                    sum += inter1_val * u1_val + inter2_val * s2_val;
+                }
             }
             __syncthreads();
-
-            if (tid < numWarps) {
-                // Reduce the values in shared memory across all warps.
-                scalar_t inter1 = reduction1[tid];
-                scalar_t inter2 = reduction2[tid];
-                for (int offset = numWarps / 2; offset > 0; offset >>= 1) {
-                    inter1 += __shfl_down_sync(0xFFFFFFFF, inter1, offset);
-                    inter2 += __shfl_down_sync(0xFFFFFFFF, inter2, offset);
-                }
-
-                // Only one thread (tid==0) accumulates the contributions from this low_rank index.
-                if (tid == 0) {
-                    // First term: (input * S1s) dot U1s, second term: (input * U2s) dot S2s.
-                    int idx = k * num_terms + term;
-                    result += inter1 * U1s_shared[idx] + inter2 * S2s_shared[idx];
-                }
-            }
         }
     }
 
-    // Write out the result (only one thread writes)
-    if (tid == 0) {
-        // Scale by 1/(2*num_terms) and add the bias.
-        output[b][o] = bias[o] + result / (static_cast<scalar_t>(2 * num_terms));
+    if (batchIdx < batch_size && outputIdx < output_dim) {
+        // Write the result to the output tensor.
+        output[batchIdx][outputIdx] = sum / (static_cast<scalar_t>(2 * num_terms)) + sharedBias[tx];
     }
-}
-
-int64_t calcSharedMem(int64_t elementSize, int64_t blockSize, int64_t low_rank_dim, int64_t num_terms, int warpSize) {
-    // Calculate the required shared memory size based on the block size and dimensions.
-    int64_t numWarps = (blockSize + warpSize - 1) / warpSize;  // Number of warps in the block.
-    return (numWarps * 2 + low_rank_dim * num_terms * 2) * elementSize;
-}
-
-int findSuitableBlockSize(const cudaDeviceProp& prop, int64_t elementSize, int64_t low_rank_dim, int64_t num_terms) {
-    int maxThreadsPerBlock = prop.maxThreadsPerBlock;
-    int maxThreadsPerSM = prop.maxThreadsPerMultiProcessor;
-    int regsPerSM = prop.regsPerMultiprocessor;
-    int sharedMemPerSM = prop.sharedMemPerMultiprocessor;
-    int sharedMemPerBlock = prop.sharedMemPerBlock;
-    int maxBlocksPerSM = prop.maxBlocksPerMultiProcessor;
-
-    const int desiredBlocksPerSM = 2;
-    // This value has been retrieved through "--ptxas-options=-v"
-    // and is specific to the kernel and device but its a good starting point.
-    const int registersPerThread = 45;
-
-    // Candidate selection variables.
-    int idealBlockSize = 32;
-    int minDiff = maxThreadsPerSM;  // Initialize with the maximum possible difference.
-    int bestTotalThreads = 0;
-
-    // Evaluate candidate block sizes (from 32 up to maxThreadsPerBlock, stepping by 32).
-    for (int blockSize = 32; blockSize <= std::min(maxThreadsPerBlock, 1024); blockSize *= 2) {
-        // 1. Calculate register usage and how many blocks can be resident by registers.
-        int registersUsedPerBlock = blockSize * registersPerThread;
-        int blocksByRegs = (registersUsedPerBlock > 0) ? (regsPerSM / registersUsedPerBlock) : 0;
-
-        // 2. Calculate shared memory usage and how many blocks can be resident by shared memory.
-        int sharedMemUsedPerBlock = calcSharedMem(elementSize, blockSize, low_rank_dim, num_terms, prop.warpSize);
-        // Check if the shared memory usage exceeds the maximum allowed per block.
-        if (sharedMemUsedPerBlock > sharedMemPerBlock) {
-            continue;  // Skip this block size if it exceeds the limit.
-        }
-        int blocksBySharedMem = (sharedMemUsedPerBlock > 0) ? (sharedMemPerSM / sharedMemUsedPerBlock) : 0;
-
-        // 3. Derived hardware limit: the number of blocks is also limited by the maximum threads per SM.
-        int blocksByThreads = maxThreadsPerSM / blockSize;
-
-        // The resident blocks for this candidate is the minimum of all constraints.
-        int residentBlocks = std::min({blocksByRegs, blocksBySharedMem, maxBlocksPerSM, blocksByThreads});
-
-        // Enforce the minimum desired resident blocks per SM.
-        if (residentBlocks < desiredBlocksPerSM) {
-            continue;
-        }
-
-        // Total resident threads for this candidate.
-        int totalThreads = residentBlocks * blockSize;
-        // Calculate the difference from the maximum threads per SM.
-        int diff = maxThreadsPerSM - totalThreads;
-
-        // Selection criteria:
-        // Prefer the candidate that minimizes the difference.
-        // If two candidates are similar (same difference), prefer the one with a higher blockSize.
-        if (diff <= minDiff) {
-            minDiff = diff;
-            idealBlockSize = blockSize;
-            bestTotalThreads = totalThreads;
-        }
-    }
-
-    std::cout << "Ideal Block Size (1D): " << idealBlockSize << std::endl;
-    std::cout << "Resident Threads per SM: " << bestTotalThreads << " (out of " << maxThreadsPerSM << " available)" << std::endl;
-
-    return idealBlockSize;
 }
 
 // Wrapper function that sets up grid dimensions, shared memory, and kernel launch.
@@ -189,35 +134,53 @@ torch::Tensor sketched_linear_forward_cuda(
     // Create output tensor.
     auto output = torch::zeros({batch_size, output_dim}, input.options());
 
-    // Query current GPU properties.
-    int device = input.device().index();
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, device);
-    int chosenBlockSize = findSuitableBlockSize(prop, input.element_size(), low_rank_dim, num_terms);
-    // int chosenBlockSize = 512;
+    dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, num_terms);
+    dim3 block(TILE_DIM, TILE_DIM);
+    int shared_mem_size = 3 * TILE_DIM * TILE_DIM * input.element_size();
 
-    // Define grid dimensions: one block per (batch, output) pair.
-    dim3 grid(batch_size, output_dim);
-    dim3 block(chosenBlockSize);
-
-    // Allocate shared memory: one float per thread.
-    size_t shared_mem_size = calcSharedMem(input.element_size(), chosenBlockSize, low_rank_dim, num_terms, prop.warpSize);
-
-    // Launch the kernel using AT_DISPATCH_FLOATING_TYPES to handle different data types.
+    // allocate intermediate output tensor contigously
+    auto output_intermediate = torch::zeros({2, num_terms, batch_size, low_rank_dim}, input.options().memory_format(torch::MemoryFormat::Contiguous));
     AT_DISPATCH_FLOATING_TYPES(
         input.scalar_type(),
-        "sketched_linear_forward_cuda",
+        "sklinear_forward_intermediate",
         ([&] {
-            sketched_linear_forward_kernel<scalar_t><<<grid, block, shared_mem_size>>>(
+            sklinear_forward_intermediate<scalar_t><<<grid, block, shared_mem_size>>>(
                 input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
                 S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
+                batch_size, input_dim, low_rank_dim);
+        }));
+
+    dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
+    dim3 block2(TILE_DIM, TILE_DIM);
+    int shared_mem_size2 = (4 * TILE_DIM * TILE_DIM + TILE_DIM) * input.element_size();
+
+    // Launch the kernel.
+    AT_DISPATCH_FLOATING_TYPES(
+        input.scalar_type(),
+        "sklinear_forward_output",
+        ([&] {
+            sklinear_forward_output<scalar_t><<<grid2, block2, shared_mem_size2>>>(
+                output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
                 S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 bias.packed_accessor32<scalar_t, 1, torch::RestrictPtrTraits>(),
                 output.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
                 batch_size, input_dim, num_terms, low_rank_dim, output_dim);
         }));
 
     return output;
+}
+
+std::vector<torch::Tensor> sketched_linear_backward_cuda(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& input,
+    const torch::Tensor& S1s,
+    const torch::Tensor& S2s,
+    const torch::Tensor& U1s,
+    const torch::Tensor& U2s) {
+    // raise not implemented error
+    throw std::runtime_error("sketched_linear_backward_cuda not implemented yet.");
+    return std::vector<torch::Tensor>{};
 }

@@ -1,4 +1,5 @@
 import math
+import warnings
 from typing import Any, Tuple
 
 import torch
@@ -7,6 +8,7 @@ from torch.autograd import Function
 from torch.nn import init
 
 from panther.sketch import scaled_sign_sketch as gen_U
+from panther.utils.compatibility import has_tensor_core_support
 from pawX import sketched_linear_backward, sketched_linear_forward
 
 
@@ -20,15 +22,16 @@ class SketchedLinearFunction(Function):
         U1s: torch.Tensor,
         U2s: torch.Tensor,
         bias: torch.Tensor,
+        use_tensor_core: bool = False,
     ):
-        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias)
+        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, use_tensor_core)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
     # output is the output of the forward().
     def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
-        input, S1s, S2s, U1s, U2s, bias = inputs
-        ctx.save_for_backward(input, S1s, S2s, U1s, U2s, bias)
+        input, S1s, S2s, U1s, U2s, _, _ = inputs
+        ctx.save_for_backward(input, S1s, S2s, U1s, U2s)
 
     @staticmethod
     def backward(ctx: Any, *grad_output: Any) -> Any:
@@ -36,7 +39,7 @@ class SketchedLinearFunction(Function):
         # dl/dS1_i = g h_in^T U2_i^T / 2 * l
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
-        input, S1s, S2s, U1s, U2s, _ = ctx.saved_tensors
+        input, S1s, S2s, U1s, U2s = ctx.saved_tensors
         grads = sketched_linear_backward(
             grad_output=grad_output[0],
             input=input,
@@ -52,6 +55,7 @@ class SketchedLinearFunction(Function):
             None,  # U1s
             None,  # U2s
             grads[3],  # bias
+            None,  # boolean for use_tensor_core
         )
 
 
@@ -65,6 +69,17 @@ class SKLinear(nn.Module):
     S2s: torch.Tensor
     U1s: torch.Tensor
     U2s: torch.Tensor
+    WARNING_MSG_TC = (
+        "Tensor Core not utilized. Ensure 'in_features', 'out_features', "
+        "and 'low_rank' are multiples of 16 (current: {}, {}, {})."
+    )
+    WARNING_MSG_BATCH = (
+        "Batch size {} is not a multiple of 16. Tensor Core optimizations disabled."
+    )
+    WARNING_MSG_FC = (
+        "The sketching layer uses more parameters than a fully connected layer. "
+        "Consider reducing 'num_terms' or 'low_rank' for efficiency."
+    )
 
     def __init__(
         self,
@@ -77,17 +92,30 @@ class SKLinear(nn.Module):
         dtype=None,
         device=None,
     ):
+        if (
+            2 * num_terms * low_rank * (out_features + in_features)
+            > out_features * in_features
+        ):
+            warnings.warn(
+                self.WARNING_MSG_FC,
+                category=UserWarning,
+                stacklevel=2,
+            )
+
+        self.will_use_tensor_core = has_tensor_core_support()
+        if self.will_use_tensor_core and (
+            in_features % 16 != 0 or out_features % 16 != 0 or low_rank % 16 != 0
+        ):
+            # Log warning to user
+            self.will_use_tensor_core = False
+            warnings.warn(
+                self.WARNING_MSG_TC.format(in_features, out_features, low_rank),
+                UserWarning,
+                stacklevel=2,
+            )
+
         factory_kwargs = {"dtype": dtype, "device": device}
         super(SKLinear, self).__init__()
-
-        # if (
-        #     2 * num_terms * low_rank * (out_features + in_features)
-        #     > out_features * in_features
-        # ):
-        #     raise ValueError(
-        #         "The number of parameters in the sketching layer is larger "
-        #         + "than the number of parameters in the fully connected layer."
-        #     )
 
         self.num_terms = num_terms
         self.low_rank = low_rank
@@ -99,24 +127,24 @@ class SKLinear(nn.Module):
             "U1s",
             torch.stack(
                 [
-                    gen_U(low_rank, out_features, **factory_kwargs)
+                    gen_U(self.low_rank, self.out_features, **factory_kwargs)
                     for _ in range(num_terms)
                 ]
-            ),
+            ).contiguous(),
         )  # kxd1
         self.register_buffer(
             "U2s",
             torch.stack(
                 [
-                    gen_U(low_rank, in_features, **factory_kwargs).T
+                    gen_U(self.low_rank, self.in_features, **factory_kwargs).T
                     for _ in range(num_terms)
                 ]
-            ),
+            ).contiguous(),
         )  # d2xk
 
         # W is used to only initialize S
         if W_init is None:
-            W = torch.empty(in_features, out_features, **factory_kwargs)
+            W = torch.empty(self.in_features, self.out_features, **factory_kwargs)
             init.kaiming_uniform_(W, a=math.sqrt(5))
         else:
             W = W_init.T.detach().clone()
@@ -124,36 +152,65 @@ class SKLinear(nn.Module):
         # S1s and S2s are precomputed but not updated in the backward pass
         self.S1s = nn.Parameter(
             torch.stack([torch.matmul(W, self.U1s[i].T) for i in range(num_terms)])
-        )  # d2xk
+        ).contiguous()  # d2xk
         self.S2s = nn.Parameter(
             torch.stack([torch.matmul(self.U2s[i].T, W) for i in range(num_terms)])
-        )  # kxd1
+        ).contiguous()  # kxd1
 
         # Bias term initialized with a small standard deviation
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+            self.bias = nn.Parameter(
+                torch.empty(self.out_features, **factory_kwargs)
+            ).contiguous()
             fan_in, _ = init._calculate_fan_in_and_fan_out(W)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             init.uniform_(self.bias, -bound, bound)
         else:
             self.register_parameter("bias", None)
 
-    def forward(self, h_in):
+    def forward(self, h_in: torch.Tensor) -> torch.Tensor:
+        batch_size = h_in.shape[0]
+        use_tensor_core = self.will_use_tensor_core
+        if h_in.is_cuda and use_tensor_core and (batch_size % 16 != 0):
+            # Log warning to user
+            use_tensor_core = False
+            warnings.warn(
+                self.WARNING_MSG_BATCH.format(batch_size),
+                UserWarning,
+                stacklevel=2,
+            )
         return SketchedLinearFunction.apply(
-            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias
+            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, use_tensor_core
         )
 
 
 if __name__ == "__main__":
+    in_features = 16
+    out_features = 16
+    num_terms = 1
+    low_rank = 16
+    batch_size = 16
     linear = SKLinear(
-        in_features=10,
-        out_features=10,
-        num_terms=1,
-        low_rank=1,
+        in_features=in_features,
+        out_features=out_features,
+        num_terms=num_terms,
+        low_rank=low_rank,
         dtype=torch.float32,
         device=torch.device("cuda:0"),
     )
-    input = torch.randn(1, 10, dtype=torch.float32, device=torch.device("cuda:0"))
+    input = torch.randn(
+        batch_size, in_features, dtype=torch.float32, device=torch.device("cuda:0")
+    )
     output = linear(input)
-    print(output)
-    print(output.shape)
+    output_expected = torch.zeros(
+        batch_size, out_features, dtype=torch.float32, device=torch.device("cuda:0")
+    )
+    for i in range(num_terms):
+        output_expected += input.mm(linear.S1s[i]).mm(linear.U1s[i]) + input.mm(
+            linear.U2s[i]
+        ).mm(linear.S2s[i])
+    output_expected /= 2 * num_terms
+    output_expected += linear.bias
+    assert torch.allclose(
+        output, output_expected, atol=1
+    ), f"\n{output[0]}\n{output_expected[0]}"
