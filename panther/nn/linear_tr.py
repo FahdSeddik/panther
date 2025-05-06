@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.autograd import Function
 from torch.nn import init
 import triton
-from panther.random import scaled_sign_sketch as gen_U
+from panther.sketch import scaled_sign_sketch as gen_U
 from torch.library import triton_op, wrap_triton
 from .linear_kernels import (
     first_pass_kernel,
