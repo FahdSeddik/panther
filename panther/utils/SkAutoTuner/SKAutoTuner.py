@@ -223,52 +223,43 @@ class SKAutoTuner:
             )
             
             if copy_weights:
-                # Initialize S1s and S2s based on original weights
-                kernels = original_layer.weight.detach().clone()
-                # Convert to shape expected by SKConv2d (in_channels, kernel_h, kernel_w, out_channels)
-                kernels = kernels.permute(1, 2, 3, 0).contiguous()
+                kernels = original_layer.weight.data.clone()
+                kernels = kernels.permute(1, 2, 3, 0)
                 
-                # Reshape to matrix form for matrix multiplication
-                # From (in_c, kernel_h, kernel_w, out_c) to (in_c*kernel_h*kernel_w, out_c)
-                kernels_reshaped = kernels.reshape(-1, kernels.shape[-1])
-                
-                for i in range(sketched_layer.num_terms):
-                    # Check dimensions for S1s computation
-                    if sketched_layer.U1s[i].shape[1] != kernels_reshaped.shape[1]:
-                        if self.verbose:
-                            print(f"Warning: Shape mismatch for U1s[{i}]. Expected second dim {kernels_reshaped.shape[1]}, got {sketched_layer.U1s[i].shape[1]}")
-                        continue
-                        
-                    # Calculate S1s (d2 × k) from kernels (d2 × d1) and U1s (k × d1)
-                    sketched_layer.S1s.data[i] = torch.matmul(
-                        kernels_reshaped,  # (in_c*kernel_h*kernel_w, out_c)
-                        sketched_layer.U1s[i].T  # (out_c, low_rank)
-                    )  # Result: (in_c*kernel_h*kernel_w, low_rank)
-                    
-                    # Check dimensions for S2s computation
-                    expected_u2_shape = (sketched_layer.low_rank * sketched_layer.kernel_size[0] * sketched_layer.kernel_size[1], 
-                                        kernels_reshaped.shape[0])
-                    if sketched_layer.U2s[i].shape != expected_u2_shape:
-                        if self.verbose:
-                            print(f"Warning: Shape mismatch for U2s[{i}]. Expected {expected_u2_shape}, got {sketched_layer.U2s[i].shape}")
-                        continue
-                        
-                    # Calculate S2s from U2s and kernels
-                    S2_temp = torch.matmul(
-                        sketched_layer.U2s[i],  # (low_rank*kernel_h*kernel_w, in_c*kernel_h*kernel_w)
-                        kernels_reshaped  # (in_c*kernel_h*kernel_w, out_c)
-                    )  # Result: (low_rank*kernel_h*kernel_w, out_c)
-                    
-                    # Reshape to match S2s tensor shape (low_rank, -1)
-                    try:
-                        sketched_layer.S2s.data[i] = S2_temp.reshape(sketched_layer.low_rank, -1)
-                    except RuntimeError:
-                        if self.verbose:
-                            print(f"Warning: Failed to reshape S2_temp from {S2_temp.shape} to {(sketched_layer.low_rank, -1)}")
-                
-                # Copy bias if present
-                if original_layer.bias is not None and sketched_layer.bias is not None:
-                    sketched_layer.bias.data.copy_(original_layer.bias.data)
+                def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
+                    """Computes mode-4 matricization (unfolding along the last dimension)."""
+                    return tensor.reshape(-1, tensor.shape[-1])  # (I4, I1 * I2 * I3)
+
+                sketched_layer.S1s = nn.Parameter(
+                    torch.stack(
+                        [
+                            mode4_unfold(torch.matmul(kernels, sketched_layer.U1s[i].T))
+                            for i in range(params["num_terms"])
+                        ]
+                    )
+                )  # d2xk
+                K_mat4 = kernels.view(
+                    original_layer.in_channels * sketched_layer.kernel_size[0] * sketched_layer.kernel_size[1],
+                    original_layer.out_channels,
+                )
+                sketched_layer.S2s = nn.Parameter(
+                    torch.stack(
+                        [
+                            mode4_unfold(
+                                torch.matmul(sketched_layer.U2s[i], K_mat4).view(
+                                    params["low_rank"], *sketched_layer.kernel_size, original_layer.out_channels
+                                )
+                            )
+                            for i in range(params["num_terms"])
+                        ]
+                    )
+                )
+                if original_layer.bias is not None:
+                    sketched_layer.bias = nn.Parameter(original_layer.bias.data.clone())
+                else:
+                    raise ValueError(
+                        "Layer must have a bias parameter, not implemented yet to not have it sketchedconv2d"
+                    )
 
         elif isinstance(original_layer, nn.MultiheadAttention):
             # Create a new sketched attention layer
