@@ -3,13 +3,13 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
-
-# import torch.nn.functional as F
+import torch.nn.functional as F
 from torch.autograd import Function
 from torch.nn import init
 
 from panther.sketch import scaled_sign_sketch as gen_U
-from pawX import sketched_conv2d_forward
+
+# from pawX import sketched_conv2d_forward
 
 
 def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
@@ -17,23 +17,35 @@ def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
     return tensor.reshape(-1, tensor.shape[-1])  # (I4, I1 * I2 * I3)
 
 
-# def sketched_conv2d_forward(
-#     x: torch.Tensor,
-#     S1s: torch.Tensor,
-#     U1s: torch.Tensor,
-#     stride: Tuple[int, int],
-#     padding: Tuple[int, int],
-#     kernel_size: Tuple[int, int],
-#     bias: torch.Tensor,
-# ) -> torch.Tensor:
-#     B, C, H, W = x.shape
-#     L, K, D1 = U1s.shape
-#     Kh, Kw = kernel_size
-#     H_out = (H + 2 * padding[0] - Kh) // stride[0] + 1
-#     W_out = (W + 2 * padding[1] - Kw) // stride[1] + 1
-#     temp = F.conv2d(x, S1s, stride=stride, padding=padding).view(B, L, K, H_out, W_out)
-#     out = torch.einsum("blkhw,lko->blhwo", temp, U1s).mean(dim=1) + bias
-#     return out.view(B, H_out, W_out, D1).permute(0, 3, 1, 2)
+def sketched_conv2d_forward(
+    x: torch.Tensor,
+    S1s: torch.Tensor,
+    S2s: torch.Tensor,
+    U1s: torch.Tensor,
+    U2s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    bias: torch.Tensor,
+) -> torch.Tensor:
+    B, C, H, W = x.shape
+    L, K, D1 = U1s.shape
+    Kh, Kw = kernel_size
+    H_out = (H + 2 * padding[0] - Kh) // stride[0] + 1
+    W_out = (W + 2 * padding[1] - Kw) // stride[1] + 1
+    temp = F.conv2d(x, S1s, stride=stride, padding=padding).view(B, L, K, H_out, W_out)
+    temp_reshape = temp.view(B, L * K, H_out * W_out)
+    U1s_view = U1s.view(L * K, D1).transpose(0, 1)
+    out1 = torch.bmm(U1s_view.expand(B, D1, L * K), temp_reshape)
+    out1 = out1.view(B, D1, H_out, W_out)
+
+    r = K * Kh * Kw
+    temp = F.conv2d(x, U2s, stride=stride, padding=padding).view(B, L, r, H_out, W_out)
+    temp_reshape = temp.view(B, L * r, H_out * W_out)
+    S2s_view = S2s.view(L * r, D1).transpose(0, 1)
+    out2 = torch.bmm(S2s_view.expand(B, D1, L * r), temp_reshape)
+    out2 = out2.view(B, D1, H_out, W_out)
+    return (out1 + out2).div(2 * L) + bias.view(1, D1, 1, 1)
 
 
 class SketchedConv2dFunction(Function):
@@ -43,13 +55,17 @@ class SketchedConv2dFunction(Function):
         ctx: Any,
         x: torch.Tensor,
         S1s: torch.Tensor,
+        S2s: torch.Tensor,
         U1s: torch.Tensor,
+        U2s: torch.Tensor,
         stride: Tuple[int, int],
         padding: Tuple[int, int],
         kernel_size: Tuple[int, int],
         bias: torch.Tensor,
     ):
-        return sketched_conv2d_forward(x, S1s, U1s, stride, padding, kernel_size, bias)
+        return sketched_conv2d_forward(
+            x, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
+        )
 
 
 class SKConv2d(nn.Module):
@@ -59,7 +75,9 @@ class SKConv2d(nn.Module):
     num_terms: int
     low_rank: int
     S1s: torch.Tensor
+    S2s: torch.Tensor
     U1s: torch.Tensor
+    U2s: torch.Tensor
 
     def __init__(
         self,
@@ -112,10 +130,23 @@ class SKConv2d(nn.Module):
             torch.stack(
                 [
                     gen_U(low_rank, out_channels, **factory_kwargs)
-                    for _ in range(num_terms * 2)
+                    for _ in range(num_terms)
                 ]
             ),
         )  # kxd1
+        self.register_buffer(
+            "U2s",
+            torch.stack(
+                [
+                    gen_U(
+                        low_rank * self.kernel_size[0] * self.kernel_size[1],
+                        in_channels * self.kernel_size[0] * self.kernel_size[1],
+                        **factory_kwargs,
+                    )
+                    for _ in range(num_terms)
+                ]
+            ),
+        )  # k h w x d2 h w
 
         if layer is None:
             kernels = torch.empty(
@@ -154,17 +185,38 @@ class SKConv2d(nn.Module):
             torch.stack(
                 [
                     mode4_unfold(torch.matmul(kernels, self.U1s[i].T))
-                    for i in range(num_terms * 2)
+                    for i in range(num_terms)
                 ]
             )
             .permute(0, 2, 1)
             .reshape(
-                self.num_terms * 2 * self.low_rank,
+                self.num_terms * self.low_rank,
                 self.in_channels,
                 self.kernel_size[0],
                 self.kernel_size[1],
             )
         )  # d2xk
+        K_mat4 = kernels.view(
+            in_channels * self.kernel_size[0] * self.kernel_size[1], out_channels
+        )
+        self.S2s = nn.Parameter(
+            torch.stack(
+                [
+                    mode4_unfold(
+                        torch.matmul(self.U2s[i], K_mat4).view(
+                            low_rank, *self.kernel_size, out_channels
+                        )
+                    )
+                    for i in range(num_terms)
+                ]
+            )
+        )
+        self.U2s = self.U2s.reshape(
+            self.num_terms * self.low_rank * self.kernel_size[0] * self.kernel_size[1],
+            self.in_channels,
+            self.kernel_size[0],
+            self.kernel_size[1],
+        )
 
     @staticmethod
     def fromTorch(layer: nn.Conv2d, num_terms: int, low_rank: int) -> "SKConv2d":
@@ -187,7 +239,9 @@ class SKConv2d(nn.Module):
         return SketchedConv2dFunction.apply(
             x,
             self.S1s,
+            self.S2s,
             self.U1s,
+            self.U2s,
             self.stride,
             self.padding,
             self.kernel_size,
