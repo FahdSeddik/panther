@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Model Visualization</title>
+    <style>
+        {{CSS_CONTENT}}
+    </style>
+</head>
+<body>
+    <h1>Interactive Model Visualization</h1>
+    <div class="controls">
+        <button id="expandAll">Expand All</button>
+        <button id="collapseAll">Collapse All</button>
+        <input type="text" id="searchInput" placeholder="Search modules...">
+        <button id="clearSearch">Clear</button>
+        <button id="exportJSON" class="export-btn">Export Model Info (JSON)</button>
+    </div>
+    <div class="visualization-container" id="visualization">
+        {{SVG_CONTENT}}
+        <div class="zoom-controls">
+            <button class="zoom-button" id="zoomIn">+</button>
+            <button class="zoom-button" id="zoomOut">-</button>
+            <button class="zoom-button" id="resetZoom">Reset</button>
+        </div>
+    </div>
+    <div class="info-panel" id="infoPanel">
+        <h3>Module Information</h3>
+        <p>Click on a module in the visualization to view its details</p>
+    </div>
+    <div class="copy-notification" id="copyNotification">Module name copied to clipboard!</div>
+    <div class="node-menu" id="nodeMenu">
+        <div class="menu-item" id="copyName">Copy Module Name</div>
+        <div class="menu-item" id="showDetails">Show Details</div>
+        <div class="menu-item" id="highlightPath">Highlight Path</div>
+    </div>
+
+    <script>
+        // Module information from Python
+        const moduleInfo = {{MODULE_INFO}};
+        
+        {{JS_CONTENT}}
+    </script>
+</body>
+</html>
