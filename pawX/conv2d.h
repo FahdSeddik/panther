@@ -2,15 +2,13 @@
 
 #include <torch/extension.h>
 
-std::vector<torch::Tensor> sketched_conv2d_forward(const torch::Tensor &x,
-                                                   const torch::Tensor &S1s,
-                                                   const torch::Tensor &S2s,
-                                                   const torch::Tensor &U1s,
-                                                   const torch::Tensor &U2s,
-                                                   const std::vector<int64_t> &stride,
-                                                   const std::vector<int64_t> &padding,
-                                                   const std::vector<int64_t> &kernel_size,
-                                                   const torch::Tensor &bias);
+torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
+                                      const torch::Tensor &S1s,
+                                      const torch::Tensor &U1s,
+                                      const std::vector<int64_t> &stride,
+                                      const std::vector<int64_t> &padding,
+                                      const std::vector<int64_t> &kernel_size,
+                                      const torch::Tensor &bias);
 
 torch::autograd::tensor_list sketched_conv2d_backward(const torch::Tensor &x_windows,
                                                       const torch::Tensor &S1s,
