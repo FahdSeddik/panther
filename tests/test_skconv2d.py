@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 from panther.nn import SKConv2d
-from pawX import sketched_conv2d_backward, sketched_conv2d_forward
+from panther.nn.conv2d import sketched_conv2d_backward, sketched_conv2d_forward
 
 torch.manual_seed(42)
 
@@ -16,6 +16,7 @@ STRIDE = (1, 1)
 PADDING = (1, 1)
 LOW_RANK_DIM = 2
 NUM_TERMS = 3
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class MockCtx:
@@ -63,14 +64,11 @@ def test_tensors():
         num_terms=NUM_TERMS,
         stride=STRIDE,
         padding=PADDING,
+        device=DEVICE,
     )
 
     x = torch.randn(
-        BATCH_SIZE,
-        IN_CHANNELS,
-        HEIGHT,
-        WIDTH,
-        requires_grad=True,
+        BATCH_SIZE, IN_CHANNELS, HEIGHT, WIDTH, requires_grad=True, device=DEVICE
     )
     S1s = layer.S1s.clone().detach().requires_grad_(True)
     S2s = layer.S2s.clone().detach().requires_grad_(True)
@@ -123,13 +121,17 @@ def test_output_correctness(
         num_terms=num_terms,
         stride=stride,
         padding=padding,
+        device=DEVICE,
     )
-    x = torch.randn(batch_size, in_channels, height, width, requires_grad=True)
+    x = torch.randn(
+        batch_size, in_channels, height, width, requires_grad=True, device=DEVICE
+    )
     outputmodel = layer(x)
     S1s = (
         layer.S1s.clone()
         .detach()
-        .reshape(num_terms, in_channels, kernel_size[0], kernel_size[1], low_rank_dim)
+        .reshape(num_terms, low_rank_dim, in_channels, kernel_size[0], kernel_size[1])
+        .permute(0, 2, 3, 4, 1)
     )
     S2s = (
         layer.S2s.clone()
@@ -137,7 +139,15 @@ def test_output_correctness(
         .reshape(num_terms, low_rank_dim, kernel_size[0], kernel_size[1], out_channels)
     )
     U1s = layer.U1s.clone().detach()
-    U2s = layer.U2s.clone().detach()
+    U2s = (
+        layer.U2s.clone()
+        .detach()
+        .reshape(
+            num_terms,
+            low_rank_dim * kernel_size[0] * kernel_size[1],
+            in_channels * kernel_size[0] * kernel_size[1],
+        )
+    )
     bias = layer.bias.clone().detach()
     # S1s x4 U1s in code
     mat1 = torch.einsum("iabcd,ide->iabce", S1s, U1s)
@@ -156,7 +166,7 @@ def test_output_correctness(
     mat2 = mat2.permute(
         0, 4, 1, 2, 3
     )  # Shape: (num_terms, out_channels, in_channels, height, width)
-    outputtruth = torch.zeros_like(outputmodel)
+    outputtruth = torch.zeros_like(outputmodel, device=DEVICE)
     for i in range(num_terms):
         outputtruth += F.conv2d(
             x,
@@ -218,14 +228,25 @@ def test_forward_gpu_vs_cpu(test_tensors):
         test_tensors
     )
 
-    out_cpu, _ = sketched_conv2d_forward(
-        input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
-    )
-    args_gpu = [x.cuda() for x in (input_tensor, S1s, S2s, U1s, U2s)]
-    out_gpu, _ = sketched_conv2d_forward(
-        *args_gpu, stride, padding, kernel_size, bias.cuda()
-    )
-    assert torch.allclose(out_cpu, out_gpu.cpu(), atol=1e-3, rtol=1e-3)
+    if DEVICE.type == "cuda":
+        out_cpu, _ = sketched_conv2d_forward(
+            input_tensor.cpu(),
+            S1s.cpu(),
+            S2s.cpu(),
+            U1s.cpu(),
+            U2s.cpu(),
+            stride,
+            padding,
+            kernel_size,
+            bias.cpu(),
+        )
+        args_gpu = [x.cuda() for x in (input_tensor, S1s, S2s, U1s, U2s)]
+        out_gpu, _ = sketched_conv2d_forward(
+            *args_gpu, stride, padding, kernel_size, bias.cuda()
+        )
+        assert torch.allclose(out_cpu, out_gpu.cpu(), atol=1e-3, rtol=1e-3)
+    else:
+        pytest.skip("CUDA not available, test skipped.")
 
 
 def test_backward_vs_autograd(test_tensors):
@@ -246,7 +267,9 @@ def test_backward_vs_autograd(test_tensors):
         input_tensor, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
     )
 
-    grad_output = torch.randn_like(out)  # Gradient of the output (random for testing)
+    grad_output = torch.randn_like(
+        out, device=DEVICE
+    )  # Gradient of the output (random for testing)
 
     # Autograd gradients
     autograd_grads = torch.autograd.grad(

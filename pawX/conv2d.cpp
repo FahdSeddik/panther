@@ -15,34 +15,20 @@ std::vector<torch::Tensor> sketched_conv2d_forward(const torch::Tensor &x,
                                                    const std::vector<int64_t> &padding,
                                                    const std::vector<int64_t> &kernel_size,
                                                    const torch::Tensor &bias) {
-    // Save shapes
     int64_t B = x.size(0), C = x.size(1), H = x.size(2), W = x.size(3);
-    int64_t L = U1s.size(0), out_channels = U1s.size(2);
+    int64_t L = U1s.size(0), K = U1s.size(1), D1 = U1s.size(2);
+    int64_t Kh = kernel_size[0], Kw = kernel_size[1];
+    int64_t H_out = (H - Kh + 2 * padding[0]) / stride[0] + 1;
+    int64_t W_out = (W - Kw + 2 * padding[1]) / stride[1] + 1;
 
-    // Optional padding
-    torch::Tensor x_pad = x;
-    if (padding[0] > 0 || padding[1] > 0) {
-        x_pad = torch::constant_pad_nd(x, {padding[1], padding[1], padding[0], padding[0]});
-    }
+    auto temp = torch::nn::functional::conv2d(x, S1s, torch::nn::functional::Conv2dFuncOptions().stride(stride).padding(padding)).view({B, L, K, H_out, W_out});
+    auto out1 = torch::einsum("blkhw,lko->blhwo", {temp, U1s});
 
-    // Compute output spatial dims
-    int64_t H_out = (x_pad.size(2) - kernel_size[0]) / stride[0] + 1;
-    int64_t W_out = (x_pad.size(3) - kernel_size[1]) / stride[1] + 1;
-
-    // Extract sliding windows: [B, H_out*W_out, C*Kh*Kw]
-    auto x_windows = x_pad.as_strided(
-                              {x_pad.size(0), x_pad.size(1), H_out, W_out, kernel_size[0], kernel_size[1]},
-                              {x_pad.stride(0), x_pad.stride(1), x_pad.stride(2) * stride[0], x_pad.stride(3) * stride[1], x_pad.stride(2), x_pad.stride(3)})
-                         .permute({0, 2, 3, 1, 4, 5})
-                         .reshape({B, -1, kernel_size[0] * kernel_size[1] * C});
-
-    // Compute sketched conv terms
-    auto out1 = torch::einsum("bnd,tdr,tro->bno", {x_windows, S1s, U1s});
-    auto out2 = torch::einsum("bnd,tdr,tro->bno", {x_windows, U2s.transpose(1, 2), S2s});
-    auto out = (out1 + out2).div(2.0f * L) + bias;
-
-    // Reshape to NCHW
-    return {out.view({B, H_out, W_out, out_channels}).permute({0, 3, 1, 2}), x_windows};
+    int64_t r = K * Kh * Kw;
+    temp = torch::nn::functional::conv2d(x, U2s, torch::nn::functional::Conv2dFuncOptions().stride(stride).padding(padding)).view({B, L, r, H_out, W_out});
+    auto out2 = torch::einsum("blrhw,lro->blhwo", {temp, S2s});
+    auto out = (out1 + out2).mean(1).div(2.0f) + bias;
+    return {out.view({B, H_out, W_out, D1}).permute({0, 3, 1, 2}), x};
 }
 
 // Backward function for sketched convolution
