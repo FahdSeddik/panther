@@ -12,7 +12,8 @@ torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
                                       const std::vector<int64_t> &stride,
                                       const std::vector<int64_t> &padding,
                                       const std::vector<int64_t> &kernel_size,
-                                      const torch::Tensor &bias) {
+                                      const torch::Tensor &bias)
+{
     int64_t B = x.size(0), C = x.size(1), H = x.size(2), W = x.size(3);
     int64_t L = U1s.size(0), K = U1s.size(1), D1 = U1s.size(2);
     int64_t Kh = kernel_size[0], Kw = kernel_size[1];
@@ -20,8 +21,23 @@ torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
     int64_t W_out = (W - Kw + 2 * padding[1]) / stride[1] + 1;
 
     auto temp = torch::nn::functional::conv2d(x, S1s, torch::nn::functional::Conv2dFuncOptions().stride(stride).padding(padding)).view({B, L, K, H_out, W_out});
-    auto out = torch::einsum("blkhw,lko->blhwo", {temp, U1s}).mean(1) + bias;
-    return out.view({B, H_out, W_out, D1}).permute({0, 3, 1, 2});
+
+    auto temp_reshaped = temp.view({B, L * K, H_out * W_out});
+
+    // U1s: [L, K, D1] → [LK, D1] → transpose to [D1, LK] for matmul
+    auto U1s_T = U1s.view({L * K, D1}).transpose(0, 1); // [D1, LK]
+
+    // Do batched matrix multiplication
+    // We want: [B, D1, H*W] = [B, D1, LK] x [B, LK, H*W]
+    auto out = torch::bmm(U1s_T.expand({B, D1, L * K}), temp_reshaped); // [B, D1, H*W]
+
+    // Reshape to [B, D1, H, W]
+    out = out.view({B, D1, H_out, W_out}) / L;
+
+    // Add bias directly (already in target layout)
+    out.add_(bias.view({1, D1, 1, 1}));
+
+    return out.contiguous();
 }
 
 // Backward function for sketched convolution
@@ -34,7 +50,8 @@ torch::autograd::tensor_list sketched_conv2d_backward(const torch::Tensor &input
                                                       const std::vector<int64_t> &padding,
                                                       const std::vector<int64_t> &kernel_size,
                                                       const std::vector<int64_t> &in_shape,
-                                                      const torch::Tensor &grad_out) {
+                                                      const torch::Tensor &grad_out)
+{
     int64_t num_terms = S2s.size(0);
     int64_t hout = grad_out.size(2), wout = grad_out.size(3);
 
