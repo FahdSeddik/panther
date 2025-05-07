@@ -7,7 +7,7 @@ from torch.autograd import Function
 from torch.nn import init
 
 from panther.sketch import scaled_sign_sketch as gen_U
-from pawX import sketched_conv2d_backward, sketched_conv2d_forward
+from pawX import sketched_conv2d_forward
 
 
 def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
@@ -30,40 +30,9 @@ class SketchedConv2dFunction(Function):
         kernel_size: Tuple[int, int],
         bias: torch.Tensor,
     ):
-        out, x_windows = sketched_conv2d_forward(
+        return sketched_conv2d_forward(
             x, S1s, S2s, U1s, U2s, stride, padding, kernel_size, bias
-        )
-        ctx.save_for_backward(
-            x_windows,
-            S1s,
-            S2s,
-            U1s,
-            U2s,
-            torch.tensor(stride, dtype=torch.int64),
-            torch.tensor(padding, dtype=torch.int64),
-            torch.tensor(kernel_size, dtype=torch.int64),
-            torch.tensor([x.shape[2], x.shape[3]], dtype=torch.int64),
-        )
-        return out
-
-    @staticmethod
-    def backward(ctx: Any, *grad_output: Any) -> Any:
-        input, S1s, S2s, U1s, U2s, stride, padding, kernelSize, inshape = (
-            ctx.saved_tensors
-        )
-        gout, g_S1s, g_S2s, g_bias = sketched_conv2d_backward(
-            input,
-            S1s,
-            S2s,
-            U1s,
-            U2s,
-            (stride[0].item(), stride[1].item()),
-            (padding[0].item(), padding[1].item()),
-            (kernelSize[0].item(), kernelSize[1].item()),
-            (inshape[0].item(), inshape[1].item()),
-            grad_output[0],
-        )
-        return (gout, g_S1s, g_S2s, None, None, None, None, None, g_bias)
+        )[0]
 
 
 class SKConv2d(nn.Module):
@@ -245,65 +214,3 @@ class SKConv2d(nn.Module):
             self.kernel_size,
             self.bias,
         )
-
-
-def make_sketched_conv2d(
-    layer: nn.Conv2d,
-    num_terms: int = 6,
-    low_rank: int = 8,
-) -> SKConv2d:
-    """Creates a SKConv2d layer from a given layer."""
-    assert isinstance(layer, nn.Conv2d), "Layer must be a Conv2d layer"
-    assert layer.groups == 1, "Groups must be 1 for SKConv2d"
-    assert layer.dilation == (1, 1), "Dilation must be (1, 1) for SKConv2d"
-
-    sketched_conv = SKConv2d(
-        in_channels=layer.in_channels,
-        out_channels=layer.out_channels,
-        kernel_size=layer.kernel_size,
-        stride=layer.stride,
-        padding=layer.padding,
-        # bias=layer.bias is not None,
-        num_terms=num_terms,
-        low_rank=low_rank,
-    )
-
-    kernels = layer.weight.data.clone()
-    kernels = kernels.permute(1, 2, 3, 0)
-
-    def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
-        """Computes mode-4 matricization (unfolding along the last dimension)."""
-        return tensor.reshape(-1, tensor.shape[-1])  # (I4, I1 * I2 * I3)
-
-    sketched_conv.S1s = nn.Parameter(
-        torch.stack(
-            [
-                mode4_unfold(torch.matmul(kernels, sketched_conv.U1s[i].T))
-                for i in range(num_terms)
-            ]
-        )
-    )  # d2xk
-    K_mat4 = kernels.view(
-        layer.in_channels * sketched_conv.kernel_size[0] * sketched_conv.kernel_size[1],
-        layer.out_channels,
-    )
-    sketched_conv.S2s = nn.Parameter(
-        torch.stack(
-            [
-                mode4_unfold(
-                    torch.matmul(sketched_conv.U2s[i], K_mat4).view(
-                        low_rank, *sketched_conv.kernel_size, layer.out_channels
-                    )
-                )
-                for i in range(num_terms)
-            ]
-        )
-    )
-    if layer.bias is not None:
-        sketched_conv.bias = nn.Parameter(layer.bias.data.clone())
-    else:
-        raise ValueError(
-            "Layer must have a bias parameter, not implemented yet to not have it sketchedconv2d"
-        )
-
-    return sketched_conv
