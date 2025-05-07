@@ -6,15 +6,13 @@
 
 // Forward function for sketched convolution
 // returns output, x_windows
-std::vector<torch::Tensor> sketched_conv2d_forward(const torch::Tensor &x,
-                                                   const torch::Tensor &S1s,
-                                                   const torch::Tensor &S2s,
-                                                   const torch::Tensor &U1s,
-                                                   const torch::Tensor &U2s,
-                                                   const std::vector<int64_t> &stride,
-                                                   const std::vector<int64_t> &padding,
-                                                   const std::vector<int64_t> &kernel_size,
-                                                   const torch::Tensor &bias) {
+torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
+                                      const torch::Tensor &S1s,
+                                      const torch::Tensor &U1s,
+                                      const std::vector<int64_t> &stride,
+                                      const std::vector<int64_t> &padding,
+                                      const std::vector<int64_t> &kernel_size,
+                                      const torch::Tensor &bias) {
     int64_t B = x.size(0), C = x.size(1), H = x.size(2), W = x.size(3);
     int64_t L = U1s.size(0), K = U1s.size(1), D1 = U1s.size(2);
     int64_t Kh = kernel_size[0], Kw = kernel_size[1];
@@ -22,13 +20,8 @@ std::vector<torch::Tensor> sketched_conv2d_forward(const torch::Tensor &x,
     int64_t W_out = (W - Kw + 2 * padding[1]) / stride[1] + 1;
 
     auto temp = torch::nn::functional::conv2d(x, S1s, torch::nn::functional::Conv2dFuncOptions().stride(stride).padding(padding)).view({B, L, K, H_out, W_out});
-    auto out1 = torch::einsum("blkhw,lko->blhwo", {temp, U1s});
-
-    int64_t r = K * Kh * Kw;
-    temp = torch::nn::functional::conv2d(x, U2s, torch::nn::functional::Conv2dFuncOptions().stride(stride).padding(padding)).view({B, L, r, H_out, W_out});
-    auto out2 = torch::einsum("blrhw,lro->blhwo", {temp, S2s});
-    auto out = (out1 + out2).mean(1).div(2.0f) + bias;
-    return {out.view({B, H_out, W_out, D1}).permute({0, 3, 1, 2}), x};
+    auto out = torch::einsum("blkhw,lko->blhwo", {temp, U1s}).mean(1) + bias;
+    return out.view({B, H_out, W_out, D1}).permute({0, 3, 1, 2});
 }
 
 // Backward function for sketched convolution
