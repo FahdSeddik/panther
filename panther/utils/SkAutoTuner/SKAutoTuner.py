@@ -24,7 +24,8 @@ class SKAutoTuner:
         search_algorithm: SearchAlgorithm = None,
         verbose: bool = False,
         accuracy_threshold: float = None,
-        optmization_eval_func: Callable[[nn.Module], float] = None
+        optmization_eval_func: Callable[[nn.Module], float] = None,
+        num_runs = 50
     ):
         """
         Initialize the autotuner.
@@ -42,6 +43,7 @@ class SKAutoTuner:
         self.accuracy_eval_func = accuracy_eval_func
         self.search_algorithm = search_algorithm or GridSearch()
         self.verbose = verbose
+        self.num_runs = num_runs
         self.accuracy_threshold = accuracy_threshold
         self.optmization_eval_func = optmization_eval_func
         # Dictionary to store results for each layer
@@ -298,6 +300,52 @@ class SKAutoTuner:
         
         return True
 
+    def _evaluate_model(self, accuracy_score):
+        """
+        Evaluate the model and calculate the optimization score.
+        
+        Args:
+            accuracy_score: Accuracy score of the model
+            
+        Returns:
+            Tuple of (final_score, speed_score)
+        """
+        speed_score = None
+        if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
+            if accuracy_score >= self.accuracy_threshold:
+                speed_score = self.optmization_eval_func(self.model)
+                score = speed_score
+            else:
+                score = float('-inf')
+        else:
+            score = accuracy_score
+            
+        return score, speed_score
+    
+    def _try_parameters(self, layer_name, params, copy_weights=True):
+        """
+        Apply parameters to a layer, evaluate the model, and restore the original layer.
+        
+        Args:
+            layer_name: Name of the layer to tune
+            params: Parameters to try
+            copy_weights: Whether to copy weights from original layer
+            
+        Returns:
+            Tuple of (score, accuracy_score, speed_score, original_layer)
+        """
+        # Get and store original layer
+        layer = self._get_layer_by_name(layer_name)
+        
+        # Apply parameters
+        self._replace_layer(layer_name, type(layer), params, copy_weights=copy_weights)
+        
+        # Evaluate
+        accuracy_score = self.accuracy_eval_func(self.model)
+        score, speed_score = self._evaluate_model(accuracy_score)
+        
+        return score, accuracy_score, speed_score, layer
+    
     def _tune_layer_group(self, config: LayerConfig) -> Dict[str, Dict[str, Any]]:
         """
         Tune a group of layers according to the configuration.
@@ -322,45 +370,49 @@ class SKAutoTuner:
                 if params is None:
                     break  # No more parameter combinations to try
                 
-                original_layers = []
-                # Apply parameters to all layers
-                for layer_name in config.layer_names:
-                    layer = self._get_layer_by_name(layer_name)
-                    original_layers.append(layer)
-                    self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
-                
-                # Evaluate
-                speed_score = None
-                accuracy_score = self.accuracy_eval_func(self.model)
-                if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
-                    if accuracy_score >= self.accuracy_threshold:
-                        speed_score = self.optmization_eval_func(self.model)
-                        score = speed_score
-                    else:
-                        score = float('-inf')
-                else:
-                    score = accuracy_score
+                runs_score = [0] * self.num_runs
+                runs_accuracy_score = [0] * self.num_runs
+                runs_speed_score = [0] * self.num_runs
 
-                # Update search algorithm
-                self.search_algorithm.update(params, score)
-                
-                # Save result
-                result = {"params": params, "score": score}
-                all_results.append(result)
-                
-                if score > best_score:
-                    best_score = score
+                for run_n in range(runs_score):
+                    original_layers = []
+                    # Apply parameters to all layers
+                    for layer_name in config.layer_names:
+                        layer = self._get_layer_by_name(layer_name)
+                        original_layers.append(layer)
+                        self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
+                    
+                    # Evaluate
+                    accuracy_score = self.accuracy_eval_func(self.model)
+                    score, speed_score = self._evaluate_model(accuracy_score)
+        
+                    # Update search algorithm
+                    self.search_algorithm.update(params, score)
+                    
+                    # Save result
+                    result = {"params": params, "score": score}
+                    all_results.append(result)
+                    
+                    # restore original layers
+                    for i, layer_name in enumerate(config.layer_names):
+                        parent, name = self._get_parent_module_and_name(layer_name)
+                        original_layer = original_layers[i]
+                        setattr(parent, name, original_layer)
+
+                    runs_score[i] = score
+                    runs_accuracy_score[i] = accuracy_score
+                    runs_speed_score[i] = speed_score
+
+                avg_score = sum(runs_score) / len(runs_score)
+                avg_accuracy_score = sum(runs_accuracy_score) / len(runs_accuracy_score)
+                avg_speed_score = sum(runs_speed_score) / len(runs_speed_score)
+
+                if avg_score > best_score:
+                    best_score = avg_score
                     best_params = params
-
-                # restore original layers
-                for i, layer_name in enumerate(config.layer_names):
-                    parent, name = self._get_parent_module_and_name(layer_name)
-                    original_layer = original_layers[i]
-                    setattr(parent, name, original_layer)
                 
                 if self.verbose:
-                    print(f"Tried parameters: {params}, accuracy_score: {accuracy_score}, speed_score: {speed_score}\
-                          final score: {score}")
+                    print(f"Tried parameters: {params}, accuracy_score: {avg_accuracy_score}, speed_score: {avg_speed_score}, final score: {avg_score}")
             
             # Store results
             group_key = "_".join(config.layer_names)
@@ -391,40 +443,44 @@ class SKAutoTuner:
                     if params is None:
                         break  # No more parameter combinations to try
                     
-                    # Apply parameters to this layer
-                    layer = self._get_layer_by_name(layer_name)
-                    self._replace_layer(layer_name, type(layer), params, copy_weights=config.copy_weights)
+                    # Run multiple times and average results
+                    runs_score = [0] * self.num_runs
+                    runs_accuracy_score = [0] * self.num_runs
+                    runs_speed_score = [0] * self.num_runs
+                    original_layer = None
                     
-                    # Evaluate
-                    accuracy_score = self.accuracy_eval_func(self.model)
-                    speed_score = None
-                    if self.accuracy_threshold is not None and self.optmization_eval_func is not None:
-                        if accuracy_score >= self.accuracy_threshold:
-                            speed_score = self.optmization_eval_func(self.model)
-                            score = speed_score
-                        else:
-                            score = float('-inf')
-                    else:
-                        score = accuracy_score
+                    for i in range(self.num_runs):
+                        # Apply parameters and evaluate
+                        score, accuracy_score, speed_score, original_layer = self._try_parameters(
+                            layer_name, params, copy_weights=config.copy_weights
+                        )
+                        
+                        runs_score[i] = score
+                        runs_accuracy_score[i] = accuracy_score
+                        runs_speed_score[i] = speed_score
+                        
+                        # Restore original layer for next run
+                        parent, name = self._get_parent_module_and_name(layer_name)
+                        setattr(parent, name, original_layer)
                     
-                    # Update search algorithm
-                    self.search_algorithm.update(params, score)
+                    # Calculate averages
+                    avg_score = sum(runs_score) / len(runs_score)
+                    avg_accuracy_score = sum(runs_accuracy_score) / len(runs_accuracy_score)
+                    avg_speed_score = sum(runs_speed_score) / len(runs_speed_score)
+                    
+                    # Update search algorithm with average score
+                    self.search_algorithm.update(params, avg_score)
                     
                     # Save result
-                    result = {"params": params, "score": score}
+                    result = {"params": params, "score": avg_score}
                     layer_results.append(result)
                     
-                    if score > best_score:
-                        best_score = score
+                    if avg_score > best_score:
+                        best_score = avg_score
                         best_params = params
-
-                    # restore original layer
-                    parent, name = self._get_parent_module_and_name(layer_name)
-                    setattr(parent, name, layer)
                     
                     if self.verbose:
-                        print(f"Tried parameters: {params}, accuracy_score: {accuracy_score}, speed_score: {speed_score}\
-                          final score: {score}")
+                        print(f"Tried parameters: {params}, accuracy_score: {avg_accuracy_score}, speed_score: {avg_speed_score}, final score: {avg_score}")
                 
                 # Store results for this layer
                 self.results[layer_name] = layer_results
