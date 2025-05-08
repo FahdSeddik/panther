@@ -374,7 +374,7 @@ class SKAutoTuner:
                 runs_accuracy_score = [0] * self.num_runs
                 runs_speed_score = [0] * self.num_runs
 
-                for run_n in range(runs_score):
+                for run_n in range(self.num_runs):
                     original_layers = []
                     # Apply parameters to all layers
                     for layer_name in config.layer_names:
