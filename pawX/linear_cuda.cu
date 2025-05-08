@@ -140,15 +140,14 @@ torch::Tensor sketched_linear_forward_cuda(
     int numTilesI = (input_dim + TILE_DIM - 1) / TILE_DIM;
     dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, numTilesI);
     dim3 block(TILE_DIM, TILE_DIM);
-    int shared_mem_size = 3 * TILE_DIM * TILE_DIM * input.element_size();
 
     // allocate intermediate output tensor contigously
-    auto output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options().memory_format(torch::MemoryFormat::Contiguous));
+    auto output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();
     AT_DISPATCH_FLOATING_TYPES(
         input.scalar_type(),
         "sklinear_forward_intermediate",
         ([&] {
-            sklinear_forward_intermediate<scalar_t><<<grid, block, shared_mem_size>>>(
+            sklinear_forward_intermediate<scalar_t><<<grid, block, 3 * TILE_DIM * TILE_DIM * sizeof(scalar_t)>>>(
                 input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
                 S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
@@ -156,18 +155,16 @@ torch::Tensor sketched_linear_forward_cuda(
                 batch_size, input_dim, low_rank_dim, num_terms);
         }));
 
-    output_intermediate = output_intermediate.sum(0);
+    output_intermediate = output_intermediate.sum(0).contiguous();
 
     dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
-    dim3 block2(TILE_DIM, TILE_DIM);
-    int shared_mem_size2 = (4 * TILE_DIM * TILE_DIM + TILE_DIM) * input.element_size();
 
     // Launch the kernel.
     AT_DISPATCH_FLOATING_TYPES(
         input.scalar_type(),
         "sklinear_forward_output",
         ([&] {
-            sklinear_forward_output<scalar_t><<<grid2, block2, shared_mem_size2>>>(
+            sklinear_forward_output<scalar_t><<<grid2, block, (4 * TILE_DIM * TILE_DIM + TILE_DIM) * sizeof(scalar_t)>>>(
                 output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
                 S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
@@ -570,6 +567,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     at::cuda::stream_synchronize(stream2);
     at::cuda::stream_synchronize(stream3);
     at::cuda::stream_synchronize(stream4);
+    torch::cuda::synchronize(device_id);
+    at::cuda::setCurrentCUDAStream(at::cuda::getDefaultCUDAStream(device_id));
     cudaEventDestroy(afterIntermSum);
     cudaEventDestroy(afterGcompute);
 

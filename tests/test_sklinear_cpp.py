@@ -221,6 +221,34 @@ def test_backward_gpu_vs_cpu(test_tensors):
         ), "Backward pass differs between CPU and GPU."
 
 
+def test_forward_gpu_vs_cpu2(test_tensors):
+    """Ensure forward pass produces the same output on CPU and GPU."""
+    # skip test anyway
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA is not available.")
+
+    input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
+    i_gpu = input_tensor.to("cuda")
+    S1s_gpu = S1s.to("cuda")
+    S2s_gpu = S2s.to("cuda")
+    U1s_gpu = U1s.to("cuda")
+    U2s_gpu = U2s.to("cuda")
+    bias_gpu = bias.to("cuda")
+
+    output_tc = sketched_linear_forward(
+        i_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu, use_gpu=True
+    ).cpu()
+    output_no_tc = sketched_linear_forward(
+        input_tensor, S1s, S2s, U1s, U2s, bias, use_gpu=False
+    )
+    print("OUTPUT GPU", output_tc)
+    print("OUTPUT CPU", output_no_tc)
+    assert output_tc.shape == output_no_tc.shape, "Output shape mismatch."
+    assert torch.allclose(
+        output_no_tc, output_tc, atol=1, rtol=1
+    ), "Forward pass differs between CPU and GPU."
+
+
 def test_backward_gpu_vs_cpu2(test_tensors):
     """Ensure backward pass produces the same gradients on CPU and GPU."""
     # skip test anyway

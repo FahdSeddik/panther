@@ -624,6 +624,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     at::cuda::stream_synchronize(stream2);
     at::cuda::stream_synchronize(stream3);
     at::cuda::stream_synchronize(stream4);
+    torch::cuda::synchronize(device_id);
+    at::cuda::setCurrentCUDAStream(at::cuda::getDefaultCUDAStream(device_id));
     cudaEventDestroy(afterIntermSum);
     cudaEventDestroy(afterGcompute);
 
