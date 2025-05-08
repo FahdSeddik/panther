@@ -25,7 +25,7 @@ class SKAutoTuner:
         verbose: bool = False,
         accuracy_threshold: float = None,
         optmization_eval_func: Callable[[nn.Module], float] = None,
-        num_runs = 50
+        num_runs = 1
     ):
         """
         Initialize the autotuner.
@@ -399,9 +399,9 @@ class SKAutoTuner:
                         original_layer = original_layers[i]
                         setattr(parent, name, original_layer)
 
-                    runs_score[i] = score
-                    runs_accuracy_score[i] = accuracy_score
-                    runs_speed_score[i] = speed_score
+                    runs_score[run_n] = score
+                    runs_accuracy_score[run_n] = accuracy_score
+                    runs_speed_score[run_n] = speed_score
 
                 avg_score = sum(runs_score) / len(runs_score)
                 avg_accuracy_score = sum(runs_accuracy_score) / len(runs_accuracy_score)
@@ -449,15 +449,15 @@ class SKAutoTuner:
                     runs_speed_score = [0] * self.num_runs
                     original_layer = None
                     
-                    for i in range(self.num_runs):
+                    for run_n in range(self.num_runs):
                         # Apply parameters and evaluate
                         score, accuracy_score, speed_score, original_layer = self._try_parameters(
                             layer_name, params, copy_weights=config.copy_weights
                         )
                         
-                        runs_score[i] = score
-                        runs_accuracy_score[i] = accuracy_score
-                        runs_speed_score[i] = speed_score
+                        runs_score[run_n] = score
+                        runs_accuracy_score[run_n] = accuracy_score
+                        runs_speed_score[run_n] = speed_score
                         
                         # Restore original layer for next run
                         parent, name = self._get_parent_module_and_name(layer_name)
