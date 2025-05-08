@@ -232,56 +232,26 @@ class SKAutoTuner:
 
         elif isinstance(original_layer, nn.Conv2d):
             # Create a new sketched convolution layer
-            sketched_layer = sketched_class(
-                in_channels=original_layer.in_channels,
-                out_channels=original_layer.out_channels,
-                kernel_size=original_layer.kernel_size,
-                stride=original_layer.stride,
-                padding=original_layer.padding,
-                device=original_layer.weight.device,
-                dtype=original_layer.weight.dtype,
-                **params
-            )
-            
-            if copy_weights:
-                kernels = original_layer.weight.data.clone()
-                kernels = kernels.permute(1, 2, 3, 0)
-                
-                def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
-                    """Computes mode-4 matricization (unfolding along the last dimension)."""
-                    return tensor.reshape(-1, tensor.shape[-1])  # (I4, I1 * I2 * I3)
+            sketched_layer = None
 
-                sketched_layer.S1s = nn.Parameter(
-                    torch.stack(
-                        [
-                            mode4_unfold(torch.matmul(kernels, sketched_layer.U1s[i].T))
-                            for i in range(params["num_terms"])
-                        ]
-                    )
-                )  # d2xk
-                K_mat4 = kernels.view(
-                    original_layer.in_channels * sketched_layer.kernel_size[0] * sketched_layer.kernel_size[1],
-                    original_layer.out_channels,
+            from panther.nn import conv2d
+
+            if self.copy_weights:
+                sketched_layer = conv2d.fromTorch(
+                    original_layer,
+                    **params
                 )
-                sketched_layer.S2s = nn.Parameter(
-                    torch.stack(
-                        [
-                            mode4_unfold(
-                                torch.matmul(sketched_layer.U2s[i], K_mat4).view(
-                                    params["low_rank"], *sketched_layer.kernel_size, original_layer.out_channels
-                                )
-                            )
-                            for i in range(params["num_terms"])
-                        ]
-                    )
+            else:
+                sketched_layer = sketched_class(
+                    in_channels=original_layer.in_channels,
+                    out_channels=original_layer.out_channels,
+                    kernel_size=original_layer.kernel_size,
+                    stride=original_layer.stride,
+                    padding=original_layer.padding,
+                    device=original_layer.weight.device,
+                    dtype=original_layer.weight.dtype,
+                    **params
                 )
-                if original_layer.bias is not None:
-                    sketched_layer.bias = nn.Parameter(original_layer.bias.data.clone())
-                else:
-                    # Initialize with zeros if original layer has no bias
-                    sketched_layer.bias = nn.Parameter(torch.zeros(original_layer.out_channels, 
-                                                                device=original_layer.weight.device,
-                                                                dtype=original_layer.weight.dtype))
 
         elif isinstance(original_layer, nn.MultiheadAttention):
             # Create a new sketched attention layer
