@@ -140,18 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
               return;
           }
           
-          // Copy to clipboard and handle callback properly
-          navigator.clipboard.writeText(moduleName).then(function() {
-              // Show notification
-              copyNotification.textContent = `Module name "${moduleName}" copied to clipboard!`;
-              copyNotification.style.opacity = 1;
-              setTimeout(function() {
-                  copyNotification.style.opacity = 0;
-              }, 2000);
-          }).catch(function(err) {
-              console.error('Failed to copy module name: ', err);
-          });
-          
           // Display module information
           displayModuleInfo(moduleName);
           
@@ -178,13 +166,17 @@ document.addEventListener('DOMContentLoaded', function() {
           // Set up menu items
           document.getElementById('copyName').onclick = function(e) {
               e.stopPropagation();
-              navigator.clipboard.writeText(moduleName);
+              navigator.clipboard.writeText(moduleName).then(function() {
+                  // Show notification
+                  copyNotification.textContent = `Module name "${moduleName}" copied to clipboard!`;
+                  copyNotification.style.opacity = 1;
+                  setTimeout(function() { 
+                      copyNotification.style.opacity = 0; 
+                  }, 2000);
+              }).catch(function(err) {
+                  console.error('Failed to copy module name: ', err);
+              });
               nodeMenu.style.display = 'none';
-              copyNotification.textContent = `Module name "${moduleName}" copied to clipboard!`;
-              copyNotification.style.opacity = 1;
-              setTimeout(function() { 
-                  copyNotification.style.opacity = 0; 
-              }, 2000);
           };
           
           document.getElementById('showDetails').onclick = function(e) {

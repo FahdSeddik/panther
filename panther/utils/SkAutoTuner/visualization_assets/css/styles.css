@@ -138,6 +138,7 @@ th {
 
 /* Draggable node styles */
 [id^="node_"] {
+  cursor: pointer;
   transition: filter 0.2s;
 }
 
