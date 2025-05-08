@@ -47,7 +47,7 @@ def test_forward_output_shape(test_tensors):
     assert output.shape == (BATCH_SIZE, OUT_FEATURES), "Output shape mismatch."
 
 
-def test_tc(test_tensors):
+def test_tc_forward(test_tensors):
     if not has_tensor_core_support():
         pytest.skip("Tensor Core support is not available.")
     # all test tensors to be on GPU
@@ -60,15 +60,45 @@ def test_tc(test_tensors):
     bias_gpu = bias.to("cuda")
     # check that without and with gpu is same value or close
     output_tc = sketched_linear_forward(
-        i_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu, use_tensor_core=True
+        i_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu, use_gpu=True
     ).cpu()
     output_no_tc = sketched_linear_forward(
-        input_tensor, S1s, S2s, U1s, U2s, bias, use_tensor_core=False
+        input_tensor, S1s, S2s, U1s, U2s, bias, use_gpu=False
     )
     assert output_tc.shape == output_no_tc.shape, "Output shape mismatch."
     assert torch.allclose(
         output_tc, output_no_tc, atol=1, rtol=1
     ), "Output values mismatch between Tensor Core and non-Tensor Core."
+
+
+def test_tc_backward(test_tensors):
+    if not has_tensor_core_support():
+        pytest.skip("Tensor Core support is not available.")
+    # all test tensors to be on GPU
+    input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
+    i_gpu = input_tensor.to("cuda")
+    S1s_gpu = S1s.to("cuda")
+    S2s_gpu = S2s.to("cuda")
+    U1s_gpu = U1s.to("cuda")
+    U2s_gpu = U2s.to("cuda")
+
+    # Random gradient to backpropagate
+    grad_output = torch.randn(BATCH_SIZE, OUT_FEATURES).to("cuda")
+
+    # Compute gradients using Tensor Core
+    grads_tc = sketched_linear_backward(
+        grad_output, i_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, use_gpu=True
+    )
+
+    # Compute gradients without Tensor Core
+    grads_no_tc = sketched_linear_backward(
+        grad_output.cpu(), input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
+    )
+
+    for g_tc, g_no_tc in zip(grads_tc, grads_no_tc):
+        assert torch.allclose(
+            g_tc.cpu(), g_no_tc.cpu(), atol=1e-3, rtol=1e-3
+        ), "Gradient mismatch between Tensor Core and non-Tensor Core."
 
 
 def test_forward_deterministic(test_tensors):
@@ -83,13 +113,17 @@ def test_forward_deterministic(test_tensors):
 def test_backward_output_shape(test_tensors):
     """Ensure the backward function returns gradients with expected shapes."""
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
-    output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
+    output = sketched_linear_forward(
+        input_tensor, S1s, S2s, U1s, U2s, bias, use_gpu=False
+    )
 
     # Compute gradient w.r.t output
     grad_output = torch.randn_like(output)
 
     # Call backward function
-    grads = sketched_linear_backward(grad_output, input_tensor, S1s, S2s, U1s, U2s)
+    grads = sketched_linear_backward(
+        grad_output, input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
+    )
 
     assert len(grads) == 4, "Backward function must return 4 gradients."
     assert (
@@ -107,8 +141,12 @@ def test_backward_deterministic(test_tensors):
 
     grad_output = torch.randn_like(output)
 
-    grads1 = sketched_linear_backward(grad_output, input_tensor, S1s, S2s, U1s, U2s)
-    grads2 = sketched_linear_backward(grad_output, input_tensor, S1s, S2s, U1s, U2s)
+    grads1 = sketched_linear_backward(
+        grad_output, input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
+    )
+    grads2 = sketched_linear_backward(
+        grad_output, input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
+    )
 
     for g1, g2 in zip(grads1, grads2):
         assert torch.allclose(g1, g2), "Backward pass is not deterministic."
@@ -129,9 +167,11 @@ def test_forward_gpu_vs_cpu(test_tensors):
     U2s_gpu = U2s.to("cuda")
     bias_gpu = bias.to("cuda")
 
-    output_cpu = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
+    output_cpu = sketched_linear_forward(
+        input_tensor, S1s, S2s, U1s, U2s, bias, use_gpu=False
+    )
     output_gpu = sketched_linear_forward(
-        input_tensor_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu
+        input_tensor_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu, bias_gpu, use_gpu=True
     ).cpu()
 
     assert torch.allclose(
@@ -158,11 +198,17 @@ def test_backward_gpu_vs_cpu(test_tensors):
     grad_output_cpu = torch.randn((batch_size, output_dim))
 
     grads_cpu = sketched_linear_backward(
-        grad_output_cpu, input_tensor, S1s, S2s, U1s, U2s
+        grad_output_cpu, input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
     )
 
     grads_gpu = sketched_linear_backward(
-        grad_output_cpu.to("cuda"), input_tensor_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu
+        grad_output_cpu.to("cuda"),
+        input_tensor_gpu,
+        S1s_gpu,
+        S2s_gpu,
+        U1s_gpu,
+        U2s_gpu,
+        use_gpu=True,
     )
 
     for g_cpu, g_gpu in zip(grads_cpu, grads_gpu):

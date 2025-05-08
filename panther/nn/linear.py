@@ -22,9 +22,9 @@ class SketchedLinearFunction(Function):
         U1s: torch.Tensor,
         U2s: torch.Tensor,
         bias: torch.Tensor,
-        use_tensor_core: bool = False,
+        use_gpu: bool = False,
     ):
-        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, use_tensor_core)
+        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, use_gpu)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
@@ -101,13 +101,13 @@ class SKLinear(nn.Module):
                 category=UserWarning,
                 stacklevel=2,
             )
-
-        self.will_use_tensor_core = has_tensor_core_support()
-        if self.will_use_tensor_core and (
+        self.has_tensor_core = has_tensor_core_support()
+        self.use_gpu = True
+        if self.has_tensor_core and (
             in_features % 16 != 0 or out_features % 16 != 0 or low_rank % 16 != 0
         ):
             # Log warning to user
-            self.will_use_tensor_core = False
+            self.use_gpu = False
             warnings.warn(
                 self.WARNING_MSG_TC.format(in_features, out_features, low_rank),
                 UserWarning,
@@ -170,17 +170,22 @@ class SKLinear(nn.Module):
 
     def forward(self, h_in: torch.Tensor) -> torch.Tensor:
         batch_size = h_in.shape[0]
-        use_tensor_core = self.will_use_tensor_core
-        if h_in.is_cuda and use_tensor_core and (batch_size % 16 != 0):
+        use_gpu = self.use_gpu
+        if (
+            h_in.is_cuda
+            and self.has_tensor_core
+            and self.use_gpu
+            and (batch_size % 16 != 0)
+        ):
             # Log warning to user
-            use_tensor_core = False
+            use_gpu = False
             warnings.warn(
                 self.WARNING_MSG_BATCH.format(batch_size),
                 UserWarning,
                 stacklevel=2,
             )
         return SketchedLinearFunction.apply(
-            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, use_tensor_core
+            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, use_gpu
         )
 
 

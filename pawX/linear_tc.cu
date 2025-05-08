@@ -211,7 +211,7 @@ torch::Tensor sketched_linear_forward_cuda(
             B, R, T, O);
         return out;
     } else {
-        return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).sum(0) + bias;
+        return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).mean(0).div(2.0f) + bias;
     }
 }
 
