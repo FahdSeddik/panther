@@ -184,7 +184,7 @@ class SKConv2d(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass of the SKConv2d layer."""
-        return SketchedConv2dFunction.apply(
+        return sketched_conv2d_forward(
             x,
             self.S1s,
             self.U1s,
