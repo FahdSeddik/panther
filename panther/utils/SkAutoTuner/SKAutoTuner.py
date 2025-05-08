@@ -234,10 +234,10 @@ class SKAutoTuner:
             # Create a new sketched convolution layer
             sketched_layer = None
 
-            from panther.nn import conv2d
+            from panther.nn.conv2d import SKConv2d
 
             if copy_weights:
-                sketched_layer = conv2d.fromTorch(
+                sketched_layer = SKConv2d.fromTorch(
                     original_layer,
                     **params
                 )
