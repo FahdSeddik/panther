@@ -179,23 +179,28 @@ torch::Tensor sketched_linear_forward_cuda(
 
     int B = input.size(0), I = input.size(1);
     int T = S1s.size(0), R = S1s.size(2), O = S2s.size(2);
-
-    // auto interm = torch::zeros({2, T, B, R}, input.options());
-    int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
-    auto partial = torch::zeros({numTilesI, 2, T, B, R}, input.options());
     dim3 block(BLOCK_ROW_WARPS * 32, BLOCK_COL_WARPS);
-    dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
-               (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
-               numTilesI);
 
-    sklinear_forward_intermediate_wmma<<<grid1, block>>>(
-        input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        partial.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
-        B, I, R, T, (1.0f / (2.0f * T)));
+    torch::Tensor interm;
+    if (T > 1) {
+        int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
+        auto partial = torch::zeros({numTilesI, 2, T, B, R}, input.options());
+        dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
+                   (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
+                   numTilesI);
 
-    auto interm = partial.sum(0);
+        sklinear_forward_intermediate_wmma<<<grid1, block>>>(
+            input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
+            S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+            U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+            partial.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
+            B, I, R, T, (1.0f / (2.0f * T)));
+
+        interm = partial.sum(0);
+    } else {
+        auto input_expanded = input.unsqueeze(0);
+        interm = torch::stack({input_expanded.bmm(S1s), input_expanded.bmm(U2s)}, 0);
+    }
 
     if (R <= 96) {
         auto out = torch::zeros({B, O}, input.options());

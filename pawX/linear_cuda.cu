@@ -134,46 +134,54 @@ torch::Tensor sketched_linear_forward_cuda(
     int num_terms = S1s.size(0);
     int low_rank_dim = S1s.size(2);  // also U1s.dim(2) and S2s.dim(1)
     int output_dim = S2s.size(2);
-
-    // Create output tensor.
-    auto output = torch::zeros({batch_size, output_dim}, input.options());
-    int numTilesI = (input_dim + TILE_DIM - 1) / TILE_DIM;
-    dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, numTilesI);
     dim3 block(TILE_DIM, TILE_DIM);
 
-    // allocate intermediate output tensor contigously
-    auto output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();
-    AT_DISPATCH_FLOATING_TYPES(
-        input.scalar_type(),
-        "sklinear_forward_intermediate",
-        ([&] {
-            sklinear_forward_intermediate<scalar_t><<<grid, block, 3 * TILE_DIM * TILE_DIM * sizeof(scalar_t)>>>(
-                input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
-                S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                output_intermediate.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
-                batch_size, input_dim, low_rank_dim, num_terms);
-        }));
+    // Create output tensor.
+    torch::Tensor output_intermediate;
+    if (num_terms > 1) {
+        int numTilesI = (input_dim + TILE_DIM - 1) / TILE_DIM;
+        dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, numTilesI);
 
-    output_intermediate = output_intermediate.sum(0).contiguous();
+        // allocate intermediate output tensor contigously
+        output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();
+        AT_DISPATCH_FLOATING_TYPES(
+            input.scalar_type(),
+            "sklinear_forward_intermediate",
+            ([&] {
+                sklinear_forward_intermediate<scalar_t><<<grid, block, 3 * TILE_DIM * TILE_DIM * sizeof(scalar_t)>>>(
+                    input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                    S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    output_intermediate.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
+                    batch_size, input_dim, low_rank_dim, num_terms);
+            }));
+        output_intermediate = output_intermediate.sum(0).contiguous();
+    } else {
+        auto input_expanded = input.unsqueeze(0);
+        output_intermediate = torch::stack({input_expanded.bmm(S1s), input_expanded.bmm(U2s)}, 0);
+    }
 
-    dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
+    if (low_rank_dim <= 96) {
+        dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
+        auto output = torch::zeros({batch_size, output_dim}, input.options());
+        // Launch the kernel.
+        AT_DISPATCH_FLOATING_TYPES(
+            input.scalar_type(),
+            "sklinear_forward_output",
+            ([&] {
+                sklinear_forward_output<scalar_t><<<grid2, block, (4 * TILE_DIM * TILE_DIM + TILE_DIM) * sizeof(scalar_t)>>>(
+                    output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
+                    S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    bias.packed_accessor32<scalar_t, 1, torch::RestrictPtrTraits>(),
+                    output.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                    batch_size, input_dim, num_terms, low_rank_dim, output_dim);
+            }));
 
-    // Launch the kernel.
-    AT_DISPATCH_FLOATING_TYPES(
-        input.scalar_type(),
-        "sklinear_forward_output",
-        ([&] {
-            sklinear_forward_output<scalar_t><<<grid2, block, (4 * TILE_DIM * TILE_DIM + TILE_DIM) * sizeof(scalar_t)>>>(
-                output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
-                S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                bias.packed_accessor32<scalar_t, 1, torch::RestrictPtrTraits>(),
-                output.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
-                batch_size, input_dim, num_terms, low_rank_dim, output_dim);
-        }));
-
-    return output;
+        return output;
+    } else {
+        return (output_intermediate[0].bmm(U1s) + output_intermediate[1].bmm(S2s)).mean(0).div(2.0f) + bias;
+    }
 }
 
 template <typename scalar_t>
