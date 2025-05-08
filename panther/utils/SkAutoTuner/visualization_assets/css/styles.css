@@ -57,6 +57,19 @@ body {
   opacity: 0;
   transition: opacity 0.5s;
 }
+
+.copy-notification.success {
+  background-color: #4CAF50; /* Green for success */
+}
+
+.copy-notification.error {
+  background-color: #F44336; /* Red for error */
+}
+
+.copy-notification.info {
+  background-color: #2196F3; /* Blue for info */
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
@@ -208,4 +221,51 @@ button:hover {
 /* Animation for transitions */
 svg g {
   transition: opacity 0.3s, transform 0.1s;
+}
+
+.highlight-path-segment polygon,
+.highlight-path-segment rect {
+  stroke: #4CAF50 !important; /* Green for path */
+  stroke-width: 2.5px !important;
+  fill-opacity: 0.8 !important;
+}
+
+.highlight-path-segment text {
+  font-weight: bold;
+}
+
+/* Styles for expansion indicator */
+.expansion-indicator {
+  font-family: monospace;
+  font-size: 16px;
+  fill: #333;
+  cursor: pointer;
+}
+
+body.dark-theme .expansion-indicator {
+  fill: #ccc;
+}
+
+/* Resizable container */
+.resize-handle {
+  width: 100%;
+  height: 10px;
+  background-color: #f0f0f0;
+  cursor: ns-resize;
+  border-top: 1px solid #ccc;
+}
+
+/* Ensure SVG takes full width of its container for pan/zoom to work correctly */
+#svgPanZoomContainer svg {
+    display: block; /* Removes extra space below inline SVGs */
+    width: 100%;
+    height: 100%;
+    max-width: 100%; /* Ensure it doesn't overflow */
+    max-height: 100%; /* Ensure it doesn't overflow */
+}
+
+.svg-pan-zoom-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Crucial for svg-pan-zoom */
 }
