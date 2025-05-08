@@ -21,6 +21,27 @@ document.addEventListener('DOMContentLoaded', function() {
   const collapsedNodes = new Set();
   let svgPanZoomInstance; // To store the svg-pan-zoom instance
 
+  // Function to show notification messages
+  function showNotification(message, type = 'info') {
+    if (!copyNotification) return;
+    
+    // Clear any existing timeout
+    if (window.notificationTimeout) {
+      clearTimeout(window.notificationTimeout);
+    }
+    
+    // Set message and show
+    copyNotification.textContent = message;
+    copyNotification.className = 'copy-notification'; // Reset classes
+    copyNotification.classList.add(type); // Add type class (success, error, info)
+    copyNotification.style.opacity = '1';
+    
+    // Hide after delay
+    window.notificationTimeout = setTimeout(() => {
+      copyNotification.style.opacity = '0';
+    }, 2000);
+  }
+
   // Show loading indicator
   function showLoading(show = true) {
     if (loadingIndicator) {
@@ -436,10 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // For a very simple line, you might parse 'd', find M (moveto) and L (lineto)
         // and adjust. But this won't work for splines (C, S commands).
-
-        // console.warn("Edge updating is complex and this is a basic placeholder.");
-        // Example: If you knew an edge always started/ended at the node's center,
-        // you'd need the node's bounding box center in its new translated position.
     });
   }
   
@@ -540,4 +557,215 @@ document.addEventListener('DOMContentLoaded', function() {
                     modulePath.startsWith(collapsedParentPath + '.') && modulePath !== collapsedParentPath
                 );
                 if (isHiddenByCollapse) {
-                    node.class
+                    node.classList.add('hidden-node');
+                }
+            }
+        });
+        return;
+    }
+
+    // Determine if we're using a special filter syntax (key:value)
+    const isSpecialFilter = searchTerm.includes(':');
+    let filterKey, filterValue;
+    
+    if (isSpecialFilter) {
+        const parts = searchTerm.split(':');
+        filterKey = parts[0].trim();
+        filterValue = parts.slice(1).join(':').trim(); // In case value contains colons too
+    }
+
+    // Search in moduleInfo data (if available) and highlight matching nodes
+    const moduleInfoData = window.moduleInfo || {};
+    
+    allGraphNodes.forEach(node => {
+        const modulePath = node.getAttribute('data-name');
+        if (!modulePath) {
+            node.classList.add('hidden-by-search');
+            return;
+        }
+        
+        // Default to hiding
+        node.classList.add('hidden-by-search');
+        node.style.opacity = 0.3;
+        
+        // Special filter handling
+        if (isSpecialFilter) {
+            const moduleData = moduleInfoData[modulePath];
+            if (!moduleData) return; // No data to filter on
+            
+            // Handle different filter types
+            let matchesFilter = false;
+            
+            switch(filterKey) {
+                case 'type':
+                    matchesFilter = moduleData.type && moduleData.type.toLowerCase().includes(filterValue);
+                    break;
+                case 'trainable':
+                    matchesFilter = 
+                        (filterValue === 'yes' && moduleData.trainable) || 
+                        (filterValue === 'no' && !moduleData.trainable);
+                    break;
+                case 'params':
+                case 'parameters':
+                    if (filterValue.startsWith('>')) {
+                        const threshold = parseInt(filterValue.substring(1).trim());
+                        matchesFilter = !isNaN(threshold) && moduleData.parameters > threshold;
+                    } else if (filterValue.startsWith('<')) {
+                        const threshold = parseInt(filterValue.substring(1).trim());
+                        matchesFilter = !isNaN(threshold) && moduleData.parameters < threshold;
+                    } else {
+                        const exactValue = parseInt(filterValue);
+                        matchesFilter = !isNaN(exactValue) && moduleData.parameters === exactValue;
+                    }
+                    break;
+                default:
+                    // Try to match against any property
+                    for (const [key, value] of Object.entries(moduleData)) {
+                        if (
+                            (key.toLowerCase() === filterKey && 
+                             String(value).toLowerCase().includes(filterValue)) || 
+                            (String(value).toLowerCase().includes(searchTerm))
+                        ) {
+                            matchesFilter = true;
+                            break;
+                        }
+                    }
+            }
+            
+            if (matchesFilter) {
+                node.classList.remove('hidden-by-search');
+                node.style.opacity = 1;
+                // Also show all parent nodes in the path
+                const parts = modulePath.split('.');
+                let currentPath = '';
+                for (let i = 0; i < parts.length; i++) {
+                    currentPath = i === 0 ? parts[i] : `${currentPath}.${parts[i]}`;
+                    const parentNode = svgElement.querySelector(`g[data-name="${currentPath}"]`);
+                    if (parentNode) {
+                        parentNode.classList.remove('hidden-by-search');
+                        parentNode.style.opacity = 1;
+                        // Ensure parent nodes are expanded
+                        if (collapsedNodes.has(currentPath)) {
+                            toggleNodeCollapse(parentNode, false);
+                        }
+                    }
+                }
+            }
+            
+        } else {
+            // Simple name search
+            if (modulePath.toLowerCase().includes(searchTerm)) {
+                node.classList.remove('hidden-by-search');
+                node.style.opacity = 1;
+                
+                // Make sure parents are visible and expanded
+                const parts = modulePath.split('.');
+                let currentPath = '';
+                for (let i = 0; i < parts.length; i++) {
+                    currentPath = i === 0 ? parts[i] : `${currentPath}.${parts[i]}`;
+                    const parentNode = svgElement.querySelector(`g[data-name="${currentPath}"]`);
+                    if (parentNode && parentNode !== node) {
+                        parentNode.classList.remove('hidden-by-search');
+                        parentNode.style.opacity = 1;
+                        
+                        // Expand parent if collapsed
+                        if (collapsedNodes.has(currentPath)) {
+                            toggleNodeCollapse(parentNode, false);
+                        }
+                    }
+                }
+            }
+        }
+    });
+  });
+
+  // Search clearing
+  if (clearSearch) clearSearch.addEventListener('click', function() {
+    if (searchInput) searchInput.value = '';
+    // Trigger the input event to clear search results
+    const event = new Event('input', { bubbles: true });
+    searchInput.dispatchEvent(event);
+    searchInput.focus();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Focus search with Ctrl+F
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault(); // Prevent browser's find
+        searchInput.focus();
+    }
+    
+    // Clear search with Escape
+    if (e.key === 'Escape') {
+        if (searchInput && document.activeElement === searchInput) {
+            searchInput.value = '';
+            const event = new Event('input', { bubbles: true });
+            searchInput.dispatchEvent(event);
+        } else if (helpTooltip && helpTooltip.style.display === 'block') {
+            toggleHelp(false);
+        }
+    }
+    
+    // Show help with ? or Ctrl+H
+    if (e.key === '?' || ((e.ctrlKey || e.metaKey) && e.key === 'h')) {
+        e.preventDefault();
+        toggleHelp(helpTooltip.style.display !== 'block');
+    }
+  });
+
+  // SVG-pan-zoom keyboard handlers
+  document.addEventListener('keydown', function(e) {
+      if (!svgPanZoomInstance) return;
+      
+      // Zoom with + and -
+      if (e.key === '+' || e.key === '=') {
+          svgPanZoomInstance.zoomIn();
+      }
+      if (e.key === '-' || e.key === '_') {
+          svgPanZoomInstance.zoomOut();
+      }
+      // Reset with 0
+      if (e.key === '0') {
+          svgPanZoomInstance.resetZoom();
+      }
+  });
+  
+  // Make resize handle functional
+  if (resizeHandle && visualizationContainer) {
+      let startY, startHeight;
+      
+      resizeHandle.addEventListener('mousedown', function(e) {
+          startY = e.clientY;
+          startHeight = parseInt(document.defaultView.getComputedStyle(visualizationContainer).height, 10);
+          document.documentElement.addEventListener('mousemove', doDrag, false);
+          document.documentElement.addEventListener('mouseup', stopDrag, false);
+      });
+      
+      function doDrag(e) {
+          visualizationContainer.style.height = (startHeight + e.clientY - startY) + 'px';
+      }
+      
+      function stopDrag() {
+          document.documentElement.removeEventListener('mousemove', doDrag, false);
+          document.documentElement.removeEventListener('mouseup', stopDrag, false);
+          // After resize, make sure SVG pan-zoom instance is updated
+          if (svgPanZoomInstance) {
+              svgPanZoomInstance.resize();
+              svgPanZoomInstance.fit();
+              svgPanZoomInstance.center();
+          }
+      }
+  }
+  
+  // Load svg-pan-zoom library dynamically if not available
+  if (!window.svgPanZoom && svgElement) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js';
+      script.onload = function() {
+          console.log('svg-pan-zoom library loaded dynamically');
+          initSvgPanZoom();
+      };
+      document.head.appendChild(script);
+  }
+});

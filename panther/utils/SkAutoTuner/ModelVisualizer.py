@@ -1,15 +1,12 @@
 import torch.nn as nn
 import os
-try:
-    from graphviz import Digraph, ExecutableNotFound
-except ImportError:
-    raise ImportError("The graphviz Python package is required for ModelVisualizer. Install it with 'pip install graphviz'. "
-                      "Also, ensure that the Graphviz binaries (like 'dot') are installed and in your system's PATH.")
+from graphviz import Digraph, ExecutableNotFound
 import tempfile
 import webbrowser
 import json
 from typing import Dict, Any, Optional, Tuple
-import pkg_resources
+import importlib.resources
+import importlib.util
 import logging
 
 # Setup a logger for this module
@@ -22,10 +19,23 @@ class ModelVisualizer:
     allowing users to explore module hierarchy, view details, and search.
     """
     
-    # Get the path to the visualization assets using pkg_resources
+    # Get the path to the visualization assets using modern approach instead of pkg_resources
     try:
-        _ASSETS_PATH = pkg_resources.resource_filename(__name__, 'visualization_assets')
-    except (ImportError, ModuleNotFoundError):
+        # First try to use importlib.resources if available (Python 3.7+)
+        if importlib.util.find_spec('importlib.resources'):
+            import importlib.resources as resources
+            try:
+                # Try to use modern API (Python 3.9+)
+                _ASSETS_PATH = str(resources.files(__name__) / 'visualization_assets')
+            except (AttributeError, ImportError):
+                # Fallback for Python 3.7-3.8
+                with resources.path(__name__, 'visualization_assets') as p:
+                    _ASSETS_PATH = str(p)
+        else:
+            # Direct path fallback
+            _ASSETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization_assets')
+    except (ImportError, ModuleNotFoundError, AttributeError):
+        # Ultimate fallback
         _ASSETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization_assets')
 
     @staticmethod
@@ -181,11 +191,11 @@ class ModelVisualizer:
                     'embed_dim': module.embed_dim,
                     'num_heads': module.num_heads,
                     'dropout': module.dropout,
-                    'bias': module.bias_k is not None,
-                    'add_bias_kv': module.add_bias_kv,
-                    'add_zero_attn': module.add_zero_attn,
-                    'kdim': module.kdim,
-                    'vdim': module.vdim,
+                    'bias': hasattr(module, 'bias_k') and module.bias_k is not None,
+                    'add_bias_kv': hasattr(module, 'add_bias_kv') and module.add_bias_kv,
+                    'add_zero_attn': hasattr(module, 'add_zero_attn') and module.add_zero_attn,
+                    'kdim': getattr(module, 'kdim', None),
+                    'vdim': getattr(module, 'vdim', None),
                 })
             elif isinstance(module, (nn.TransformerEncoderLayer, nn.TransformerDecoderLayer)):
                 info.update({
@@ -290,16 +300,8 @@ class ModelVisualizer:
         
         add_nodes_and_edges(tree, 'root', root_id)
         
-        try:
-            svg_content_bytes = dot.pipe(format='svg')
-            svg_content = svg_content_bytes.decode('utf-8')
-        except ExecutableNotFound:
-            logger.error("Graphviz 'dot' executable not found. Please install Graphviz and ensure 'dot' is in your PATH.")
-            raise RuntimeError("Graphviz 'dot' executable not found. Please install Graphviz and ensure 'dot' is in your PATH. "
-                               "This tool relies on the system-installed Graphviz.")
-        except Exception as e:
-            logger.error(f"Error during Graphviz SVG generation: {e}", exc_info=True)
-            raise RuntimeError(f"Graphviz SVG generation failed: {e}")
+        svg_content_bytes = dot.pipe(format='svg')
+        svg_content = svg_content_bytes.decode('utf-8')
         
         import re
         for node_path_key, node_html_id in node_ids.items():
