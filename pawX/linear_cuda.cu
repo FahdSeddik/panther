@@ -22,6 +22,7 @@ __global__ void sklinear_forward_intermediate(
 
     scalar_t sum1 = 0, sum2 = 0;
     for (int termIdx = 0; termIdx < num_terms; termIdx++) {
+        sum1 = 0, sum2 = 0;
         if (lowRankIdx < low_rank_dim && stride + ty < input_dim) {
             sharedS1[ty * TILE_DIM + tx] = S1s[termIdx][stride + ty][lowRankIdx];
             sharedU2[ty * TILE_DIM + tx] = U2s[termIdx][stride + ty][lowRankIdx];
@@ -30,10 +31,12 @@ __global__ void sklinear_forward_intermediate(
             sharedU2[ty * TILE_DIM + tx] = 0;
         }
         // Load intermediate results into shared memory.
-        if (batchIdx < batch_size && stride + tx < input_dim) {
-            sharedInput[ty * TILE_DIM + tx] = input[batchIdx][stride + tx];
-        } else {
-            sharedInput[ty * TILE_DIM + tx] = 0;
+        if (termIdx == 0) {
+            if (batchIdx < batch_size && stride + tx < input_dim) {
+                sharedInput[ty * TILE_DIM + tx] = input[batchIdx][stride + tx];
+            } else {
+                sharedInput[ty * TILE_DIM + tx] = 0;
+            }
         }
         __syncthreads();
         if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
@@ -49,8 +52,8 @@ __global__ void sklinear_forward_intermediate(
 
         if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
             // Write the result to the output tensor.
-            output[stride][0][termIdx][batchIdx][lowRankIdx] = sum1;
-            output[stride][1][termIdx][batchIdx][lowRankIdx] = sum2;
+            output[blockIdx.z][0][termIdx][batchIdx][lowRankIdx] = sum1;
+            output[blockIdx.z][1][termIdx][batchIdx][lowRankIdx] = sum2;
         }
     }
 }

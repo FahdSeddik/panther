@@ -8,7 +8,7 @@ torch::Tensor sketched_linear_forward(
     const torch::Tensor& U2s,
     const torch::Tensor& bias,
     const bool use_tensor_core) {
-    if (input.device().is_cuda() && use_tensor_core) {
+    if (input.device().is_cuda()) {
         return sketched_linear_forward_cuda(input, S1s, S2s, U1s, U2s, bias);
     } else {
         return sketched_linear_forward_cpu(input, S1s, S2s, U1s, U2s, bias);
