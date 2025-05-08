@@ -389,6 +389,9 @@ class SKAutoTuner:
                 best_speed_score_across_param_runs = float('-inf')
                 best_layer_across_param_runs = None
                 
+                if self.verbose:
+                    print(f"Trying parameters: {params}")
+
                 for run_n in range(self.num_runs_per_param):
                     # Apply parameters and evaluate
                     score, accuracy_score, speed_score, original_layer, new_layer = self._try_parameters(
@@ -405,6 +408,9 @@ class SKAutoTuner:
                         best_accuracy_score_across_param_runs = accuracy_score
                         best_speed_score_across_param_runs = speed_score
                         best_layer_across_param_runs = new_layer
+
+                    if self.verbose:
+                        print(f"run: {run_n + 1}/{self.num_runs_per_param} - accuracy_score: {accuracy_score}, speed_score: {speed_score}, final score: {score}")
                 
                 # Update search algorithm with average score
                 self.search_algorithm.update(params, best_score_across_param_runs)
@@ -451,6 +457,9 @@ class SKAutoTuner:
             best_speed_score_across_param_runs = float('-inf')
             best_layers_across_param_runs = None
 
+            if self.verbose:
+                print(f"Trying parameters: {params}")
+
             for run_n in range(self.num_runs_per_param):
                 original_layers = []
                 new_layers = []
@@ -464,6 +473,12 @@ class SKAutoTuner:
                 # Evaluate
                 accuracy_score = self.accuracy_eval_func(self.model)
                 score, speed_score = self._evaluate_model(accuracy_score)
+
+                # Restore original layers
+                for i, layer_name in enumerate(config.layer_names):
+                    parent, name = self._get_parent_module_and_name(layer_name)
+                    original_layer = original_layers[i]
+                    setattr(parent, name, original_layer)
                 
                 # Check if this run is the best for the current parameter set
                 if score > best_score_across_param_runs:
@@ -471,12 +486,9 @@ class SKAutoTuner:
                     best_accuracy_score_across_param_runs = accuracy_score
                     best_speed_score_across_param_runs = speed_score
                     best_layers_across_param_runs = copy.deepcopy(new_layers)
-                
-                # Restore original layers
-                for i, layer_name in enumerate(config.layer_names):
-                    parent, name = self._get_parent_module_and_name(layer_name)
-                    original_layer = original_layers[i]
-                    setattr(parent, name, original_layer)
+
+                if self.verbose:
+                        print(f"run: {run_n + 1}/{self.num_runs_per_param} - accuracy_score: {accuracy_score}, speed_score: {speed_score}, final score: {score}")
 
             # Update search algorithm with best score
             self.search_algorithm.update(params, best_score_across_param_runs)
