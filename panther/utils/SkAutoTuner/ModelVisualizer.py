@@ -96,10 +96,18 @@ class ModelVisualizer:
                 continue
                 
             # Collect basic info
+            try:
+                param_count = sum(p.numel() for p in module.parameters() if p.requires_grad)
+                is_trainable = any(p.requires_grad for p in module.parameters())
+            except Exception:
+                param_count = 0
+                is_trainable = False
+                
             info = {
                 'type': type(module).__name__,
-                'parameters': sum(p.numel() for p in module.parameters() if p.requires_grad),
-                'trainable': any(p.requires_grad for p in module.parameters()),
+                'parameters': param_count,
+                'trainable': is_trainable,
+                'class': str(type(module)),
             }
             
             # Add specific module type information
@@ -110,11 +118,40 @@ class ModelVisualizer:
                     'kernel_size': module.kernel_size,
                     'stride': module.stride,
                     'padding': module.padding,
+                    'groups': module.groups,
+                    'dilation': module.dilation,
                 })
             elif isinstance(module, nn.Linear):
                 info.update({
                     'in_features': module.in_features,
                     'out_features': module.out_features,
+                    'bias': module.bias is not None,
+                })
+            elif isinstance(module, nn.BatchNorm2d):
+                info.update({
+                    'num_features': module.num_features,
+                    'eps': module.eps,
+                    'momentum': module.momentum,
+                    'affine': module.affine,
+                })
+            elif isinstance(module, nn.RNN) or isinstance(module, nn.LSTM) or isinstance(module, nn.GRU):
+                info.update({
+                    'input_size': module.input_size,
+                    'hidden_size': module.hidden_size,
+                    'num_layers': module.num_layers,
+                    'bidirectional': module.bidirectional,
+                    'dropout': module.dropout,
+                })
+            elif isinstance(module, nn.Dropout):
+                info.update({
+                    'p': module.p,
+                    'inplace': module.inplace,
+                })
+            elif isinstance(module, nn.MaxPool2d) or isinstance(module, nn.AvgPool2d):
+                info.update({
+                    'kernel_size': module.kernel_size,
+                    'stride': module.stride,
+                    'padding': module.padding,
                 })
             
             module_info[name] = info
@@ -150,6 +187,9 @@ class ModelVisualizer:
                 'splines': 'ortho',
                 'fontname': 'Arial',
                 'fontsize': '14',
+                'nodesep': '0.5',
+                'ranksep': '0.7',
+                'concentrate': 'true',
             }
             
         if node_attrs is None:
@@ -175,18 +215,31 @@ class ModelVisualizer:
         tree, module_types = ModelVisualizer._build_module_tree(model.named_modules())
         module_info = ModelVisualizer._collect_module_info(model)
         
-        # Add the root node
-        root_id = str(uuid.uuid4())
+        # Add root model info to module_info
         root_type = type(model).__name__
-        dot.node(root_id, f'{root_type}', tooltip=f'Root: {root_type}')
+        module_info['root'] = {
+            'type': root_type,
+            'parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
+            'trainable': any(p.requires_grad for p in model.parameters()),
+            'class': str(type(model)),
+        }
+        
+        # Add the root node
+        root_id = "node_root"
+        dot.node(root_id, f'{root_type}', tooltip=f'Root: {root_type}', 
+                id='node_root', data_name='root')
+        
+        # Mapping from module path to node ID
+        node_ids = {'root': root_id}
         
         # Process the modules and build the graph
-        def add_nodes(subtree, parent_id, parent_path=''):
+        def add_nodes(subtree, parent_path=''):
             for name, child in sorted(subtree.items()):
                 current_path = f"{parent_path}.{name}" if parent_path else name
                 
-                # Create unique ID for this node
-                node_id = str(uuid.uuid4())
+                # Create node ID that's valid for HTML
+                node_id = f"node_{current_path.replace('.', '_')}"
+                node_ids[current_path] = node_id
                 
                 # Get module type and add node
                 module_type = module_types.get(current_path, "")
@@ -201,21 +254,27 @@ class ModelVisualizer:
                 # Add the node
                 fillcolor = "#E5F5FD" if child else "#C2E0F4"  # Different color for leaf nodes
                 dot.node(node_id, label, tooltip=tooltip, fillcolor=fillcolor,
-                        id=f'node_{current_path.replace(".", "_")}',
-                        data_name=current_path)
+                        id=node_id, data_name=current_path)
                 
                 # Connect to parent
-                dot.edge(parent_id, node_id)
+                parent_id = node_ids[parent_path] if parent_path else root_id
+                edge_id = f"edge_{parent_id}_{node_id}"
+                dot.edge(parent_id, node_id, id=edge_id, data_source=parent_id, data_target=node_id)
                 
                 # Process children
                 if child:
-                    add_nodes(child, node_id, current_path)
+                    add_nodes(child, current_path)
         
         # Add all nodes starting from root
-        add_nodes(tree, root_id)
+        add_nodes(tree)
         
         # Generate the SVG
         svg_content = dot.pipe().decode('utf-8')
+        
+        # Add more interactivity attributes to SVG
+        # Make sure edges have proper data attributes for dragging support
+        edge_pattern = r'<g class="edge".*?<path'
+        edge_replacement = r'<g class="edge" data-source="\1" data-target="\2"><path'
         
         # Prepare the module info for JavaScript
         js_module_info = json.dumps(module_info)
