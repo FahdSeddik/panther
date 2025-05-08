@@ -251,7 +251,7 @@ class ModelVisualizer:
                     info = module_info[current_path]
                     tooltip += f"\nParameters: {info['parameters']:,}"
                 
-                # Add the node
+                # Add the node with data attributes for JavaScript interactivity
                 fillcolor = "#E5F5FD" if child else "#C2E0F4"  # Different color for leaf nodes
                 dot.node(node_id, label, tooltip=tooltip, fillcolor=fillcolor,
                         id=node_id, data_name=current_path)
@@ -271,10 +271,20 @@ class ModelVisualizer:
         # Generate the SVG
         svg_content = dot.pipe().decode('utf-8')
         
-        # Add more interactivity attributes to SVG
-        # Make sure edges have proper data attributes for dragging support
-        edge_pattern = r'<g class="edge".*?<path'
-        edge_replacement = r'<g class="edge" data-source="\1" data-target="\2"><path'
+        # Ensure nodes have proper data-name attributes by modifying the SVG
+        # This step is crucial to make the interactivity work
+        for node_path, node_id in node_ids.items():
+            # Create a pattern to find the node in the SVG
+            node_pattern = f'id="{node_id}"'
+            # Ensure data-name attribute is present
+            data_name_attr = f'data-name="{node_path}"'
+            
+            # If the data-name attribute is missing, add it
+            if data_name_attr not in svg_content:
+                svg_content = svg_content.replace(
+                    node_pattern, 
+                    f'{node_pattern} {data_name_attr}'
+                )
         
         # Prepare the module info for JavaScript
         js_module_info = json.dumps(module_info)
