@@ -236,7 +236,7 @@ class SKAutoTuner:
 
             from panther.nn import conv2d
 
-            if self.copy_weights:
+            if copy_weights:
                 sketched_layer = conv2d.fromTorch(
                     original_layer,
                     **params
