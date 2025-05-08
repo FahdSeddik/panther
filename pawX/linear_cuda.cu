@@ -9,19 +9,19 @@ __global__ void sklinear_forward_intermediate(
     const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,  // gets loaded term number of times
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,    // gets loaded batch / TILE times
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,
-    torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> output,  // 2 * num * batch * low_rank
-    int batch_size, int input_dim, int low_rank_dim) {
+    torch::PackedTensorAccessor32<scalar_t, 5, torch::RestrictPtrTraits> output,  // numTilesI, 2 * num * batch * low_rank
+    int batch_size, int input_dim, int low_rank_dim, int num_terms) {
     int tx = threadIdx.x, ty = threadIdx.y;
-    int termIdx = blockIdx.z;
     int batchIdx = blockIdx.y * TILE_DIM + ty;    // row
     int lowRankIdx = blockIdx.x * TILE_DIM + tx;  // col
+    int stride = blockIdx.z * TILE_DIM;
     extern __shared__ float shData[];
     scalar_t* sharedS1 = (scalar_t*)shData;
     scalar_t* sharedU2 = sharedS1 + TILE_DIM * TILE_DIM;
     scalar_t* sharedInput = sharedU2 + TILE_DIM * TILE_DIM;
 
     scalar_t sum1 = 0, sum2 = 0;
-    for (int stride = 0; stride < input_dim; stride += TILE_DIM) {
+    for (int termIdx = 0; termIdx < num_terms; termIdx++) {
         if (lowRankIdx < low_rank_dim && stride + ty < input_dim) {
             sharedS1[ty * TILE_DIM + tx] = S1s[termIdx][stride + ty][lowRankIdx];
             sharedU2[ty * TILE_DIM + tx] = U2s[termIdx][stride + ty][lowRankIdx];
@@ -46,12 +46,12 @@ __global__ void sklinear_forward_intermediate(
             }
         }
         __syncthreads();
-    }
 
-    if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
-        // Write the result to the output tensor.
-        output[0][termIdx][batchIdx][lowRankIdx] = sum1;
-        output[1][termIdx][batchIdx][lowRankIdx] = sum2;
+        if (batchIdx < batch_size && lowRankIdx < low_rank_dim) {
+            // Write the result to the output tensor.
+            output[stride][0][termIdx][batchIdx][lowRankIdx] = sum1;
+            output[stride][1][termIdx][batchIdx][lowRankIdx] = sum2;
+        }
     }
 }
 
@@ -133,13 +133,13 @@ torch::Tensor sketched_linear_forward_cuda(
 
     // Create output tensor.
     auto output = torch::zeros({batch_size, output_dim}, input.options());
-
-    dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, num_terms);
+    int numTilesI = (input_dim + TILE_DIM - 1) / TILE_DIM;
+    dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, numTilesI);
     dim3 block(TILE_DIM, TILE_DIM);
     int shared_mem_size = 3 * TILE_DIM * TILE_DIM * input.element_size();
 
     // allocate intermediate output tensor contigously
-    auto output_intermediate = torch::zeros({2, num_terms, batch_size, low_rank_dim}, input.options().memory_format(torch::MemoryFormat::Contiguous));
+    auto output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options().memory_format(torch::MemoryFormat::Contiguous));
     AT_DISPATCH_FLOATING_TYPES(
         input.scalar_type(),
         "sklinear_forward_intermediate",
@@ -148,9 +148,11 @@ torch::Tensor sketched_linear_forward_cuda(
                 input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
                 S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
-                batch_size, input_dim, low_rank_dim);
+                output_intermediate.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
+                batch_size, input_dim, low_rank_dim, num_terms);
         }));
+
+    output_intermediate = output_intermediate.sum(0);
 
     dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
     dim3 block2(TILE_DIM, TILE_DIM);
