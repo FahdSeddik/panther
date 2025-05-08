@@ -273,18 +273,28 @@ class ModelVisualizer:
         
         # Ensure nodes have proper data-name attributes by modifying the SVG
         # This step is crucial to make the interactivity work
+        import re
         for node_path, node_id in node_ids.items():
-            # Create a pattern to find the node in the SVG
-            node_pattern = f'id="{node_id}"'
-            # Ensure data-name attribute is present
+            # Create a pattern to find the node group in the SVG
+            node_group_pattern = rf'(<g[^>]*id="{node_id}"[^>]*)(>)'
             data_name_attr = f'data-name="{node_path}"'
-            
-            # If the data-name attribute is missing, add it
-            if data_name_attr not in svg_content:
-                svg_content = svg_content.replace(
-                    node_pattern, 
-                    f'{node_pattern} {data_name_attr}'
-                )
+            # Add data-name to the <g> if missing
+            svg_content = re.sub(
+                node_group_pattern,
+                lambda m: m.group(1) + (f' {data_name_attr}' if data_name_attr not in m.group(1) else '') + m.group(2),
+                svg_content
+            )
+            # Also add data-name to all direct children of this <g> (rect, text, etc.)
+            # Find the <g ...>...</g> block
+            g_block_pattern = rf'(<g[^>]*id="{node_id}"[^>]*>)([\s\S]*?)(</g>)'
+            def add_data_name_to_children(match):
+                g_open, g_content, g_close = match.groups()
+                # Add data-name to all child elements (rect, text, polygon, etc.)
+                g_content = re.sub(r'(<(rect|polygon|ellipse|text|title|path|circle)\b[^>]*)(/?>)',
+                    lambda m2: m2.group(1) + (f' {data_name_attr}' if data_name_attr not in m2.group(1) else '') + m2.group(3),
+                    g_content)
+                return g_open + g_content + g_close
+            svg_content = re.sub(g_block_pattern, add_data_name_to_children, svg_content)
         
         # Prepare the module info for JavaScript
         js_module_info = json.dumps(module_info)

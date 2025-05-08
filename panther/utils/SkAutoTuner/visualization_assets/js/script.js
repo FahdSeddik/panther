@@ -328,41 +328,76 @@ document.addEventListener('DOMContentLoaded', function() {
           infoPanel.innerHTML = `<h3>Module: ${moduleName}</h3><p>No detailed information available</p>`;
           return;
       }
-      
       let html = `<h3>Module: ${moduleName}</h3>`;
       html += `<div class="layer-path">${moduleName}</div>`;
+      html += `<button id="copyNameBtn" style="margin-bottom:8px;">Copy Name</button>`;
       html += `<table>`;
       html += `<tr><th>Property</th><th>Value</th></tr>`;
-      
-      // Add basic properties
       html += `<tr><td>Type</td><td>${info.type}</td></tr>`;
       html += `<tr><td>Parameters</td><td>${info.parameters.toLocaleString()}</td></tr>`;
       html += `<tr><td>Trainable</td><td>${info.trainable ? 'Yes' : 'No'}</td></tr>`;
-      
-      // Add specific properties
       for (const [key, value] of Object.entries(info)) {
           if (!['type', 'parameters', 'trainable'].includes(key)) {
               html += `<tr><td>${key}</td><td>${JSON.stringify(value)}</td></tr>`;
           }
       }
-      
       html += `</table>`;
       infoPanel.innerHTML = html;
+      // Add copy functionality
+      const copyBtn = document.getElementById('copyNameBtn');
+      if (copyBtn) {
+          copyBtn.onclick = function() {
+              navigator.clipboard.writeText(moduleName).then(function() {
+                  copyNotification.textContent = `Module name "${moduleName}" copied to clipboard!`;
+                  copyNotification.style.opacity = 1;
+                  setTimeout(function() { 
+                      copyNotification.style.opacity = 0; 
+                  }, 2000);
+              });
+          };
+      }
   }
   
-  // Search functionality
+  // Enhanced search: support name, type, and property search
   searchInput.addEventListener('input', function() {
-      const searchTerm = this.value.toLowerCase();
+      const searchTerm = this.value.trim().toLowerCase();
       if (searchTerm === '') {
           nodes.forEach(node => {
               node.style.opacity = 1;
           });
           return;
       }
-      
+      // Advanced search: type:Linear, trainable:yes, etc.
+      let filterFn;
+      const typeMatch = searchTerm.match(/^type:(.+)$/);
+      const trainableMatch = searchTerm.match(/^trainable:(yes|no)$/);
+      if (typeMatch) {
+          const typeVal = typeMatch[1].trim();
+          filterFn = node => {
+              const moduleName = node.getAttribute('data-name') || '';
+              const info = moduleInfo[moduleName];
+              return info && info.type && info.type.toLowerCase().includes(typeVal);
+          };
+      } else if (trainableMatch) {
+          const trainableVal = trainableMatch[1] === 'yes';
+          filterFn = node => {
+              const moduleName = node.getAttribute('data-name') || '';
+              const info = moduleInfo[moduleName];
+              return info && !!info.trainable === trainableVal;
+          };
+      } else {
+          // Default: substring match on name or type
+          filterFn = node => {
+              const moduleName = node.getAttribute('data-name') || '';
+              const info = moduleInfo[moduleName];
+              return (
+                  moduleName.toLowerCase().includes(searchTerm) ||
+                  (info && info.type && info.type.toLowerCase().includes(searchTerm))
+              );
+          };
+      }
       nodes.forEach(node => {
-          const moduleName = node.getAttribute('data-name') || '';
-          if (moduleName.toLowerCase().includes(searchTerm)) {
+          if (filterFn(node)) {
               node.style.opacity = 1;
           } else {
               node.style.opacity = 0.2;
