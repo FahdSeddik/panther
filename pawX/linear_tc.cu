@@ -197,7 +197,7 @@ torch::Tensor sketched_linear_forward_cuda(
 
     auto interm = partial.sum(0);
 
-    if (R <= 64) {
+    if (R <= 96) {
         auto out = torch::zeros({B, O}, input.options());
         dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
