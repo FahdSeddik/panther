@@ -1,13 +1,17 @@
 import torch.nn as nn
 import os
-from graphviz import Digraph, ExecutableNotFound
+import re
+import json
 import tempfile
 import webbrowser
-import json
-from typing import Dict, Any, Optional, Tuple
-import importlib.resources
-import importlib.util
 import logging
+from typing import Dict, Any, Optional, Tuple
+
+try:
+    from graphviz import Digraph, ExecutableNotFound
+except ImportError:
+    Digraph = None
+    ExecutableNotFound = Exception
 
 # Setup a logger for this module
 logger = logging.getLogger(__name__)
@@ -19,24 +23,9 @@ class ModelVisualizer:
     allowing users to explore module hierarchy, view details, and search.
     """
     
-    # Get the path to the visualization assets using modern approach instead of pkg_resources
-    try:
-        # First try to use importlib.resources if available (Python 3.7+)
-        if importlib.util.find_spec('importlib.resources'):
-            import importlib.resources as resources
-            try:
-                # Try to use modern API (Python 3.9+)
-                _ASSETS_PATH = str(resources.files(__name__) / 'visualization_assets')
-            except (AttributeError, ImportError):
-                # Fallback for Python 3.7-3.8
-                with resources.path(__name__, 'visualization_assets') as p:
-                    _ASSETS_PATH = str(p)
-        else:
-            # Direct path fallback
-            _ASSETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization_assets')
-    except (ImportError, ModuleNotFoundError, AttributeError):
-        # Ultimate fallback
-        _ASSETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization_assets')
+    # Get the path to the visualization assets
+    # Use a simpler approach that doesn't rely on importlib.resources
+    _ASSETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'visualization_assets')
 
     @staticmethod
     def _build_module_tree(named_modules: iter) -> Tuple[Dict[str, Any], Dict[str, str]]:
@@ -54,7 +43,7 @@ class ModelVisualizer:
                 current_level = current_level.setdefault(part, {})
                 
         return tree, module_types
-
+    
     @staticmethod
     def _print_tree(subtree: Dict[str, Any], module_types: Dict[str, str], 
                     full_path: str = '', prefix: str = '', is_last: bool = True):
@@ -70,7 +59,7 @@ class ModelVisualizer:
             if child:
                 extension = '    ' if is_child_last else '│   '
                 ModelVisualizer._print_tree(child, module_types, current_path, prefix + extension, is_child_last)
-
+    
     @staticmethod
     def print_module_tree(model: nn.Module, root_name: str = 'model'):
         """
@@ -80,7 +69,7 @@ class ModelVisualizer:
         module_types[''] = type(model).__name__
         print(f"{root_name} ({module_types.get('', 'UnknownType')})/")
         ModelVisualizer._print_tree(tree, module_types, full_path=root_name)
-
+    
     @staticmethod
     def _collect_module_info(model: nn.Module) -> Dict[str, Dict[str, Any]]:
         """
@@ -222,9 +211,7 @@ class ModelVisualizer:
         """
         Creates an interactive visualization of the model structure.
         """
-        try:
-            from graphviz import Digraph
-        except ImportError:
+        if Digraph is None:
             raise ImportError("The graphviz Python package is required. Install with 'pip install graphviz'.")
 
         default_graph_attrs = {
@@ -267,7 +254,7 @@ class ModelVisualizer:
         root_label = f"{root_name_for_graph} ({root_display_type})"
         if len(root_label) > max_label_length:
             root_label = root_label[:max_label_length-3] + "..."
-
+        
         root_id = "node_root_model"
         dot.node(root_id, root_label, tooltip=f'Root: {root_display_type}\nParameters: {module_info["root"]["parameters"]:,}',
                  id=root_id, data_name='root', fillcolor='#D1E7F7', shape='Mrecord')
@@ -280,6 +267,7 @@ class ModelVisualizer:
                 node_id = f"node_{current_full_path.replace('.', '_').replace('-', '_')}"
                 node_ids[current_full_path] = node_id
                 module_type_name = module_types.get(current_full_path, "Unknown")
+                
                 label = f"{name_part} ({module_type_name})"
                 if len(label) > max_label_length:
                     label = label[:max_label_length-3] + "..."
@@ -291,6 +279,7 @@ class ModelVisualizer:
                 node_fillcolor = default_node_attrs.get('fillcolor', '#E5F5FD')
                 if not children_subtree:
                     node_fillcolor = "#C2E0F4" 
+                
                 dot.node(node_id, label, tooltip='\n'.join(tooltip_parts), fillcolor=node_fillcolor,
                          id=node_id, data_name=current_full_path)
                 edge_id = f"edge_{parent_node_id}_{node_id}"
@@ -303,11 +292,10 @@ class ModelVisualizer:
         svg_content_bytes = dot.pipe(format='svg')
         svg_content = svg_content_bytes.decode('utf-8')
         
-        import re
         for node_path_key, node_html_id in node_ids.items():
             data_name_attr_str = f'data-name="{node_path_key}"'
             g_block_pattern = rf'(<g[^>]*id="{re.escape(node_html_id)}"[^>]*>)([\s\S]*?)(</g>)'
-
+            
             def process_g_block(match_obj):
                 g_open_tag, g_content, g_close_tag = match_obj.groups()
                 if data_name_attr_str not in g_open_tag:
@@ -317,11 +305,12 @@ class ModelVisualizer:
                     if data_name_attr_str not in child_tag_open:
                         return child_tag_open + f' {data_name_attr_str}' + child_tag_rest
                     return child_match.group(0)
+                
                 g_content = re.sub(r'(<(?:rect|polygon|ellipse|text|path|circle)\b[^>]*?)(/?>)', 
                                    add_data_to_visual_child, 
                                    g_content)
                 return g_open_tag + g_content + g_close_tag
-
+            
             svg_content = re.sub(g_block_pattern, process_g_block, svg_content)
 
         js_module_info = json.dumps(module_info)
@@ -350,7 +339,7 @@ class ModelVisualizer:
             raise FileNotFoundError(f"JavaScript file not found at {js_path}")
         with open(js_path, 'r', encoding='utf-8') as f:
             js_content = f.read()
-        
+            
         html_content = template_content.replace('{{SVG_CONTENT}}', svg_content)
         html_content = html_content.replace('{{MODULE_INFO}}', js_module_info)
         html_content = html_content.replace('{{CSS_CONTENT}}', css_content)
