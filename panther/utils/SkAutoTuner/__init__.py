@@ -2,6 +2,7 @@ from .SKAutoTuner import SKAutoTuner
 from .Configs import LayerConfig, TuningConfigs
 from .Searching import SearchAlgorithm, GridSearch, RandomSearch, BayesianOptimization
 from .ModelVisualizer import ModelVisualizer
+from .ConfigVisualizer import ConfigVisualizer
 
 __all__ = [
     "SKAutoTuner",
@@ -11,5 +12,6 @@ __all__ = [
     "GridSearch",
     "RandomSearch",
     "BayesianOptimization",
-    "ModelVisualizer"
+    "ModelVisualizer",
+    "ConfigVisualizer"
 ]

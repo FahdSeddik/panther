@@ -324,6 +324,109 @@ body.dark-theme .expansion-indicator {
     height: 100%;
     overflow: hidden; /* Crucial for svg-pan-zoom */
 }
+        #config-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            max-height: 90vh;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 15px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        #config-panel h3 {
+            margin-top: 0;
+            color: #4285F4;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        #config-panel h4 {
+            margin: 10px 0 5px;
+            color: #555;
+        }
+        .panel-section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        #selected-layers-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin: 0;
+            padding-left: 20px;
+        }
+        #selected-layers-list li {
+            margin-bottom: 3px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        #selected-layers-list li:hover {
+            color: #ff5252;
+        }
+        .selected-node {
+            fill: #FFC107 !important;
+            stroke: #FF5722 !important;
+            stroke-width: 2px !important;
+        }
+        #lc-params {
+            width: 100%;
+            font-family: monospace;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+        .option-row {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        .option-row label {
+            margin-left: 5px;
+        }
+        button {
+            background: #4285F4;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        #clear-selection {
+            background: #f44336;
+        }
+        #clear-selection:hover {
+            background: #d32f2f;
+        }
+        #generated-code {
+            width: 100%;
+            height: 180px;
+            font-family: monospace;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            background: #f5f5f5;
+        }
+        .config-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+        .param-data {
+            font-size: 12px;
+            color: #666;
+            margin-left: 10px;
+        }
+        
 
         /* Loading Spinner */
         .loading-spinner {
@@ -1741,6 +1844,245 @@ document.addEventListener('DOMContentLoaded', function() {
       document.head.appendChild(script);
   }
 });
+        // Config panel functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Store all selected layers
+            const selectedLayers = new Set();
+            let generatedConfigs = [];
+            
+            // Get SVG container and add click events to nodes
+            const svgContainer = document.querySelector('#svg-container');
+            const svgElement = svgContainer.querySelector('svg');
+            
+            // Add click handlers to all module nodes
+            svgElement.querySelectorAll('g[data-name]').forEach(node => {
+                node.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    const nodeName = node.getAttribute('data-name');
+                    if (nodeName === 'root') return; // Skip root node
+                    
+                    // Toggle selection
+                    if (selectedLayers.has(nodeName)) {
+                        selectedLayers.delete(nodeName);
+                        node.classList.remove('selected-node');
+                    } else {
+                        selectedLayers.add(nodeName);
+                        node.classList.add('selected-node');
+                    }
+                    
+                    updateSelectedLayersList();
+                });
+            });
+            
+            // Update the list of selected layers
+            function updateSelectedLayersList() {
+                const layersList = document.getElementById('selected-layers-list');
+                layersList.innerHTML = '';
+                
+                selectedLayers.forEach(layer => {
+                    const li = document.createElement('li');
+                    li.textContent = layer;
+                    li.addEventListener('click', function() {
+                        // Find and deselect the corresponding node in the SVG
+                        const node = svgElement.querySelector(`g[data-name="${layer}"]`);
+                        if (node) {
+                            node.classList.remove('selected-node');
+                        }
+                        selectedLayers.delete(layer);
+                        updateSelectedLayersList();
+                    });
+                    layersList.appendChild(li);
+                });
+            }
+            
+            // Clear selection button
+            document.getElementById('clear-selection').addEventListener('click', function() {
+                selectedLayers.clear();
+                svgElement.querySelectorAll('g.selected-node').forEach(node => {
+                    node.classList.remove('selected-node');
+                });
+                updateSelectedLayersList();
+            });
+            
+            // Generate LayerConfig button
+            document.getElementById('generate-config').addEventListener('click', function() {
+                if (selectedLayers.size === 0) {
+                    alert('Please select at least one layer first.');
+                    return;
+                }
+                
+                // Get params, separate and copy_weights values
+                let paramsStr = document.getElementById('lc-params').value.trim();
+                let params = {};
+                if (paramsStr) {
+                    try {
+                        params = JSON.parse(paramsStr);
+                    } catch (e) {
+                        alert('Invalid JSON in Parameters field. Please correct the format.');
+                        return;
+                    }
+                } else {
+                    alert('Please enter parameter values as JSON. For example: {"out_features": [64, 128]}');
+                    return;
+                }
+                
+                const separate = document.getElementById('lc-separate').checked;
+                const copyWeights = document.getElementById('lc-copy-weights').checked;
+                
+                // Format the layer names
+                let layerNamesCode;
+                if (selectedLayers.size === 1) {
+                    // Single string for single layer
+                    layerNamesCode = `"${Array.from(selectedLayers)[0]}"`;
+                } else {
+                    // List for multiple layers
+                    layerNamesCode = JSON.stringify(Array.from(selectedLayers));
+                }
+                
+                // Generate the LayerConfig code
+                const layerConfigCode = `LayerConfig(
+    layer_names=${layerNamesCode},
+    params=${JSON.stringify(params, null, 4)},
+    separate=${separate},
+    copy_weights=${copyWeights}
+)`;
+                
+                document.getElementById('generated-code').value = layerConfigCode;
+            });
+            
+            // Add to TuningConfigs button
+            document.getElementById('add-to-tuning').addEventListener('click', function() {
+                const code = document.getElementById('generated-code').value;
+                if (!code.trim().startsWith('LayerConfig(')) {
+                    alert('Please generate a LayerConfig first.');
+                    return;
+                }
+                
+                generatedConfigs.push(code);
+                
+                // Update the code to show all configs collected so far
+                const allConfigsCode = `# Import required classes
+from panther.utils.SkAutoTuner.Configs.LayerConfig import LayerConfig
+from panther.utils.SkAutoTuner.Configs.TuningConfigs import TuningConfigs
+
+# Define your layer configurations
+configs = [
+    ${generatedConfigs.join(',
+    ')}
+]
+
+# Create TuningConfigs object
+tuning_configs = TuningConfigs(configs)`;
+                
+                document.getElementById('generated-code').value = allConfigsCode;
+            });
+            
+            // Generate TuningConfigs button
+            document.getElementById('generate-tuning').addEventListener('click', function() {
+                if (generatedConfigs.length === 0) {
+                    // If no configs have been added, try to use the current one
+                    const code = document.getElementById('generated-code').value;
+                    if (code.trim().startsWith('LayerConfig(')) {
+                        generatedConfigs.push(code);
+                    } else {
+                        alert('Please generate at least one LayerConfig first.');
+                        return;
+                    }
+                }
+                
+                // Generate the full TuningConfigs code
+                const tuningConfigsCode = `# Import required classes
+from panther.utils.SkAutoTuner.Configs.LayerConfig import LayerConfig
+from panther.utils.SkAutoTuner.Configs.TuningConfigs import TuningConfigs
+
+# Define your layer configurations
+configs = [
+    ${generatedConfigs.join(',
+    ')}
+]
+
+# Create TuningConfigs object
+tuning_configs = TuningConfigs(configs)`;
+                
+                document.getElementById('generated-code').value = tuningConfigsCode;
+            });
+            
+            // Copy to clipboard button
+            document.getElementById('copy-code').addEventListener('click', function() {
+                const codeTextarea = document.getElementById('generated-code');
+                codeTextarea.select();
+                document.execCommand('copy');
+                
+                // Brief visual feedback
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                setTimeout(() => {
+                    this.textContent = originalText;
+                }, 2000);
+            });
+            
+            // Add module parameter hints to the SVG nodes
+            const moduleInfo = ${js_module_info};
+            svgElement.querySelectorAll('g[data-name]').forEach(node => {
+                const nodeName = node.getAttribute('data-name');
+                if (nodeName && moduleInfo[nodeName]) {
+                    const info = moduleInfo[nodeName];
+                    let paramData = '';
+                    
+                    if (info.type === 'Linear') {
+                        paramData = `in: ${info.in_features}, out: ${info.out_features}`;
+                    } else if (info.type === 'Conv2d') {
+                        paramData = `in: ${info.in_channels}, out: ${info.out_channels}, k: ${info.kernel_size}`;
+                    }
+                    
+                    if (paramData) {
+                        // Add parameter data to node labels for reference
+                        const textElement = node.querySelector('text');
+                        if (textElement) {
+                            const span = document.createElement('tspan');
+                            span.setAttribute('x', textElement.getAttribute('x'));
+                            span.setAttribute('dy', '1.2em');
+                            span.setAttribute('class', 'param-data');
+                            span.textContent = paramData;
+                            textElement.appendChild(span);
+                        }
+                    }
+                }
+            });
+        });
+        
     </script>
-</body>
+
+        <div id="config-panel">
+            <h3>SKAutoTuner Configuration</h3>
+            <div class="panel-section">
+                <h4>Selected Layers</h4>
+                <ul id="selected-layers-list"></ul>
+                <button id="clear-selection">Clear Selection</button>
+            </div>
+            <div class="panel-section">
+                <h4>LayerConfig Options</h4>
+                <label for="lc-params">Parameters:</label>
+                <textarea id="lc-params" rows="3" placeholder='{"out_features": [64, 128]}'></textarea>
+                <div class="option-row">
+                    <input type="checkbox" id="lc-separate" checked>
+                    <label for="lc-separate">Tune Separately</label>
+                </div>
+                <div class="option-row">
+                    <input type="checkbox" id="lc-copy-weights" checked>
+                    <label for="lc-copy-weights">Copy Weights</label>
+                </div>
+                <button id="generate-config">Generate LayerConfig</button>
+            </div>
+            <div class="panel-section">
+                <h4>Generated Configs</h4>
+                <div class="config-buttons">
+                    <button id="add-to-tuning">Add to TuningConfigs</button>
+                    <button id="generate-tuning">Generate TuningConfigs</button>
+                    <button id="copy-code">Copy to Clipboard</button>
+                </div>
+                <textarea id="generated-code" rows="10" readonly></textarea>
+            </div>
+        </div>
+        </body>
 </html>
