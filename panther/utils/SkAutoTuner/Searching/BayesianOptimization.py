@@ -3,18 +3,13 @@ import numpy as np
 import torch
 from panther.utils.SkAutoTuner.Searching.SearchAlgorithm import SearchAlgorithm
 
-try:
-    import botorch
-    from botorch.models import SingleTaskGP
-    from botorch.fit import fit_gpytorch_model
-    from botorch.acquisition import ExpectedImprovement
-    from botorch.optim import optimize_acqf
-    from gpytorch.mlls import ExactMarginalLogLikelihood
-    from botorch.utils.transforms import normalize, standardize
-    BOTORCH_AVAILABLE = True
-except ImportError:
-    BOTORCH_AVAILABLE = False
-    print("Warning: botorch is not available. Install with: pip install botorch")
+import botorch
+from botorch.models import SingleTaskGP
+from botorch.fit import fit_gpytorch_model
+from botorch.acquisition import ExpectedImprovement
+from botorch.optim import optimize_acqf
+from gpytorch.mlls import ExactMarginalLogLikelihood
+from botorch.utils.transforms import normalize, standardize
 
 class BayesianOptimization(SearchAlgorithm):
     """
@@ -31,9 +26,6 @@ class BayesianOptimization(SearchAlgorithm):
             random_trials: Number of initial random trials before using GP
             exploration_weight: Weight for exploration in acquisition function (higher = more exploration)
         """
-        if not BOTORCH_AVAILABLE:
-            raise ImportError("botorch is required for this implementation. Install with: pip install botorch")
-        
         self.param_space = {}
         self.max_trials = max_trials
         self.random_trials = random_trials
