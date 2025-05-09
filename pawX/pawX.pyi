@@ -106,7 +106,7 @@ def sketched_conv2d_forward(
     stride: Tuple[int, int],
     padding: Tuple[int, int],
     kernel_size: Tuple[int, int],
-    bias: torch.Tensor,
+    bias: torch.Tensor | None = None,
 ) -> torch.Tensor: ...
 def sketched_conv2d_backward(
     input: torch.Tensor,

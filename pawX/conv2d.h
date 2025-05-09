@@ -8,7 +8,7 @@ torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
                                       const std::vector<int64_t> &stride,
                                       const std::vector<int64_t> &padding,
                                       const std::vector<int64_t> &kernel_size,
-                                      const torch::Tensor &bias);
+                                      const c10::optional<torch::Tensor> &bias_opt);
 
 torch::autograd::tensor_list sketched_conv2d_backward(const torch::Tensor &x_windows,
                                                       const torch::Tensor &S1s,
