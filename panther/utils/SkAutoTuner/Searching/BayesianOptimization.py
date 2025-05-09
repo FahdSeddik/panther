@@ -5,7 +5,7 @@ from panther.utils.SkAutoTuner.Searching.SearchAlgorithm import SearchAlgorithm
 
 import botorch
 from botorch.models import SingleTaskGP
-from botorch.fit import fit_gpytorch_model
+from botorch.fit import fit_gpytorch_mll
 from botorch.acquisition import ExpectedImprovement
 from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
@@ -142,7 +142,7 @@ class BayesianOptimization(SearchAlgorithm):
         
         # Fit the model
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll)
+        fit_gpytorch_mll(mll)
     
     def get_next_params(self) -> Dict[str, Any]:
         """
