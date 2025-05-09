@@ -1,5 +1,7 @@
 #include <torch/extension.h>
 
+#include "linear.h"
+
 #define TILE_DIM 16
 
 template <typename scalar_t>
@@ -169,4 +171,16 @@ torch::Tensor sketched_linear_forward_cuda(
         }));
 
     return output;
+}
+
+std::vector<torch::Tensor> sketched_linear_backward_cuda(
+    const torch::Tensor& grad_output,
+    const torch::Tensor& input,
+    const torch::Tensor& S1s,
+    const torch::Tensor& S2s,
+    const torch::Tensor& U1s,
+    const torch::Tensor& U2s) {
+    // raise not implemented error
+    throw std::runtime_error("sketched_linear_backward_cuda not implemented yet.");
+    return std::vector<torch::Tensor>{};
 }

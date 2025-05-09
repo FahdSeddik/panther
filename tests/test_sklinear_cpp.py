@@ -139,6 +139,38 @@ def test_forward_gpu_vs_cpu(test_tensors):
     ), "Forward pass differs between CPU and GPU."
 
 
+def test_backward_gpu_vs_cpu(test_tensors):
+    """Ensure backward pass produces the same gradients on CPU and GPU."""
+    # skip test anyway
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA is not available.")
+
+    input_tensor, S1s, S2s, U1s, U2s, _ = test_tensors
+
+    input_tensor_gpu = input_tensor.to("cuda")
+    S1s_gpu = S1s.to("cuda")
+    S2s_gpu = S2s.to("cuda")
+    U1s_gpu = U1s.to("cuda")
+    U2s_gpu = U2s.to("cuda")
+
+    batch_size = input_tensor.shape[0]
+    output_dim = U1s.shape[2]
+    grad_output_cpu = torch.randn((batch_size, output_dim))
+
+    grads_cpu = sketched_linear_backward(
+        grad_output_cpu, input_tensor, S1s, S2s, U1s, U2s
+    )
+
+    grads_gpu = sketched_linear_backward(
+        grad_output_cpu.to("cuda"), input_tensor_gpu, S1s_gpu, S2s_gpu, U1s_gpu, U2s_gpu
+    )
+
+    for g_cpu, g_gpu in zip(grads_cpu, grads_gpu):
+        assert torch.allclose(
+            g_cpu, g_gpu.cpu(), atol=1, rtol=1
+        ), "Backward pass differs between CPU and GPU."
+
+
 def test_backward_vs_autograd(test_tensors):
     """Ensure gradients computed by sketched_linear_backward match autograd."""
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors

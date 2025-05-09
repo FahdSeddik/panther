@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Model Visualization</title>
+    <style>
+        /* Basic Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body.dark-theme {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        body.dark-theme .controls,
+        body.dark-theme .info-panel,
+        body.dark-theme .node-menu,
+        body.dark-theme .help-tooltip,
+        body.dark-theme .zoom-controls,
+        body.dark-theme button,
+        body.dark-theme input {
+            background-color: #252526;
+            color: #d4d4d4;
+            border-color: #3c3c3c;
+        }
+        body.dark-theme button:hover,
+        body.dark-theme .menu-item:hover {
+            background-color: #3e3e3e;
+        }
+        body.dark-theme .zoom-button {
+            background: #3775c9; /* Darker blue for dark theme */
+        }
+        body.dark-theme th {
+            background-color: #333;
+        }
+        body.dark-theme td, body.dark-theme th {
+            border-bottom-color: #444;
+        }
+        body.dark-theme .layer-path {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+        body.dark-theme #searchInput {
+            background-color: #3c3c3c;
+            color: #d4d4d4;
+        }
+        body.dark-theme .visualization-container {
+            border-color: #3c3c3c;
+        }
+        body.dark-theme .resize-handle {
+            background-color: #252526;
+            border-top-color: #3c3c3c;
+        }
+
+        {{CSS_CONTENT}}
+
+        /* Loading Spinner */
+        .loading-spinner {
+            border: 5px solid #f3f3f3; /* Light grey */
+            border-top: 5px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001; /* Above node menu */
+        }
+        body.dark-theme .loading-spinner {
+            border-color: #444;
+            border-top-color: #3775c9;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Model Visualization</h1>
+    <div class="controls" role="toolbar" aria-label="Visualization Controls">
+        <button id="expandAll" title="Expand all nodes">Expand All</button>
+        <button id="collapseAll" title="Collapse all top-level nodes">Collapse All</button>
+        <input type="text" id="searchInput" placeholder="Search (e.g., name, type:Conv2d)" aria-label="Search modules">
+        <button id="clearSearch" title="Clear search input">Clear</button>
+        <button id="exportJSON" class="export-btn" title="Export model structure as JSON">Export JSON</button>
+        <button id="themeToggle" title="Toggle light/dark theme">Toggle Theme</button>
+        <button id="helpButton" title="Show help and keyboard shortcuts (?)">Help (?)</button>
+    </div>
+
+    <div class="visualization-container" id="visualizationContainer" role="application" aria-roledescription="Interactive model graph">
+        <div id="loadingIndicator" class="loading-spinner" style="display: none;"></div>
+        <div class="svg-pan-zoom-container" id="svgPanZoomContainer">
+             {{SVG_CONTENT}}
+        </div>
+        <div class="zoom-controls" role="group" aria-label="Zoom Controls">
+            <button class="zoom-button" id="zoomIn" title="Zoom In (+)">+</button>
+            <button class="zoom-button" id="zoomOut" title="Zoom Out (-)">-</button>
+            <button class="zoom-button" id="resetZoom" title="Reset Zoom (100%)">Reset</button>
+        </div>
+    </div>
+    <div class="resize-handle" id="resizeHandle" title="Resize visualization area" aria-label="Resize Handle"></div>
+
+    <div class="info-panel" id="infoPanel" role="region" aria-live="polite" aria-labelledby="infoPanelHeader">
+        <h3 id="infoPanelHeader">Module Information</h3>
+        <p>Click on a module in the visualization to view its details.</p>
+    </div>
+
+    <div class="copy-notification" id="copyNotification" role="alert" aria-live="assertive">Module name copied to clipboard!</div>
+
+    <div class="node-menu" id="nodeMenu" role="menu" aria-hidden="true">
+        <div class="menu-item" id="copyName" role="menuitem">Copy Module Name</div>
+        <div class="menu-item" id="showDetails" role="menuitem">Show Details</div>
+        <div class="menu-item" id="highlightPath" role="menuitem">Highlight Path</div>
+        <div class="menu-item" id="toggleCollapse" role="menuitem">Toggle Collapse</div>
+    </div>
+
+    <div class="help-tooltip" id="helpTooltip" role="dialog" aria-labelledby="helpTooltipHeader" aria-hidden="true">
+      <h3 id="helpTooltipHeader">Keyboard Shortcuts & Tips</h3>
+      <button id="closeHelpTooltip" aria-label="Close help" style="float: right; font-size: 1.2em; line-height: 1; padding: 0.2em 0.4em;">&times;</button>
+      <ul>
+        <li><b>Double-click node</b>: Collapse/expand node</li>
+        <li><b>Right-click node</b>: Show context menu</li>
+        <li><b>Alt + Drag / Middle-click Drag</b>: Move individual node</li>
+        <li><b>Ctrl + Scroll / Pinch</b>: Zoom SVG</li>
+        <li><b>Shift + Drag SVG</b>: Pan SVG</li>
+        <li><b>Ctrl+F</b>: Focus search bar</li>
+        <li><b>Esc</b>: Clear search / Close help</li>
+        <li><b>? or Ctrl+H</b>: Show/hide this help</li>
+      </ul>
+      <p>Search examples: <code>MyLayer</code>, <code>type:Linear</code>, <code>trainable:yes</code>, <code>params:>1000</code></p>
+    </div>
+
+    <script>
+        // Module information from Python
+        const moduleInfo = {{MODULE_INFO}};
+        
+        {{JS_CONTENT}}
+    </script>
+</body>
+</html>
