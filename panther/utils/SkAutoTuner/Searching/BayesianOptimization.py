@@ -6,7 +6,7 @@ from panther.utils.SkAutoTuner.Searching.SearchAlgorithm import SearchAlgorithm
 import botorch
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
-from botorch.acquisition import ExpectedImprovement
+from botorch.acquisition import LogExpectedImprovement
 from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.utils.transforms import normalize, standardize
@@ -165,9 +165,8 @@ class BayesianOptimization(SearchAlgorithm):
         
         # Update the GP model
         self._update_model()
-        
-        # Define the acquisition function
-        acq_func = ExpectedImprovement(
+          # Define the acquisition function
+        acq_func = LogExpectedImprovement(
             model=self.model, 
             best_f=self.best_value,
             maximize=True
