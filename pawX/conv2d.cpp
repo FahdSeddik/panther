@@ -12,7 +12,7 @@ torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
                                       const std::vector<int64_t> &stride,
                                       const std::vector<int64_t> &padding,
                                       const std::vector<int64_t> &kernel_size,
-                                      const torch::Tensor &bias)
+                                      const c10::optional<torch::Tensor> &bias_opt)
 {
     int64_t B = x.size(0), C = x.size(1), H = x.size(2), W = x.size(3);
     int64_t L = U1s.size(0), K = U1s.size(1), D1 = U1s.size(2);
@@ -35,7 +35,11 @@ torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
     out = out.view({B, D1, H_out, W_out}) / L;
 
     // Add bias directly (already in target layout)
-    out.add_(bias.view({1, D1, 1, 1}));
+    if (bias_opt.has_value())
+    {
+        auto bias = bias_opt.value();
+        out.add_(bias.view({1, D1, 1, 1}));
+    }
 
     return out.contiguous();
 }
