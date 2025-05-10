@@ -59,7 +59,6 @@ class ModelVisualizer:
             if child:
                 extension = '    ' if is_child_last else '│   '
                 ModelVisualizer._print_tree(child, module_types, current_path, prefix + extension, is_child_last)
-    
     @staticmethod
     def print_module_tree(model: nn.Module, root_name: str = 'model'):
         """
@@ -68,7 +67,7 @@ class ModelVisualizer:
         tree, module_types = ModelVisualizer._build_module_tree(model.named_modules())
         module_types[''] = type(model).__name__
         print(f"{root_name} ({module_types.get('', 'UnknownType')})/")
-        ModelVisualizer._print_tree(tree, module_types, full_path=root_name)
+        ModelVisualizer._print_tree(tree, module_types, full_path="")
     
     @staticmethod
     def _collect_module_info(model: nn.Module) -> Dict[str, Dict[str, Any]]:
