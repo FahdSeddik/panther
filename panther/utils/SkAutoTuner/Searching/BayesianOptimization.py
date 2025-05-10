@@ -1,15 +1,13 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 from panther.utils.SkAutoTuner.Searching.SearchAlgorithm import SearchAlgorithm
 
-import botorch
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
-from botorch.acquisition import LogExpectedImprovement
+from botorch.acquisition import LogExpectedImprovement, UpperConfidenceBound, ExpectedImprovement
 from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
-from botorch.utils.transforms import normalize, standardize
 
 class BayesianOptimization(SearchAlgorithm):
     """
@@ -17,7 +15,9 @@ class BayesianOptimization(SearchAlgorithm):
     This implementation leverages the efficient and robust implementations
     from the botorch library for Bayesian Optimization.
     """
-    def __init__(self, max_trials: int = 20, random_trials: int = 3, exploration_weight: float = 0.01):
+    def __init__(self, max_trials: int = 20, random_trials: int = 3, 
+                 exploration_weight: float = 0.1, acquisition_type: str = "logei"
+                 ,seed: Optional[int] = None):
         """
         Initialize Bayesian Optimization algorithm.
         
@@ -25,23 +25,28 @@ class BayesianOptimization(SearchAlgorithm):
             max_trials: Maximum number of trials to run
             random_trials: Number of initial random trials before using GP
             exploration_weight: Weight for exploration in acquisition function (higher = more exploration)
+            acquisition_type: Type of acquisition function ('ei', 'ucb', or 'logei')
+            noise_level: Assumed noise level in observations
+            seed: Random seed for reproducibility
         """
         self.param_space = {}
         self.max_trials = max_trials
         self.random_trials = random_trials
         self.exploration_weight = exploration_weight
+        self.acquisition_type = acquisition_type.lower()
         self.current_trial = 0
         
-        # Parameter mapping
+          # Parameter mapping
         self._param_mapping = {}  # Maps parameter names to indices
         self._param_inv_mapping = {}  # Maps indices to parameter names
-        
         # Observation history
         self.train_x = None  # Normalized tensor of parameter values
         self.train_y = None  # Tensor of observed scores
+        self.train_y_raw = []  # Raw observation values for reporting
         
-        # Best observed value so far
+        # Best observed value and parameters
         self.best_value = None
+        self.best_params = None
         
         # GP model
         self.model = None
@@ -59,8 +64,8 @@ class BayesianOptimization(SearchAlgorithm):
         self.current_trial = 0
         self._param_mapping = {}
         self._param_inv_mapping = {}
-        
-        # Create mappings for parameters to make them numeric
+
+        # Determine parameter types and create mappings
         for i, (param, values) in enumerate(self.param_space.items()):
             self._param_mapping[param] = i
             self._param_inv_mapping[i] = param
@@ -68,6 +73,7 @@ class BayesianOptimization(SearchAlgorithm):
         # Initialize tensors for observations
         self.train_x = torch.zeros((0, len(self._param_mapping)), dtype=torch.float64)
         self.train_y = torch.zeros((0, 1), dtype=torch.float64)
+        self.train_y_raw = []
         
         # Setup optimization bounds (normalized to [0, 1])
         self.bounds = torch.stack([
@@ -77,10 +83,11 @@ class BayesianOptimization(SearchAlgorithm):
         
         # Reset best observed value
         self.best_value = None
+        self.best_params = None
         
         # Reset model
         self.model = None
-    
+
     def _params_to_point(self, params: Dict[str, Any]) -> torch.Tensor:
         """
         Convert a parameter dictionary to a normalized point in the search space.
@@ -90,13 +97,17 @@ class BayesianOptimization(SearchAlgorithm):
             
         Returns:
             Tensor of normalized parameter values
-        """
+        """        
         point = torch.zeros(len(self._param_mapping), dtype=torch.float64)
         for param, value in params.items():
             idx = self._param_mapping[param]
             options = self.param_space[param]
-            value_idx = options.index(value)
-            # Normalize to [0, 1]
+            
+            try:
+                value_idx = options.index(value)
+            except ValueError:
+                raise ValueError(f"Value '{value}' for parameter '{param}' not found in options {options}")
+                
             point[idx] = value_idx / (len(options) - 1) if len(options) > 1 else 0.5
         return point.unsqueeze(0)  # Add batch dimension
     
@@ -109,7 +120,7 @@ class BayesianOptimization(SearchAlgorithm):
             
         Returns:
             Dictionary of parameter values
-        """
+        """        
         # Remove batch dimension if present
         if point.ndim > 1:
             point = point.squeeze(0)
@@ -120,29 +131,72 @@ class BayesianOptimization(SearchAlgorithm):
             param = self._param_inv_mapping[i]
             options = self.param_space[param]
             
-            # Denormalize and find closest option
+            # For all parameters, select the closest discrete option
             if len(options) > 1:
                 raw_idx = norm_value * (len(options) - 1)
                 idx = min(int(round(raw_idx)), len(options) - 1)
             else:
                 idx = 0
-                
+
             params[param] = options[idx]
+
         return params
+    
+    def _create_gp_model(self):
+        """
+        Create a Gaussian Process model with appropriate priors and constraints.
+        """
+        try:
+            # Create the GP model with custom priors and constraints
+            model = SingleTaskGP(
+                self.train_x,
+                self.train_y,
+            )
+            
+            return model
+        except Exception as e:
+            raise RuntimeError(f"Failed to create GP model: {e}")
     
     def _update_model(self):
         """
         Update the GP model with the current observations.
         """
-        if len(self.train_y) < 2:
-            return
-        
-        # Initialize a GP model
-        self.model = SingleTaskGP(self.train_x, self.train_y)
-        
+        # Create GP model
+        self.model = self._create_gp_model()
+            
         # Fit the model
-        mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_mll(mll)
+        try:
+            mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
+            fit_gpytorch_mll(mll)
+        except Exception as e:
+            raise RuntimeError(f"Failed to fit GP model: {e}")
+    
+    def _create_acquisition_function(self):
+        """
+        Create an acquisition function based on the specified type.
+        
+        Returns:
+            BoTorch acquisition function
+        """
+        if self.acquisition_type == "ucb":
+            return UpperConfidenceBound(
+                model=self.model,
+                beta=self.exploration_weight,
+            )
+        elif self.acquisition_type == "logei":
+            return LogExpectedImprovement(
+                model=self.model,
+                best_f=self.best_value,
+                maximize=True
+            )
+        elif self.acquisition_type == "ei":
+            return ExpectedImprovement(
+                model=self.model,
+                best_f=self.best_value,
+                maximize=True
+            )
+        else:
+            raise ValueError(f"Unknown acquisition function type: {self.acquisition_type}")
     
     def get_next_params(self) -> Dict[str, Any]:
         """
@@ -156,29 +210,28 @@ class BayesianOptimization(SearchAlgorithm):
         
         self.current_trial += 1
         
-        # Use random search for the first few trials
+          # Use random search for the first few trials
         if len(self.train_y) < self.random_trials:
             random_params = {}
             for param, values in self.param_space.items():
+                # Always select directly from available options
                 random_params[param] = np.random.choice(values)
+            
             return random_params
         
         # Update the GP model
         self._update_model()
-          # Define the acquisition function
-        acq_func = LogExpectedImprovement(
-            model=self.model, 
-            best_f=self.best_value,
-            maximize=True
-        )
+        
+        # Create acquisition function
+        acq_func = self._create_acquisition_function()
         
         # Optimize the acquisition function
-        candidates, _ = optimize_acqf(
+        candidates, acq_values = optimize_acqf(
             acq_function=acq_func,
             bounds=self.bounds,
             q=1,  # Batch size
-            num_restarts=10,  # Number of restarts for optimization
-            raw_samples=100,  # Number of raw samples for initialization
+            num_restarts=5 + len(self._param_mapping),  # More restarts for higher dimensions
+            raw_samples=100 * len(self._param_mapping),  # More samples for higher dimensions
         )
         
         # Convert the candidate to parameters
@@ -197,9 +250,13 @@ class BayesianOptimization(SearchAlgorithm):
         # Convert params to normalized point
         point = self._params_to_point(params)
         
-        # Update the best observed value
+        # Store raw score
+        self.train_y_raw.append(score)
+        
+        # Update the best observed value and parameters
         if self.best_value is None or score > self.best_value:
             self.best_value = torch.tensor(score, dtype=torch.float64)
+            self.best_params = params.copy()
         
         # Add to observations
         score_tensor = torch.tensor([[score]], dtype=torch.float64)
