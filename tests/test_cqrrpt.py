@@ -85,7 +85,7 @@ def test_varying_gamma(gamma):
     torch.manual_seed(42)
     m, n = 20, 10
     M = torch.randn(m, n, dtype=torch.double)
-    Q, R, J = pawX.cqrrpt(M, gamma, "default")
+    Q, R, J = pawX.cqrrpt(M, gamma)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for gamma={gamma}!"
 

@@ -269,6 +269,7 @@ inline torch::Tensor favor_attention(const torch::Tensor& query,
                                      const torch::Tensor& key,
                                      const torch::Tensor& value,
                                      const std::string& kernel_fn,
+                                     c10::optional<torch::Tensor> attention_mask,  // [B, L, S]
                                      bool causal,
                                      c10::optional<torch::Tensor> projection_matrix = c10::nullopt) {
     torch::Tensor query_prime, key_prime;
@@ -281,10 +282,18 @@ inline torch::Tensor favor_attention(const torch::Tensor& query,
     } else {
         TORCH_CHECK(false, "Unsupported kernel_fn: ", kernel_fn);
     }
-
-    // Permute dimensions: equivalent to .permute(1, 0, 2, 3) in Python.
+    // attention mask for L
+    if (attention_mask.has_value()) {
+        attention_mask.value() = ~attention_mask.value();
+        auto maskL = attention_mask.value().all(-1);
+        auto maskS = attention_mask.value().all(-2);
+        TORCH_CHECK(!maskL.all(-1).any().item<bool>(), "Attention mask cannot be all ones for any batch in dimension L.");
+        query_prime.masked_fill_(maskL.unsqueeze(-1).unsqueeze(-1), 0.0);
+        key_prime.masked_fill_(maskS.unsqueeze(-1).unsqueeze(-1), 0.0);
+    }
     query_prime = query_prime.permute({1, 0, 2, 3});
     key_prime = key_prime.permute({1, 0, 2, 3});
+
     // Also permute value.
     auto value_prime = value.permute({1, 0, 2, 3});
 
@@ -297,13 +306,11 @@ inline torch::Tensor favor_attention(const torch::Tensor& query,
         attention_normalizer = noncausal_denominator(query_prime, key_prime);
     }
 
-    // Permute back: av_attention.permute(1, 0, 2, 3)
-    av_attention = av_attention.permute({1, 0, 2, 3});
     // For attention_normalizer: permute to (1, 0, 2) and unsqueeze at the last dimension.
-    attention_normalizer = attention_normalizer.permute({1, 0, 2}).unsqueeze(-1);
-
-    return av_attention / attention_normalizer;
+    attention_normalizer.masked_fill_(attention_normalizer == 0, 1.0);
+    return av_attention.permute({1, 0, 2, 3}) / attention_normalizer.permute({1, 0, 2}).unsqueeze(-1);
 }
+
 torch::Tensor rmha_forward(
     const torch::Tensor& query,
     const torch::Tensor& key,
@@ -316,11 +323,16 @@ torch::Tensor rmha_forward(
     int64_t embed_dim,
     const std::string& kernel_fn,
     bool causal,
+    c10::optional<torch::Tensor> attention_mask,  // [B, L, S]
     c10::optional<torch::Tensor> bq,
     c10::optional<torch::Tensor> bk,
     c10::optional<torch::Tensor> bv,
     c10::optional<torch::Tensor> b0,
     c10::optional<torch::Tensor> projection_matrix) {
+    if (attention_mask.has_value()) {
+        TORCH_CHECK(attention_mask.value().dtype() == torch::kBool,
+                    "Attention mask must be of type bool.");
+    }
     using namespace torch::nn::functional;
 
     // Linear projections
@@ -336,7 +348,7 @@ torch::Tensor rmha_forward(
     auto v = v_proj.view({value.size(0), value.size(1), num_heads, head_dim});
 
     // Apply FAVOR attention
-    auto attn_out = favor_attention(q, k, v, kernel_fn, causal, projection_matrix);
+    auto attn_out = favor_attention(q, k, v, kernel_fn, attention_mask, causal, projection_matrix);
 
     // Merge heads: (B, L, D)
     attn_out = attn_out.reshape({query.size(0), query.size(1), embed_dim});

@@ -3,6 +3,10 @@ from typing import Optional, Tuple, overload
 
 import torch
 
+class DistributionFamily(Enum):
+    Gaussian = "Gaussian"
+    Uniform = "Uniform"
+
 def scaled_sign_sketch(
     m: int,
     n: int,
@@ -16,6 +20,7 @@ def sketched_linear_forward(
     U1s: torch.Tensor,
     U2s: torch.Tensor,
     bias: torch.Tensor,
+    use_tensor_core: bool = False,
 ) -> torch.Tensor: ...
 def sketched_linear_backward(
     grad_output: torch.Tensor,
@@ -26,16 +31,13 @@ def sketched_linear_backward(
     U2s: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, torch.Tensor]: ...
 def cqrrpt(
-    M: torch.Tensor, gamma: float = 1.25, F: str = "default"
+    M: torch.Tensor,
+    gamma: float = 1.25,
+    F: DistributionFamily = DistributionFamily.Gaussian,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
 def randomized_svd(
     A: torch.Tensor, k: int, tol: float
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
-
-class DistributionFamily(Enum):
-    Gaussian = "Gaussian"
-    Uniform = "Uniform"
-
 def dense_sketch_operator(
     m: int,
     n: int,
@@ -82,6 +84,7 @@ def rmha_forward(
     embed_dim: int,
     kernel_fn: str,
     causal: bool,
+    attention_mask: Optional[torch.Tensor],
     bq: Optional[torch.Tensor] = None,
     bk: Optional[torch.Tensor] = None,
     bv: Optional[torch.Tensor] = None,
@@ -96,3 +99,24 @@ def create_projection_matrix(
     dtype: Optional[torch.dtype] = None,
     device: Optional[torch.device] = None,
 ) -> torch.Tensor: ...
+def sketched_conv2d_forward(
+    x: torch.Tensor,
+    S1s: torch.Tensor,
+    U1s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor: ...
+def sketched_conv2d_backward(
+    input: torch.Tensor,
+    S1s: torch.Tensor,
+    S2s: torch.Tensor,
+    U1s: torch.Tensor,
+    U2s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    in_shape: Tuple[int, int],
+    grad_out: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
