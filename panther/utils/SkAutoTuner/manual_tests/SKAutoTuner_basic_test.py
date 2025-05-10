@@ -109,16 +109,14 @@ def test_tuner(configs_to_use, search_algorithm):
     # Create a fresh copy of the model for tuning
     model_tunned_grid = modelModel().to(device)
     model_tunned_grid.load_state_dict(model_trained.state_dict())
-
-
     # Create tuner with search - make sure we start with the original model
     grid_tuner = SKAutoTuner(
         model=model_tunned_grid,
         configs=configs_to_use,
-        eval_func=model_eval_func,
+        accuracy_eval_func=model_accuracy_func,
         search_algorithm=search_algorithm,
         accuracy_threshold=0,  # Set a threshold for accuracy
-        speed_eval_func=model_speed_func,
+        optmization_eval_func=model_speed_func,
         verbose=True
     )
 
@@ -179,8 +177,19 @@ def test_tuner(configs_to_use, search_algorithm):
     # check the tunned model should reflect the applied best parameters
     print("\nTunned model layer types after applying best params:")
     for name, module in model_tunned_grid.named_modules():
-        print(f"{name}: {type(module).__name__}")
+        print(f"{name}: {type(module).__name__}")    # Time comparison between original and tuned model
+    def model_forward(model, feat, img, seq):
+        with torch.no_grad():
+            return model(feat, img, seq)
+    
+    print("\nComparing inference times:")
+    original_time = measure_time(model_forward, model_trained, model_feat_input, model_img_input, model_seq_input, n_runs=100)
+    tuned_time = measure_time(model_forward, model_tunned_grid, model_feat_input, model_img_input, model_seq_input, n_runs=100)
 
+    print(f"Original model inference time: {original_time * 1000:.4f} ms")
+    print(f"Tuned model inference time: {tuned_time * 1000:.4f} ms")
+    print(f"Speedup: {original_time / tuned_time:.2f}x")
+    
     # Analyze results
     results_df = grid_tuner.get_results_dataframe()
     print("\nTuning results summary:")
@@ -298,36 +307,39 @@ model_replaced.load_state_dict(model_trained.state_dict())
 # Create config for model model (multiple layer types)
 configs_to_use = TuningConfigs([
     LayerConfig(
-        layer_names=["fc1", "fc2"],
+        # Using a list of strings (all "fc" layers)
+        layer_names={"type": "Linear"},
         params={
             "num_terms": [1, 2],
             "low_rank": [8, 16],
         },
         separate=False  # Tune linear layers together
     ),
-    LayerConfig(
-        layer_names=["conv"],
-        params={
-            "num_terms": [1, 2],
-            "low_rank": [4, 8],
-        },
-        separate=True
-    ),
-    LayerConfig(
-        layer_names=["attention"],
-        params={
-            "num_random_features": [16, 32],
-            "kernel_fn": ["softmax", "relu"],
-        },
-        separate=True
-    )
+    # LayerConfig(
+    #     # Using a simple string (can also be a regex pattern)
+    #     layer_names="conv",
+    #     params={
+    #         "num_terms": [1, 2],
+    #         "low_rank": [4, 8],
+    #     },
+    #     separate=True
+    # ),
+    # LayerConfig(
+    #     # Using a dictionary with type-based selection (alternative approach)
+    #     layer_names={"pattern": "attention", "type": "MultiheadAttention"},
+    #     params={
+    #         "num_random_features": [16, 32],
+    #         "kernel_fn": ["softmax", "relu"],
+    #     },
+    #     separate=True
+    # )
 ])
 
 # Create tuner for model model
 model_tuner = SKAutoTuner(
     model=model_replaced,
     configs=configs_to_use,
-    eval_func=model_eval_func,
+    accuracy_eval_func=model_accuracy_func,
     search_algorithm=GridSearch(),
     verbose=True
 )
@@ -365,34 +377,6 @@ replaced_time = measure_time(model_forward, model_replaced, model_feat_input, mo
 print(f"Original model inference time: {original_time * 1000:.4f} ms")
 print(f"Replaced model inference time: {replaced_time * 1000:.4f} ms")
 print(f"Speedup: {original_time / replaced_time:.2f}x")
-
-# Create config for model model (multiple layer types)
-configs_to_use = TuningConfigs([
-    LayerConfig(
-        layer_names=["fc1", "fc2"],
-        params={
-            "num_terms": [1, 2, 3],
-            "low_rank": [10, 15, 20, 50, 100, 150],
-        },
-        separate=False  # Tune linear layers together
-    ),
-    LayerConfig(
-        layer_names=["conv"],
-        params={
-            "num_terms": [3, 2, 1],
-            "low_rank": [150, 100, 50, 20, 15, 10],
-        },
-        separate=True
-    ),
-    LayerConfig(
-        layer_names=["attention"],
-        params={
-            "num_random_features": [16, 32],
-            "kernel_fn": ["softmax", "relu"],
-        },
-        separate=True
-    )
-])
 
 print("==============testing grid search=================")
 test_tuner(configs_to_use, GridSearch())
