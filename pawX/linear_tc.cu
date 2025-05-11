@@ -1,8 +1,6 @@
-#include <c10/cuda/CUDAStream.h>
 #include <cuda_fp16.h>
 #include <mma.h>
-
-#include "linear.h"
+#include <torch/extension.h>
 
 using half_t = __half;  // WMMA inputs must be half precision
 using float_t = float;  // Accumulate in FP32

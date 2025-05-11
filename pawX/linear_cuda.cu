@@ -1,8 +1,6 @@
 #include <c10/cuda/CUDAStream.h>
 #include <torch/extension.h>
 
-#include "linear.h"
-
 #define TILE_DIM 16
 
 template <typename scalar_t>

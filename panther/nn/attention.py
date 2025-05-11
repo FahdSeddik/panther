@@ -45,7 +45,6 @@ class RandMultiHeadAttention(nn.Module):
     bias: bool
     kernel_fn: str
     causal: bool
-    num_random_features: int
 
     def __init__(
         self,
@@ -67,7 +66,6 @@ class RandMultiHeadAttention(nn.Module):
         self.bias: bool = bias
         self.kernel_fn: str = kernel_fn
         self.causal: bool = iscausal
-        self.num_random_features: int = num_random_features
         factory_kwargs = {"dtype": dtype, "device": device}
 
         self.Wq = nn.Parameter(torch.empty(embed_dim, embed_dim, **factory_kwargs))

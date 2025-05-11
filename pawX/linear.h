@@ -2,8 +2,6 @@
 
 #include <torch/extension.h>
 
-#include <vector>
-
 torch::Tensor sketched_linear_forward(
     const torch::Tensor& input,
     const torch::Tensor& S1s,
