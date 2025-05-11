@@ -76,15 +76,21 @@ config = get_platform_config()
 
 def has_tensor_core_support():
     if not is_available():
-        print("❌ CUDA is not available on this system.")
+        print("\033[91m[WARNING] CUDA is not available on this system.\033[0m")
         return False
     major, minor = get_device_capability()
-    print(f"✅ CUDA is available. Detected device capability: {major}.{minor}")
+    print(
+        f"\033[92m[OK] CUDA is available. Detected device capability: {major}.{minor}\033[0m"
+    )
     if (major > 7) or (major == 7 and minor >= 0):
-        print("✅ Tensor Core support detected based on device capability.")
+        print(
+            "\033[92m[OK] Tensor Core support detected based on device capability.\033[0m"
+        )
         return True
     else:
-        print("❌ Tensor Core support not detected based on device capability.")
+        print(
+            "\033[91m[WARNING] Tensor Core support not detected based on device capability.\033[0m"
+        )
         return False
 
 
@@ -96,7 +102,7 @@ cuda_tensor_core = [
 # Dynamically choose the appropriate CUDA file
 use_tensor_core = has_tensor_core_support()
 cuda_file = cuda_tensor_core if use_tensor_core else cuda_no_tensor_core
-print(f"ℹ️ Using CUDA source file: {cuda_file}")
+print(f"\033[94m[INFO] Using CUDA source file: {cuda_file}\033[0m")
 
 
 setup(
