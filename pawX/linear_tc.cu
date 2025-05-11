@@ -179,25 +179,30 @@ torch::Tensor sketched_linear_forward_cuda(
 
     int B = input.size(0), I = input.size(1);
     int T = S1s.size(0), R = S1s.size(2), O = S2s.size(2);
-
-    // auto interm = torch::zeros({2, T, B, R}, input.options());
-    int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
-    auto partial = torch::zeros({numTilesI, 2, T, B, R}, input.options());
     dim3 block(BLOCK_ROW_WARPS * 32, BLOCK_COL_WARPS);
-    dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
-               (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
-               numTilesI);
 
-    sklinear_forward_intermediate_wmma<<<grid1, block>>>(
-        input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        partial.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
-        B, I, R, T, (1.0f / (2.0f * T)));
+    torch::Tensor interm;
+    if (T > 1) {
+        int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
+        auto partial = torch::zeros({numTilesI, 2, T, B, R}, input.options());
+        dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
+                   (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
+                   numTilesI);
 
-    auto interm = partial.sum(0);
+        sklinear_forward_intermediate_wmma<<<grid1, block>>>(
+            input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
+            S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+            U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+            partial.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
+            B, I, R, T, (1.0f / (2.0f * T)));
 
-    if (R <= 64) {
+        interm = partial.sum(0);
+    } else {
+        auto input_expanded = input.unsqueeze(0);
+        interm = torch::stack({input_expanded.bmm(S1s), input_expanded.bmm(U2s)}, 0);
+    }
+
+    if (R <= 96) {
         auto out = torch::zeros({B, O}, input.options());
         dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
@@ -211,7 +216,7 @@ torch::Tensor sketched_linear_forward_cuda(
             B, R, T, O);
         return out;
     } else {
-        return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).sum(0) + bias;
+        return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).mean(0).div(2.0f) + bias;
     }
 }
 
@@ -529,8 +534,6 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     int64_t I = input.size(1), O = grad_output.size(1);
     int64_t T = S1s.size(0), R = S1s.size(2), B = grad_output.size(0);
     int64_t numTilesO = (O + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
-    auto g = grad_output.div(2.0f * T);
-    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, input.options());
 
     dim3 block(BLOCK_ROW_WARPS * 32, BLOCK_COL_WARPS);
     dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
@@ -538,6 +541,14 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
                numTilesO);
     at::cuda::CUDAStream torch_stream1 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream1 = torch_stream1.stream();
+    at::cuda::setCurrentCUDAStream(torch_stream1);
+    auto g = grad_output.div(2.0f * T).contiguous();
+    cudaEvent_t afterGcompute;
+    cudaEventCreate(&afterGcompute);
+    cudaEventRecord(afterGcompute, stream1);
+
+    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, input.options());
+
     sklinear_backward_intermediate_wmma<<<grid1, block, 0, stream1>>>(
         g.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
         U1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -548,7 +559,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
     at::cuda::CUDAStream torch_stream2 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream2 = torch_stream2.stream();
-    at::cuda::setCurrentCUDAStream(torch_stream1);
+    at::cuda::setCurrentCUDAStream(torch_stream2);
     auto interm_gradS2s = torch::zeros({numTilesI, T, R, B}, input.options());
 
     dim3 grid2((R + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
@@ -561,9 +572,9 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
         B, I, R, T);
 
     at::cuda::setCurrentCUDAStream(torch_stream2);
-    auto i_gradS2s = interm_gradS2s.sum(0);
+    auto i_gradS2s = interm_gradS2s.sum(0).contiguous();
     auto grad_S2s = torch::zeros({T, R, O}, input.options());
-
+    cudaStreamWaitEvent(stream2, afterGcompute);
     dim3 grid4((R + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                T);
@@ -597,9 +608,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     auto grad_S1s = torch::zeros({T, I, R}, input.options());
 
     cudaStreamWaitEvent(stream3, afterIntermSum);
-    cudaEventDestroy(afterIntermSum);
 
-    auto interm0 = interm[0];
+    auto interm0 = interm[0].contiguous();
 
     dim3 grid5((I + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
@@ -610,7 +620,19 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
         grad_S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         B, I, R, T);
 
-    torch::cuda::synchronize(device_id);
+    at::cuda::CUDAStream torch_stream4 = at::cuda::getStreamFromPool(false, device_id);
+    cudaStream_t stream4 = torch_stream4.stream();
+    at::cuda::setCurrentCUDAStream(torch_stream4);
+    auto grad_o = grad_output.sum(0);
 
-    return {grad_input, grad_S1s, grad_S2s, grad_output.sum(0)};
+    at::cuda::stream_synchronize(stream1);
+    at::cuda::stream_synchronize(stream2);
+    at::cuda::stream_synchronize(stream3);
+    at::cuda::stream_synchronize(stream4);
+    torch::cuda::synchronize(device_id);
+    at::cuda::setCurrentCUDAStream(at::cuda::getDefaultCUDAStream(device_id));
+    cudaEventDestroy(afterIntermSum);
+    cudaEventDestroy(afterGcompute);
+
+    return {grad_input, grad_S1s, grad_S2s, grad_o};
 }
