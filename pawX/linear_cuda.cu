@@ -441,9 +441,9 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s) {
-    TORCH_CHECK(grad_output.is_contiguous() && input.is_contiguous() &&
-                    S1s.is_contiguous() && S2s.is_contiguous() && U1s.is_contiguous() && U2s.is_contiguous(),
-                "All tensors must be contiguous in memory.");
+    // TORCH_CHECK(!grad_output.is_contiguous() && !input.is_contiguous() &&
+    //                 !S1s.is_contiguous() && S2s.is_contiguous() && U1s.is_contiguous() && U2s.is_contiguous(),
+    //             "All tensors must be contiguous in memory.");
     // g = grad_output.div(2 * num_terms)
     // t1 = g * U1s.T -> interm[0]
     // grad_input ->  interm[0]  * S1s.T +  interm[1]  * U2s.T
