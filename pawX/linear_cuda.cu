@@ -128,6 +128,12 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     const torch::Tensor& bias) {
+    TORCH_CHECK(input.is_contiguous(), "input tensor must be contiguous in memory.");
+    TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
+    TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous in memory.");
+    TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous in memory.");
+    TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous in memory.");
+    TORCH_CHECK(bias.is_contiguous(), "bias tensor must be contiguous in memory.");
     // Get dimensions.
     int batch_size = input.size(0);
     int input_dim = input.size(1);
@@ -441,9 +447,12 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s) {
-    // TORCH_CHECK(!grad_output.is_contiguous() && !input.is_contiguous() &&
-    //                 !S1s.is_contiguous() && S2s.is_contiguous() && U1s.is_contiguous() && U2s.is_contiguous(),
-    //             "All tensors must be contiguous in memory.");
+    TORCH_CHECK(grad_output.is_contiguous(), "grad_output tensor must be contiguous in memory.");
+    TORCH_CHECK(input.is_contiguous(), "input tensor must be contiguous in memory.");
+    TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
+    TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous in memory.");
+    TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous in memory.");
+    TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous in memory.");
     // g = grad_output.div(2 * num_terms)
     // t1 = g * U1s.T -> interm[0]
     // grad_input ->  interm[0]  * S1s.T +  interm[1]  * U2s.T

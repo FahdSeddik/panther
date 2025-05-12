@@ -174,8 +174,12 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& U2s,
     const torch::Tensor& bias) {
     TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
-    TORCH_CHECK(input.is_contiguous() && S1s.is_contiguous() && U2s.is_contiguous());
-    TORCH_CHECK(S2s.is_contiguous() && U1s.is_contiguous() && bias.is_contiguous());
+    TORCH_CHECK(input.is_contiguous(), "Input tensor must be contiguous.");
+    TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous.");
+    TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous.");
+    TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous.");
+    TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous.");
+    TORCH_CHECK(bias.is_contiguous(), "Bias tensor must be contiguous.");
 
     int B = input.size(0), I = input.size(1);
     int T = S1s.size(0), R = S1s.size(2), O = S2s.size(2);
@@ -520,9 +524,12 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& U1s,          // [T, R, O]
     const torch::Tensor& U2s) {        // [T, I, R]
     TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
-    // TORCH_CHECK(input.is_contiguous() && S1s.is_contiguous() && U2s.is_contiguous());
-    // TORCH_CHECK(S2s.is_contiguous() && U1s.is_contiguous());
-    // TORCH_CHECK(grad_output.is_contiguous());
+    TORCH_CHECK(input.is_contiguous(), "Input tensor must be contiguous.");
+    TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous.");
+    TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous.");
+    TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous.");
+    TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous.");
+    TORCH_CHECK(grad_output.is_contiguous(), "Gradient output tensor must be contiguous.");
     // g = grad_output.div(2 * num_terms)
     // t1 = g * U1s.T -> interm[0]
     // grad_input ->  interm[0]  * S1s.T +  interm[1]  * U2s.T
