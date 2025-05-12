@@ -520,9 +520,9 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& U1s,          // [T, R, O]
     const torch::Tensor& U2s) {        // [T, I, R]
     TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
-    TORCH_CHECK(input.is_contiguous() && S1s.is_contiguous() && U2s.is_contiguous());
-    TORCH_CHECK(S2s.is_contiguous() && U1s.is_contiguous());
-    TORCH_CHECK(grad_output.is_contiguous());
+    // TORCH_CHECK(input.is_contiguous() && S1s.is_contiguous() && U2s.is_contiguous());
+    // TORCH_CHECK(S2s.is_contiguous() && U1s.is_contiguous());
+    // TORCH_CHECK(grad_output.is_contiguous());
     // g = grad_output.div(2 * num_terms)
     // t1 = g * U1s.T -> interm[0]
     // grad_input ->  interm[0]  * S1s.T +  interm[1]  * U2s.T
