@@ -66,13 +66,23 @@ std::tuple<torch::Tensor, torch::Tensor> causal_numerator_forward(
     const torch::Tensor& qs,    // [I, D, J, K]
     const torch::Tensor& ks,    // [I, D, J, K]
     const torch::Tensor& vs) {  // [I, D, J, L]
-    // Compute einsum("dijk,dijl->dijkl", ks, vs)
-    auto KV = ks.unsqueeze(-1) * vs.unsqueeze(-2);
-    // Compute cumulative sum over dimension 0.
-    auto sums = torch::cumsum(KV, /*dim=*/1);  // [I, D, J, K, L]
-    // Compute einsum("dijkl,dijk->dijl", sums, qs)
-    auto result = torch::einsum("idjkl,idjk->idjl", {sums, qs});
-    return {result, sums};
+    auto qs_p = qs.transpose(0, 1);
+    auto ks_p = ks.transpose(0, 1);
+    auto vs_p = vs.transpose(0, 1);
+    std::vector<torch::Tensor> result;
+    auto sums = torch::zeros({ks_p.size(1), ks_p.size(2), ks_p.size(3), vs_p.size(3)}, qs.options());
+
+    int D = qs.size(1);
+    result.reserve(D);  // Preallocate space for result vector.
+    for (int idx = 0; idx < D; ++idx) {
+        // sums = sums + einsum("ijk,ijl->ijkl", ks[idx], vs[idx])
+        sums += torch::einsum("ijk,ijl->ijkl", {ks_p[idx], vs_p[idx]});
+        // einsum("ijkl,ijk->ijl", sums, qs[idx])
+        auto res = torch::einsum("ijkl,ijk->ijl", {sums, qs_p[idx]});
+        result.push_back(res.unsqueeze(0));  // [1, D, J, L]
+    }
+    auto result_tensor = torch::cat(result, 0);                       // [I, D, J, L]
+    return {result_tensor.transpose(0, 1), torch::stack(result, 0)};  // sums is not used in this loop, so return last sums
 }
 
 std::vector<torch::Tensor> causal_numerator_backward(
