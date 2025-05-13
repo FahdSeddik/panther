@@ -1,4 +1,5 @@
 #include "attention.h"
+#include "conv2d.h"
 #include "cqrrpt.h"
 #include "linear.h"
 #include "rsvd.h"
@@ -36,22 +37,29 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("dtype") = py::none());
 
     m.def("sketch_tensor",
-          py::overload_cast<const torch::Tensor&, int64_t, int64_t, DistributionFamily, c10::optional<torch::Device>, c10::optional<torch::Dtype>>(&sketch_tensor),
+          py::overload_cast<const torch::Tensor &, int64_t, int64_t, DistributionFamily, c10::optional<torch::Device>, c10::optional<torch::Dtype>>(&sketch_tensor),
           "Sketch Tensor with Distribution",
           py::arg("input"), py::arg("axis"), py::arg("new_size"), py::arg("distribution"),
           py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
 
     m.def("sketch_tensor",
-          py::overload_cast<const torch::Tensor&, int64_t, int64_t, const torch::Tensor&, c10::optional<torch::Device>, c10::optional<torch::Dtype>>(&sketch_tensor),
+          py::overload_cast<const torch::Tensor &, int64_t, int64_t, const torch::Tensor &, c10::optional<torch::Device>, c10::optional<torch::Dtype>>(&sketch_tensor),
           "Sketch Tensor with Sketch Matrix",
           py::arg("input"), py::arg("axis"), py::arg("new_size"), py::arg("sketch_matrix"),
           py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
 
-    m.def("causal_numerator_apply", &causal_numerator_apply,
-          py::arg("query_prime"), py::arg("key_prime"), py::arg("value_prime"));
+    m.def("causal_numerator_forward", &causal_numerator_forward,
+          py::arg("qs"), py::arg("ks"), py::arg("vs"));
 
-    m.def("causal_denominator_apply", &causal_denominator_apply,
-          py::arg("query_prime"), py::arg("key_prime"));
+    m.def("causal_numerator_backward", &causal_numerator_backward,
+          py::arg("res_grad"), py::arg("sums"), py::arg("qs"),
+          py::arg("ks"), py::arg("vs"));
+
+    m.def("causal_denominator_forward", &causal_denominator_forward,
+          py::arg("qs"), py::arg("ks"));
+
+    m.def("causal_denominator_backward", &causal_denominator_backward,
+          py::arg("res_grad"), py::arg("sums"), py::arg("qs"));
 
     m.def("rmha_forward", &rmha_forward,
           py::arg("query"), py::arg("key"), py::arg("value"),
@@ -66,4 +74,15 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("create_projection_matrix", &create_projection_matrix,
           py::arg("m"), py::arg("d"), py::arg("seed") = 42, py::arg("scaling") = false,
           py::arg("dtype") = c10::nullopt, py::arg("device") = c10::nullopt);
+
+    m.def("sketched_conv2d_forward", &sketched_conv2d_forward,
+          py::arg("x"), py::arg("S1s"),
+          py::arg("U1s"), py::arg("stride"),
+          py::arg("padding"), py::arg("kernel_size"), py::arg("bias") = c10::nullopt);
+
+    m.def("sketched_conv2d_backward", &sketched_conv2d_backward,
+          py::arg("input"), py::arg("S1s"), py::arg("S2s"),
+          py::arg("U1s"), py::arg("U2s"), py::arg("stride"),
+          py::arg("padding"), py::arg("kernel_size"), py::arg("in_shape"),
+          py::arg("grad_out"));
 }

@@ -18,7 +18,7 @@ def check_linux_dependencies():
         )
     except subprocess.CalledProcessError:
         print("Error: 'liblapacke-dev' is not installed. Please install it using:")
-        print("  sudo apt-get install liblapacke-dev")
+        print(" sudo apt-get install liblapacke-dev")
         sys.exit(1)
 
 
@@ -76,7 +76,7 @@ config = get_platform_config()
 
 def has_tensor_core_support():
     if not is_available():
-        print("\033[91m[WARNING] CUDA is not available on this system.\033[0m")
+        print("\033[93m[WARNING] CUDA is not available on this system.\033[0m")
         return False
     major, minor = get_device_capability()
     print(
@@ -89,7 +89,7 @@ def has_tensor_core_support():
         return True
     else:
         print(
-            "\033[91m[WARNING] Tensor Core support not detected based on device capability.\033[0m"
+            "\033[93m[WARNING] Tensor Core support not detected based on device capability.\033[0m"
         )
         return False
 
@@ -117,6 +117,8 @@ setup(
                 "cqrrpt.cpp",
                 "rsvd.cpp",
                 "attention.cpp",
+                "conv2d.cpp",
+                "timing.cu",
                 *cuda_file,
             ],
             include_dirs=config["include_dirs"],

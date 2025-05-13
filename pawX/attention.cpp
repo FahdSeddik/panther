@@ -14,12 +14,7 @@ struct CausalNumeratorFunction : public torch::autograd::Function<CausalNumerato
                                  torch::Tensor qs,
                                  torch::Tensor ks,
                                  torch::Tensor vs) {
-        // Compute einsum("dijk,dijl->dijkl", ks, vs)
-        auto einsumKV = torch::einsum("dijk,dijl->dijkl", {ks, vs});
-        // Compute cumulative sum over dimension 0.
-        auto sums = torch::cumsum(einsumKV, 0);
-        // Compute einsum("dijkl,dijk->dijl", sums, qs)
-        auto result = torch::einsum("dijkl,dijk->dijl", {sums, qs});
+        const auto& [result, sums] = causal_numerator_forward(qs, ks, vs);
 
         // Save tensors for backward.
         ctx->save_for_backward({qs, ks, vs, sums});
@@ -37,19 +32,7 @@ struct CausalNumeratorFunction : public torch::autograd::Function<CausalNumerato
         auto vs = saved[2];
         auto sums = saved[3];
 
-        // Compute:
-        // grads = flip(cumsum(flip(torch.matmul(qs.unsqueeze(-1), res_grad.unsqueeze(-2)), dims={0}), 0), dims={0})
-        auto mat = torch::matmul(qs.unsqueeze(-1), res_grad.unsqueeze(-2));
-        auto grads = torch::flip(torch::cumsum(torch::flip(mat, {0}), /*dim=*/0), {0});
-
-        // q_grads = einsum("dijkl,dijl->dijk", sums, res_grad)
-        auto q_grads = torch::einsum("dijkl,dijl->dijk", {sums, res_grad});
-        // k_grads = einsum("dijkl,dijl->dijk", grads, vs)
-        auto k_grads = torch::einsum("dijkl,dijl->dijk", {grads, vs});
-        // v_grads = einsum("dijkl,dijk->dijl", grads, ks)
-        auto v_grads = torch::einsum("dijkl,dijk->dijl", {grads, ks});
-
-        return {q_grads, k_grads, v_grads};
+        return causal_numerator_backward(res_grad, sums, qs, ks, vs);
     }
 };
 
@@ -61,62 +44,94 @@ struct CausalDenominatorFunction : public torch::autograd::Function<CausalDenomi
     static torch::Tensor forward(torch::autograd::AutogradContext* ctx,
                                  torch::Tensor qs,
                                  torch::Tensor ks) {
-        auto sums = torch::cumsum(ks, /*dim=*/0);
-        auto result = torch::einsum("dijk,dijk->dij", {qs, sums});
-        ctx->save_for_backward({qs, ks, sums});
+        const auto& [result, sums] = causal_denominator_forward(qs, ks);
+        ctx->save_for_backward({qs, sums});
         return result;
     }
 
     // Backward pass: returns gradients for qs and ks.
     static std::vector<torch::Tensor> backward(torch::autograd::AutogradContext* ctx,
                                                std::vector<torch::Tensor> grad_outputs) {
-        auto res_grad = grad_outputs[0];
+        auto res_grad = grad_outputs[0].unsqueeze(-1);
         auto saved = ctx->get_saved_variables();
         auto qs = saved[0];
         // auto ks = saved[1];  // Not needed for computing qs grad.
-        auto sums = saved[2];
+        auto sums = saved[1];
 
-        // q_grads = einsum("dijk,dij->dijk", sums, res_grad)
-        auto q_grads = torch::einsum("dijk,dij->dijk", {sums, res_grad});
-        // partial_k = einsum("dijk,dij->dijk", qs, res_grad)
-        auto partial_k = torch::einsum("dijk,dij->dijk", {qs, res_grad});
-        // k_grads = flip(cumsum(flip(partial_k, dims={0}), 0), dims={0})
-        auto k_grads = torch::flip(torch::cumsum(torch::flip(partial_k, {0}), /*dim=*/0), {0});
-
-        return {q_grads, k_grads};
+        return causal_denominator_backward(res_grad, sums, qs);
     }
 };
 
-// Wrapper for causal numerator.
-torch::Tensor causal_numerator_apply(
-    const torch::Tensor& query_prime,
-    const torch::Tensor& key_prime,
-    const torch::Tensor& value_prime) {
-    return CausalNumeratorFunction::apply(query_prime, key_prime, value_prime);
+std::tuple<torch::Tensor, torch::Tensor> causal_numerator_forward(
+    const torch::Tensor& qs,    // [I, D, J, K]
+    const torch::Tensor& ks,    // [I, D, J, K]
+    const torch::Tensor& vs) {  // [I, D, J, L]
+    // Compute einsum("dijk,dijl->dijkl", ks, vs)
+    auto KV = ks.unsqueeze(-1) * vs.unsqueeze(-2);
+    // Compute cumulative sum over dimension 0.
+    auto sums = torch::cumsum(KV, /*dim=*/1);  // [I, D, J, K, L]
+    // Compute einsum("dijkl,dijk->dijl", sums, qs)
+    auto result = torch::einsum("idjkl,idjk->idjl", {sums, qs});
+    return {result, sums};
 }
 
-// Wrapper for causal denominator.
-torch::Tensor causal_denominator_apply(
-    const torch::Tensor& query_prime,
-    const torch::Tensor& key_prime) {
-    return CausalDenominatorFunction::apply(query_prime, key_prime);
+std::vector<torch::Tensor> causal_numerator_backward(
+    const torch::Tensor& res_grad,  // [I, D, J, L]
+    const torch::Tensor& sums,      // [I, D, J, K, L]
+    const torch::Tensor& qs,        // [I, D, J, K]
+    const torch::Tensor& ks,        // [I, D, J, K]
+    const torch::Tensor& vs) {      // [I, D, J, L]
+    // Compute:
+    // grads = flip(cumsum(flip(torch.matmul(qs.unsqueeze(-1), res_grad.unsqueeze(-2)), dims={0}), 0), dims={0})
+    auto mat = qs.unsqueeze(-1) * res_grad.unsqueeze(-2);
+    auto grads = torch::flip(torch::cumsum(torch::flip(mat, {1}), /*dim=*/1), {1});
+
+    // q_grads = einsum("dijkl,dijl->dijk", sums, res_grad)
+    auto q_grads = (sums * res_grad.unsqueeze(3)).sum(-1);
+    // k_grads = einsum("dijkl,dijl->dijk", grads, vs)
+    auto k_grads = (grads * vs.unsqueeze(3)).sum(-1);
+    // v_grads = einsum("dijkl,dijk->dijl", grads, ks)
+    auto v_grads = (grads * ks.unsqueeze(-1)).sum(3);
+    return {q_grads, k_grads, v_grads};
+}
+
+std::tuple<torch::Tensor, torch::Tensor> causal_denominator_forward(
+    const torch::Tensor& qs,    // [I, D, J, K]
+    const torch::Tensor& ks) {  // [I, D, J, K]
+    // Compute cumulative sum over dimension 0.
+    auto sums = torch::cumsum(ks, /*dim=*/1);
+    // Compute einsum("dijk,dijk->dij", qs, sums)
+    auto result = (qs * sums).sum(-1);
+    return {result, sums};
+}
+
+std::vector<torch::Tensor> causal_denominator_backward(
+    const torch::Tensor& res_grad,
+    const torch::Tensor& sums,
+    const torch::Tensor& qs) {
+    // q_grads = einsum("dijk,dij->dijk", sums, res_grad)
+    auto q_grads = sums * res_grad;
+    // partial_k = einsum("dijk,dij->dijk", qs, res_grad)
+    auto partial_k = qs * res_grad;
+    // k_grads = flip(cumsum(flip(partial_k, dims={0}), 0), dims={0})
+    auto k_grads = torch::flip(torch::cumsum(torch::flip(partial_k, {1}), /*dim=*/1), {1});
+    return {q_grads, k_grads};
 }
 
 // Noncausal numerator: performs two permutations, matrix multiplications, then permutes back.
-inline torch::Tensor noncausal_numerator(const torch::Tensor& query_prime,
-                                         const torch::Tensor& key_prime,
-                                         const torch::Tensor& value) {
+inline torch::Tensor noncausal_numerator(const torch::Tensor& query_prime,  // [B, L, H, M]
+                                         const torch::Tensor& key_prime,    // [B, L, H, M]
+                                         const torch::Tensor& value) {      // [B, L, H, D]
     // Permute key and value.
-    auto kvs = torch::matmul(key_prime.permute({1, 2, 3, 0}),
-                             value.permute({1, 2, 0, 3}));
-    // Multiply and permute back.
-    return torch::matmul(query_prime.permute({1, 2, 0, 3}), kvs).permute({2, 0, 1, 3});
+    auto kvs = torch::matmul(key_prime.permute({0, 2, 3, 1}), value.permute({0, 2, 1, 3}));  // [B, H, M, D]
+    // Multiply and permute back.// [B, H, L, M] x [B, H, M, D] -> [B, H, L, D]
+    return torch::matmul(query_prime.permute({0, 2, 1, 3}), kvs).transpose(1, 2);  // [B, L, H, D]
 }
 
 // Noncausal denominator: sums key_prime along dim=0 and then sums the product over the last dimension.
-inline torch::Tensor noncausal_denominator(const torch::Tensor& query_prime,
-                                           const torch::Tensor& key_prime) {
-    return (query_prime * key_prime.sum(/*dim=*/0)).sum(-1);
+inline torch::Tensor noncausal_denominator(const torch::Tensor& query_prime,  // [B, L, H, M]
+                                           const torch::Tensor& key_prime) {  // [B, L, H, M]
+    return (query_prime.transpose(0, 1) * key_prime.sum(/*dim=*/1)).sum(-1).transpose(0, 1);
 }
 
 // Create a projection matrix with QR-based orthogonal blocks.
@@ -291,24 +306,19 @@ inline torch::Tensor favor_attention(const torch::Tensor& query,
         query_prime.masked_fill_(maskL.unsqueeze(-1).unsqueeze(-1), 0.0);
         key_prime.masked_fill_(maskS.unsqueeze(-1).unsqueeze(-1), 0.0);
     }
-    query_prime = query_prime.permute({1, 0, 2, 3});
-    key_prime = key_prime.permute({1, 0, 2, 3});
-
-    // Also permute value.
-    auto value_prime = value.permute({1, 0, 2, 3});
 
     torch::Tensor av_attention, attention_normalizer;
     if (causal) {
-        av_attention = causal_numerator_apply(query_prime, key_prime, value_prime);
-        attention_normalizer = causal_denominator_apply(query_prime, key_prime);
+        av_attention = CausalNumeratorFunction::apply(query_prime, key_prime, value);
+        attention_normalizer = CausalDenominatorFunction::apply(query_prime, key_prime);
     } else {
-        av_attention = noncausal_numerator(query_prime, key_prime, value_prime);
-        attention_normalizer = noncausal_denominator(query_prime, key_prime);
+        av_attention = noncausal_numerator(query_prime, key_prime, value);     // [B, L, H, D]
+        attention_normalizer = noncausal_denominator(query_prime, key_prime);  // [B, L, H]
     }
 
     // For attention_normalizer: permute to (1, 0, 2) and unsqueeze at the last dimension.
     attention_normalizer.masked_fill_(attention_normalizer == 0, 1.0);
-    return av_attention.permute({1, 0, 2, 3}) / attention_normalizer.permute({1, 0, 2}).unsqueeze(-1);
+    return av_attention / attention_normalizer.unsqueeze(-1);
 }
 
 torch::Tensor rmha_forward(

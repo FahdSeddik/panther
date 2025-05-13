@@ -64,15 +64,27 @@ def sketch_tensor(
     device: Optional[torch.device] = None,
     dtype: Optional[torch.dtype] = None,
 ) -> torch.Tensor: ...
-def causal_numerator_apply(
-    query_prime: torch.Tensor,
-    key_prime: torch.Tensor,
-    value_prime: torch.Tensor,
-) -> torch.Tensor: ...
-def causal_denominator_apply(
-    query_prime: torch.Tensor,
-    key_prime: torch.Tensor,
-) -> torch.Tensor: ...
+def causal_numerator_forward(
+    qs: torch.Tensor,
+    ks: torch.Tensor,
+    vs: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]: ...
+def causal_numerator_backward(
+    res_grad: torch.Tensor,
+    sums: torch.Tensor,
+    qs: torch.Tensor,
+    ks: torch.Tensor,
+    vs: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
+def causal_denominator_forward(
+    qs: torch.Tensor,
+    ks: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]: ...
+def causal_denominator_backward(
+    res_grad: torch.Tensor,
+    sums: torch.Tensor,
+    qs: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]: ...
 def rmha_forward(
     query: torch.Tensor,
     key: torch.Tensor,
@@ -100,3 +112,24 @@ def create_projection_matrix(
     dtype: Optional[torch.dtype] = None,
     device: Optional[torch.device] = None,
 ) -> torch.Tensor: ...
+def sketched_conv2d_forward(
+    x: torch.Tensor,
+    S1s: torch.Tensor,
+    U1s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor: ...
+def sketched_conv2d_backward(
+    input: torch.Tensor,
+    S1s: torch.Tensor,
+    S2s: torch.Tensor,
+    U1s: torch.Tensor,
+    U2s: torch.Tensor,
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    kernel_size: Tuple[int, int],
+    in_shape: Tuple[int, int],
+    grad_out: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
