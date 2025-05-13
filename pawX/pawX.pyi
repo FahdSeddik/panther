@@ -19,7 +19,7 @@ def sketched_linear_forward(
     S2s: torch.Tensor,
     U1s: torch.Tensor,
     U2s: torch.Tensor,
-    bias: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
     use_gpu: bool = False,
 ) -> torch.Tensor: ...
 def sketched_linear_backward(
@@ -29,6 +29,7 @@ def sketched_linear_backward(
     S2s: torch.Tensor,
     U1s: torch.Tensor,
     U2s: torch.Tensor,
+    has_bias: bool = False,
     use_gpu: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 def cqrrpt(

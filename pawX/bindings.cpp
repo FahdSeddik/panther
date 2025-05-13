@@ -13,13 +13,13 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("sketched_linear_forward", &sketched_linear_forward,
           "Sketched Linear Forward Pass",
           py::arg("input"), py::arg("S1s"), py::arg("S2s"),
-          py::arg("U1s"), py::arg("U2s"), py::arg("bias"),
+          py::arg("U1s"), py::arg("U2s"), py::arg("bias") = c10::nullopt,
           py::arg("use_gpu") = false);
 
     m.def("sketched_linear_backward", &sketched_linear_backward,
           "Sketched Linear Backward Pass",
           py::arg("grad_output"), py::arg("input"), py::arg("S1s"),
-          py::arg("S2s"), py::arg("U1s"), py::arg("U2s"), py::arg("use_gpu") = false);
+          py::arg("S2s"), py::arg("U1s"), py::arg("U2s"), py::arg("has_bias") = false, py::arg("use_gpu") = false);
 
     py::enum_<DistributionFamily>(m, "DistributionFamily")
         .value("Gaussian", DistributionFamily::Gaussian)

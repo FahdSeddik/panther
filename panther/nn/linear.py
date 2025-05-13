@@ -30,9 +30,15 @@ class SketchedLinearFunction(Function):
     # inputs is a Tuple of all of the inputs passed to forward.
     # output is the output of the forward().
     def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
-        input, S1s, S2s, U1s, U2s, _, use_gpu = inputs
+        input, S1s, S2s, U1s, U2s, bias, use_gpu = inputs
         ctx.save_for_backward(
-            input, S1s, S2s, U1s, U2s, torch.tensor(use_gpu, dtype=torch.bool)
+            input,
+            S1s,
+            S2s,
+            U1s,
+            U2s,
+            torch.tensor(use_gpu, dtype=torch.bool),
+            torch.tensor(bias is not None, dtype=torch.bool),
         )
 
     @staticmethod
@@ -41,7 +47,7 @@ class SketchedLinearFunction(Function):
         # dl/dS1_i = g h_in^T U2_i^T / 2 * l
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
-        input, S1s, S2s, U1s, U2s, use_gpu_tensor = ctx.saved_tensors
+        input, S1s, S2s, U1s, U2s, use_gpu_tensor, has_bias = ctx.saved_tensors
         use_gpu = use_gpu_tensor.item()
         grads = sketched_linear_backward(
             grad_output=grad_output[0],
@@ -50,6 +56,7 @@ class SketchedLinearFunction(Function):
             S2s=S2s,
             U1s=U1s,
             U2s=U2s,
+            has_bias=has_bias.item(),
             use_gpu=use_gpu,
         )
         return (
@@ -58,7 +65,7 @@ class SketchedLinearFunction(Function):
             grads[2],  # S2s
             None,  # U1s
             None,  # U2s
-            grads[3],  # bias
+            grads[3] if has_bias.item() else None,  # bias
             None,  # boolean for use_tensor_core
         )
 
@@ -194,9 +201,9 @@ class SKLinear(nn.Module):
 
 
 if __name__ == "__main__":
-    in_features = 16384
-    out_features = 16384
-    num_terms = 1
+    in_features = 8192
+    out_features = 32768
+    num_terms = 3
     low_rank = 512
     batch_size = 64
     linear = SKLinear(
@@ -225,6 +232,4 @@ if __name__ == "__main__":
     ), f"\n{output[0]}\n{output_expected[0]}"
 
     # Backward pass
-    grad_output = torch.randn_like(output)
-    output.backward(grad_output)
-    print("Backward pass completed successfully.")
+    output.backward(torch.randn_like(output))

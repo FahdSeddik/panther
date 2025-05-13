@@ -6,7 +6,7 @@ torch::Tensor sketched_linear_forward(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias,
+    c10::optional<torch::Tensor> bias,
     const bool use_gpu) {
     if (input.device().is_cuda() && use_gpu) {
         return sketched_linear_forward_cuda(input, S1s, S2s, U1s, U2s, bias);
@@ -21,14 +21,18 @@ torch::Tensor sketched_linear_forward_cpu(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias) {
+    c10::optional<torch::Tensor> bias) {
     int64_t num_terms = S2s.size(0);
     auto input_expanded = input.unsqueeze(0).expand({num_terms, input.size(0), input.size(1)});
 
     torch::Tensor term1 = (input_expanded.bmm(S1s)).bmm(U1s);
     torch::Tensor term2 = (input_expanded.bmm(U2s)).bmm(S2s);
 
-    return (term1.mean(0) + term2.mean(0)) * 0.5 + bias;
+    auto result = (term1.mean(0) + term2.mean(0)) * 0.5;
+    if (bias.has_value()) {
+        result.add_(bias.value());
+    }
+    return result;
 }
 
 std::vector<torch::Tensor> sketched_linear_backward(
@@ -38,11 +42,12 @@ std::vector<torch::Tensor> sketched_linear_backward(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
+    const bool has_bias,
     bool use_gpu) {
     if (input.device().is_cuda() && use_gpu) {
-        return sketched_linear_backward_cuda(grad_output, input, S1s, S2s, U1s, U2s);
+        return sketched_linear_backward_cuda(grad_output, input, S1s, S2s, U1s, U2s, has_bias);
     } else {
-        return sketched_linear_backward_cpu(grad_output, input, S1s, S2s, U1s, U2s);
+        return sketched_linear_backward_cpu(grad_output, input, S1s, S2s, U1s, U2s, has_bias);
     }
 }
 
@@ -52,7 +57,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cpu(
     const torch::Tensor& S1s,          // [T, I, R]
     const torch::Tensor& S2s,          // [T, R, O]
     const torch::Tensor& U1s,          // [T, R, O]
-    const torch::Tensor& U2s) {        // [T, I, R]
+    const torch::Tensor& U2s,
+    const bool has_bias) {  // [T, I, R]
     int64_t num_terms = S2s.size(0);
     torch::Tensor g = grad_output / (2 * num_terms);
     g = g.unsqueeze(0).expand({num_terms, g.size(0), g.size(1)});
@@ -69,7 +75,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cpu(
     torch::Tensor grad_S2s = (U2s_t.bmm(input_t)).bmm(g);
     torch::Tensor grad_S1s = input_t.bmm(g.bmm(U1s_t));
 
-    torch::Tensor grad_bias = grad_output.sum(0);
-
-    return {grad_input, grad_S1s, grad_S2s, grad_bias};
+    if (has_bias) {
+        return {grad_input, grad_S1s, grad_S2s, grad_output.sum(0)};
+    }
+    return {grad_input, grad_S1s, grad_S2s};
 }

@@ -8,7 +8,7 @@ torch::Tensor sketched_linear_forward(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias,
+    c10::optional<torch::Tensor> bias = c10::nullopt,
     const bool use_gpu = false);
 
 torch::Tensor sketched_linear_forward_cpu(
@@ -17,7 +17,7 @@ torch::Tensor sketched_linear_forward_cpu(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias);
+    c10::optional<torch::Tensor> bias = c10::nullopt);
 
 torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& input,
@@ -25,7 +25,7 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias);
+    c10::optional<torch::Tensor> bias = c10::nullopt);
 
 std::vector<torch::Tensor> sketched_linear_backward(
     const torch::Tensor& grad_output,
@@ -34,6 +34,7 @@ std::vector<torch::Tensor> sketched_linear_backward(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
+    const bool has_bias = false,
     const bool use_gpu = false);
 
 std::vector<torch::Tensor> sketched_linear_backward_cpu(
@@ -42,7 +43,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cpu(
     const torch::Tensor& S1s,
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
-    const torch::Tensor& U2s);
+    const torch::Tensor& U2s,
+    const bool has_bias = false);
 
 std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& grad_output,
@@ -50,4 +52,5 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& S1s,
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
-    const torch::Tensor& U2s);
+    const torch::Tensor& U2s,
+    const bool has_bias = false);

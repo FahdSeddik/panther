@@ -62,7 +62,8 @@ __global__ void sklinear_forward_output(
     const torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> intermediate,  // 2 x num_terms x batch_size x low_rank_dim
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S2s,           // term x low_rank_dim x output_dim
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U1s,           // term x low_rank_dim x output_dim
-    const torch::PackedTensorAccessor32<scalar_t, 1, torch::RestrictPtrTraits> bias,
+    const scalar_t* bias,
+    bool hasBias,
     torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> output,  // batch x output_dim
     int batch_size, int input_dim, int num_terms, int low_rank_dim, int output_dim) {
     int tx = threadIdx.x, ty = threadIdx.y;
@@ -73,11 +74,16 @@ __global__ void sklinear_forward_output(
     scalar_t* sharedU1 = sharedS2 + TILE_DIM * TILE_DIM;
     scalar_t* sharedInter1 = sharedU1 + TILE_DIM * TILE_DIM;
     scalar_t* sharedInter2 = sharedInter1 + TILE_DIM * TILE_DIM;
-    scalar_t* sharedBias = sharedInter2 + TILE_DIM * TILE_DIM;
+    scalar_t* sharedBias = nullptr;
+    if (hasBias) {
+        sharedBias = sharedInter2 + TILE_DIM * TILE_DIM;
+    }
     scalar_t sum = 0;
 
-    if (outputIdx < output_dim && ty == 0) {
-        sharedBias[tx] = bias[outputIdx];
+    if (hasBias) {
+        if (outputIdx < output_dim && ty == 0) {
+            sharedBias[tx] = bias[outputIdx];
+        }
     }
 
     for (int term = 0; term < num_terms; term++) {
@@ -113,8 +119,11 @@ __global__ void sklinear_forward_output(
     }
 
     if (batchIdx < batch_size && outputIdx < output_dim) {
-        // Write the result to the output tensor.
-        output[batchIdx][outputIdx] = sum / (static_cast<scalar_t>(2 * num_terms)) + sharedBias[tx];
+        if (hasBias) {
+            output[batchIdx][outputIdx] = sum / (static_cast<scalar_t>(2 * num_terms)) + sharedBias[tx];
+        } else {
+            output[batchIdx][outputIdx] = sum / (static_cast<scalar_t>(2 * num_terms));
+        }
     }
 }
 
@@ -125,13 +134,16 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias) {
+    c10::optional<torch::Tensor> bias) {
     TORCH_CHECK(input.is_contiguous(), "input tensor must be contiguous in memory.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
     TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous in memory.");
     TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous in memory.");
     TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous in memory.");
-    TORCH_CHECK(bias.is_contiguous(), "bias tensor must be contiguous in memory.");
+    if (bias.has_value()) {
+        TORCH_CHECK(bias.value().is_contiguous(), "bias tensor must be contiguous in memory.");
+    }
+
     // Get dimensions.
     int batch_size = input.size(0);
     int input_dim = input.size(1);
@@ -173,18 +185,23 @@ torch::Tensor sketched_linear_forward_cuda(
             input.scalar_type(),
             "sklinear_forward_output",
             ([&] {
-                sklinear_forward_output<scalar_t><<<grid2, block, (4 * TILE_DIM * TILE_DIM + TILE_DIM) * sizeof(scalar_t)>>>(
+                sklinear_forward_output<scalar_t><<<grid2, block, (4 * TILE_DIM * TILE_DIM + ((bias.has_value()) ? TILE_DIM : 0)) * sizeof(scalar_t)>>>(
                     output_intermediate.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
                     S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                     U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                    bias.packed_accessor32<scalar_t, 1, torch::RestrictPtrTraits>(),
+                    bias.has_value() ? bias.value().data_ptr<scalar_t>() : nullptr,
+                    bias.has_value(),
                     output.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
                     batch_size, input_dim, num_terms, low_rank_dim, output_dim);
             }));
 
         return output;
     } else {
-        return (output_intermediate[0].bmm(U1s) + output_intermediate[1].bmm(S2s)).mean(0).div(2.0f) + bias;
+        auto result = (output_intermediate[0].bmm(U1s) + output_intermediate[1].bmm(S2s)).mean(0).div(2.0f);
+        if (bias.has_value()) {
+            result.add_(bias.value());
+        }
+        return result;
     }
 }
 
@@ -444,7 +461,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& S1s,
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
-    const torch::Tensor& U2s) {
+    const torch::Tensor& U2s,
+    const bool has_bias) {
     TORCH_CHECK(grad_output.is_contiguous(), "grad_output tensor must be contiguous in memory.");
     TORCH_CHECK(input.is_contiguous(), "input tensor must be contiguous in memory.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
@@ -573,19 +591,25 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
                 B, I, R, T);
         }));
 
-    at::cuda::CUDAStream torch_stream4 = at::cuda::getStreamFromPool(false, device_id);
-    cudaStream_t stream4 = torch_stream4.stream();
-    at::cuda::setCurrentCUDAStream(torch_stream4);
-    auto grad_o = grad_output.sum(0);
+    torch::Tensor grad_o;
+    if (has_bias) {
+        at::cuda::CUDAStream torch_stream4 = at::cuda::getStreamFromPool(false, device_id);
+        cudaStream_t stream4 = torch_stream4.stream();
+        at::cuda::setCurrentCUDAStream(torch_stream4);
+        grad_o = grad_output.sum(0);
+        at::cuda::stream_synchronize(stream4);
+    }
 
     at::cuda::stream_synchronize(stream1);
     at::cuda::stream_synchronize(stream2);
     at::cuda::stream_synchronize(stream3);
-    at::cuda::stream_synchronize(stream4);
     torch::cuda::synchronize(device_id);
     at::cuda::setCurrentCUDAStream(at::cuda::getDefaultCUDAStream(device_id));
     cudaEventDestroy(afterIntermSum);
     cudaEventDestroy(afterGcompute);
 
-    return {grad_input, grad_S1s, grad_S2s, grad_o};
+    if (has_bias) {
+        return {grad_input, grad_S1s, grad_S2s, grad_o};
+    }
+    return {grad_input, grad_S1s, grad_S2s};
 }

@@ -1,3 +1,4 @@
+#include <c10/cuda/CUDAStream.h>
 #include <cuda_fp16.h>
 #include <mma.h>
 #include <torch/extension.h>
@@ -91,14 +92,24 @@ __global__ void sklinear_forward_output_wmma(
     const torch::PackedTensorAccessor32<float_t, 4, torch::RestrictPtrTraits> inter,  // [2,T,B,R]
     const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U1s,    // [T,R,O]
     const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> S2s,    // [T,R,O]
-    const torch::PackedTensorAccessor32<float_t, 1, torch::RestrictPtrTraits> bias,   // [O]
-    torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> out,          // [B,O]
+    const float_t* bias,                                                              // [O]
+    bool hasBias,
+    torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> out,  // [B,O]
     int B, int R, int T, int O) {
-    __shared__ half subTileA1[TILE_WIDTH_K][TILE_WIDTH_M];
-    __shared__ half subTileA2[TILE_WIDTH_K][TILE_WIDTH_M];
-    __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
-    __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];
-    __shared__ float_t shBias[TILE_WIDTH_N];
+    // __shared__ half subTileA1[TILE_WIDTH_K][TILE_WIDTH_M];
+    // __shared__ half subTileA2[TILE_WIDTH_K][TILE_WIDTH_M];
+    // __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
+    // __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];
+    // __shared__ float_t shBias[TILE_WIDTH_N];
+    extern __shared__ float_t shData[];
+    half_t* subTileA1 = (half_t*)shData;
+    half_t* subTileA2 = (half_t*)&subTileA1[TILE_WIDTH_K * TILE_WIDTH_M];
+    half_t* subTileB1 = (half_t*)&subTileA2[TILE_WIDTH_K * TILE_WIDTH_M];
+    half_t* subTileB2 = (half_t*)&subTileB1[TILE_WIDTH_N * TILE_WIDTH_K];
+    float_t* shBias = nullptr;
+    if (hasBias) {
+        shBias = (float_t*)&subTileB2[TILE_WIDTH_N * TILE_WIDTH_K];
+    }
 
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -113,9 +124,11 @@ __global__ void sklinear_forward_output_wmma(
     wmma::fragment<wmma::accumulator, M, N, K, float_t> c_frag;
     wmma::fill_fragment(acc, 0.0f);
 
-    // load bias into memory N
-    for (int i = tx + ty * blockDim.x; i < N; i += blockDim.x * blockDim.y) {
-        shBias[i] = (base_o + i) < O ? bias[base_o + i] : 0.0f;
+    if (hasBias) {
+        // load bias into memory N
+        for (int i = tx + ty * blockDim.x; i < N; i += blockDim.x * blockDim.y) {
+            shBias[i] = (base_o + i) < O ? bias[base_o + i] : 0.0f;
+        }
     }
 
     for (int t = 0; t < T; ++t) {
@@ -126,10 +139,10 @@ __global__ void sklinear_forward_output_wmma(
                 int aY = idx / TILE_WIDTH_M;
                 int bX = idx % TILE_WIDTH_K;
                 int bY = idx / TILE_WIDTH_K;
-                subTileA1[aY][aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[0][t][base_b + aX][k + aY])) : __float2half(0.0f);
-                subTileA2[aY][aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[1][t][base_b + aX][k + aY])) : __float2half(0.0f);
-                subTileB1[bY][bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(U1s[t][k + bX][base_o + bY])) : __float2half(0.0f);
-                subTileB2[bY][bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(S2s[t][k + bX][base_o + bY])) : __float2half(0.0f);
+                subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[0][t][base_b + aX][k + aY])) : __float2half(0.0f);
+                subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[1][t][base_b + aX][k + aY])) : __float2half(0.0f);
+                subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(U1s[t][k + bX][base_o + bY])) : __float2half(0.0f);
+                subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(S2s[t][k + bX][base_o + bY])) : __float2half(0.0f);
             }
             __syncthreads();
 
@@ -139,10 +152,10 @@ __global__ void sklinear_forward_output_wmma(
                 int subtileBRow = i;
                 int subtileBCol = N * ty;
 
-                wmma::load_matrix_sync(fA1, (half_t*)subTileA1 + subtileARow + subtileACol * TILE_WIDTH_M, TILE_WIDTH_M);
-                wmma::load_matrix_sync(fA2, (half_t*)subTileA2 + subtileARow + subtileACol * TILE_WIDTH_M, TILE_WIDTH_M);
-                wmma::load_matrix_sync(fB1, (half_t*)subTileB1 + subtileBRow + subtileBCol * TILE_WIDTH_K, TILE_WIDTH_K);
-                wmma::load_matrix_sync(fB2, (half_t*)subTileB2 + subtileBRow + subtileBCol * TILE_WIDTH_K, TILE_WIDTH_K);
+                wmma::load_matrix_sync(fA1, subTileA1 + subtileARow + subtileACol * TILE_WIDTH_M, TILE_WIDTH_M);
+                wmma::load_matrix_sync(fA2, subTileA2 + subtileARow + subtileACol * TILE_WIDTH_M, TILE_WIDTH_M);
+                wmma::load_matrix_sync(fB1, subTileB1 + subtileBRow + subtileBCol * TILE_WIDTH_K, TILE_WIDTH_K);
+                wmma::load_matrix_sync(fB2, subTileB2 + subtileBRow + subtileBCol * TILE_WIDTH_K, TILE_WIDTH_K);
                 wmma::mma_sync(acc, fA1, fB1, acc);
                 wmma::mma_sync(acc, fA2, fB2, acc);
             }
@@ -155,11 +168,13 @@ __global__ void sklinear_forward_output_wmma(
     int cCol = warpN * N;
 
     if (cRow < B && cCol < O) {
-        wmma::load_matrix_sync(c_frag, shBias, 0, wmma::mem_row_major);
-        for (int i = 0; i < c_frag.num_elements; i++) {
-            c_frag.x[i] = acc.x[i] + c_frag.x[i];
+        if (hasBias) {
+            wmma::load_matrix_sync(c_frag, shBias, 0, wmma::mem_row_major);
+            for (int i = 0; i < c_frag.num_elements; i++) {
+                acc.x[i] = acc.x[i] + c_frag.x[i];
+            }
         }
-        wmma::store_matrix_sync(&out[cRow][cCol], c_frag, O, wmma::mem_row_major);
+        wmma::store_matrix_sync(&out[cRow][cCol], acc, O, wmma::mem_row_major);
     }
 }
 
@@ -170,14 +185,16 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
-    const torch::Tensor& bias) {
+    c10::optional<torch::Tensor> bias) {
     TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
     TORCH_CHECK(input.is_contiguous(), "Input tensor must be contiguous.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous.");
     TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous.");
     TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous.");
     TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous.");
-    TORCH_CHECK(bias.is_contiguous(), "Bias tensor must be contiguous.");
+    if (bias.has_value()) {
+        TORCH_CHECK(bias.value().is_contiguous(), "Bias tensor must be contiguous.");
+    }
 
     int B = input.size(0), I = input.size(1);
     int T = S1s.size(0), R = S1s.size(2), O = S2s.size(2);
@@ -208,17 +225,23 @@ torch::Tensor sketched_linear_forward_cuda(
         auto out = torch::zeros({B, O}, input.options());
         dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
+        int shared_bytes = (TILE_WIDTH_K * TILE_WIDTH_M * 2 + 2 * TILE_WIDTH_N * TILE_WIDTH_K + (bias.has_value() ? TILE_WIDTH_N : 0)) * sizeof(float_t);
 
-        sklinear_forward_output_wmma<<<grid2, block>>>(
+        sklinear_forward_output_wmma<<<grid2, block, shared_bytes>>>(
             interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
             U1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
             S2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-            bias.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+            bias.has_value() ? bias.value().data_ptr<float>() : nullptr,
+            bias.has_value(),
             out.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
             B, R, T, O);
         return out;
     } else {
-        return (interm[0].bmm(U1s) + interm[1].bmm(S2s)).mean(0).div(2.0f) + bias;
+        auto result = (interm[0].bmm(U1s) + interm[1].bmm(S2s)).mean(0).div(2.0f);
+        if (bias.has_value()) {
+            result.add_(bias.value());
+        }
+        return result;
     }
 }
 
@@ -520,7 +543,8 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& S1s,          // [T, I, R]
     const torch::Tensor& S2s,          // [T, R, O]
     const torch::Tensor& U1s,          // [T, R, O]
-    const torch::Tensor& U2s) {        // [T, I, R]
+    const torch::Tensor& U2s,          // [T, I, R]
+    const bool has_bias) {
     TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
     TORCH_CHECK(input.is_contiguous(), "Input tensor must be contiguous.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous.");
@@ -625,19 +649,25 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
         grad_S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         B, I, R, T);
 
-    at::cuda::CUDAStream torch_stream4 = at::cuda::getStreamFromPool(false, device_id);
-    cudaStream_t stream4 = torch_stream4.stream();
-    at::cuda::setCurrentCUDAStream(torch_stream4);
-    auto grad_o = grad_output.sum(0);
+    torch::Tensor grad_o;
+    if (has_bias) {
+        at::cuda::CUDAStream torch_stream4 = at::cuda::getStreamFromPool(false, device_id);
+        cudaStream_t stream4 = torch_stream4.stream();
+        at::cuda::setCurrentCUDAStream(torch_stream4);
+        grad_o = grad_output.sum(0);
+        at::cuda::stream_synchronize(stream4);
+    }
 
     at::cuda::stream_synchronize(stream1);
     at::cuda::stream_synchronize(stream2);
     at::cuda::stream_synchronize(stream3);
-    at::cuda::stream_synchronize(stream4);
     torch::cuda::synchronize(device_id);
     at::cuda::setCurrentCUDAStream(at::cuda::getDefaultCUDAStream(device_id));
     cudaEventDestroy(afterIntermSum);
     cudaEventDestroy(afterGcompute);
 
-    return {grad_input, grad_S1s, grad_S2s, grad_o};
+    if (has_bias) {
+        return {grad_input, grad_S1s, grad_S2s, grad_o};
+    }
+    return {grad_input, grad_S1s, grad_S2s};
 }
