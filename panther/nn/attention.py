@@ -176,24 +176,24 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = RandMultiHeadAttention(
-        embed_dim=8,
-        num_heads=2,
-        num_random_features=10,
+        embed_dim=768,
+        num_heads=12,
+        num_random_features=128,
         dropout=0.1,
         kernel_fn="softmax",
-        iscausal=False,
+        iscausal=True,
         device=device,
         dtype=torch.float32,
     ).to(device)
 
     output = model(
-        query=torch.randn(1, 2, 8).to(device),
-        key=torch.randn(1, 3, 8).to(device),
-        value=torch.randn(1, 3, 8).to(device),
-        attention_mask=torch.tensor([[[0, 0, 0], [0, 0, 0]]], dtype=torch.bool).to(
-            device
-        ),
-        # attention_mask=None,
+        query=torch.randn(16, 512, 768).to(device),
+        key=torch.randn(16, 512, 768).to(device),
+        value=torch.randn(16, 512, 768).to(device),
+        # attention_mask=torch.tensor([[[0, 0, 0], [0, 0, 0]]], dtype=torch.bool).to(
+        #     device
+        # ),
+        attention_mask=None,
     )
-    print(output[0].shape)
-    print(output[0])
+    # print(output[0].shape)
+    # print(output[0])

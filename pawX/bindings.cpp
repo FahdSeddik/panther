@@ -48,11 +48,18 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("input"), py::arg("axis"), py::arg("new_size"), py::arg("sketch_matrix"),
           py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
 
-    m.def("causal_numerator_apply", &causal_numerator_apply,
-          py::arg("query_prime"), py::arg("key_prime"), py::arg("value_prime"));
+    m.def("causal_numerator_forward", &causal_numerator_forward,
+          py::arg("qs"), py::arg("ks"), py::arg("vs"));
 
-    m.def("causal_denominator_apply", &causal_denominator_apply,
-          py::arg("query_prime"), py::arg("key_prime"));
+    m.def("causal_numerator_backward", &causal_numerator_backward,
+          py::arg("res_grad"), py::arg("sums"), py::arg("qs"),
+          py::arg("ks"), py::arg("vs"));
+
+    m.def("causal_denominator_forward", &causal_denominator_forward,
+          py::arg("qs"), py::arg("ks"));
+
+    m.def("causal_denominator_backward", &causal_denominator_backward,
+          py::arg("res_grad"), py::arg("sums"), py::arg("qs"));
 
     m.def("rmha_forward", &rmha_forward,
           py::arg("query"), py::arg("key"), py::arg("value"),
