@@ -281,7 +281,8 @@ inline torch::Tensor softmax_kernel_transform(
         max_val = std::get<0>(max_val.max(-3, /*keepdim=*/true));
 
     // Final result: ratio * (exp(data_dash - diag_data - max_val) + numerical_stabilizer)
-    return ratio * (torch::exp(data_dash - diag_data - max_val) + numerical_stabilizer);
+    data_dash.sub_(diag_data).sub_(max_val).exp_().add_(numerical_stabilizer).mul_(ratio);
+    return data_dash;
 }
 
 // Favor attention wrapper function.
@@ -327,8 +328,9 @@ inline torch::Tensor favor_attention(const torch::Tensor& query,
     }
 
     // For attention_normalizer: permute to (1, 0, 2) and unsqueeze at the last dimension.
-    attention_normalizer.masked_fill_(attention_normalizer == 0, 1.0);
-    return av_attention / attention_normalizer.unsqueeze(-1);
+    if (attention_mask.has_value()) attention_normalizer.masked_fill_(attention_normalizer == 0, 1.0);
+    av_attention.div_(attention_normalizer.unsqueeze(-1));
+    return av_attention;
 }
 
 torch::Tensor rmha_forward(
