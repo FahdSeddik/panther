@@ -112,6 +112,7 @@ def test_forward_output_shape_and_mha_comparison(
     "D,I,J,K,L",
     [
         (1, 1, 1, 1, 1),
+        (2, 2, 2, 2, 2),
         (3, 1, 4, 5, 6),
         (3, 4, 1, 5, 6),
         (3, 4, 5, 1, 6),
@@ -134,11 +135,11 @@ def test_causal_numerator_correctness(D, I, J, K, L, device, dtype):  # noqa: E7
 
     # Reference implementation
     KV = torch.einsum("idjk,idjl->idjkl", ks, vs)  # [D,I,J,K,L]
-    sums = torch.cumsum(KV, dim=1)  # [D,I,J,K,L]
-    expected = torch.einsum("idjkl,idjk->idjl", sums, qs)
+    sums2 = torch.cumsum(KV, dim=1)  # [D,I,J,K,L]
+    expected = torch.einsum("idjkl,idjk->idjl", sums2, qs)
 
     # Your custom forward
-    out, _ = causal_numerator_forward(qs, ks, vs)
+    out, sums = causal_numerator_forward(qs, ks, vs)
     assert out.shape == (I, D, J, L), "Output shape mismatch"
     assert torch.allclose(
         out, expected, atol=1e-6, rtol=1e-5
@@ -147,12 +148,6 @@ def test_causal_numerator_correctness(D, I, J, K, L, device, dtype):  # noqa: E7
     # backward‐gradient check
     grad_out = torch.randn_like(out)
     # autograd‐computed grads
-    auto_q, auto_k, auto_v = torch.autograd.grad(
-        outputs=out,
-        inputs=(qs, ks, vs),
-        grad_outputs=grad_out,
-        create_graph=True,
-    )
     # custom‐backend grads
     custom_q, custom_k, custom_v = causal_numerator_backward(
         res_grad=grad_out,
@@ -161,6 +156,13 @@ def test_causal_numerator_correctness(D, I, J, K, L, device, dtype):  # noqa: E7
         ks=ks,
         vs=vs,
     )
+    auto_q, auto_k, auto_v = torch.autograd.grad(
+        outputs=out,
+        inputs=(qs, ks, vs),
+        grad_outputs=grad_out,
+        create_graph=True,
+    )
+
     for a, c, name in [
         (auto_q, custom_q, "qs"),
         (auto_k, custom_k, "ks"),
