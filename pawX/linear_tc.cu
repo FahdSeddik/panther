@@ -29,7 +29,7 @@ template <typename T>
 struct wmma_accumulator_type;
 
 template <>
-struct wmma_accumulator_type<half_t> {
+struct wmma_accumulator_type<c10::Half> {
     using type = half_t;
 };
 
