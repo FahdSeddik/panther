@@ -49,7 +49,6 @@ __global__ void sklinear_forward_intermediate_wmma(
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
     __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
 
     int tx = threadIdx.x;
@@ -76,15 +75,9 @@ __global__ void sklinear_forward_intermediate_wmma(
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
 
-            if (is_float) {
-                subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(S1s[term][k + bX][bCol + bY]) : __float2half(0.0f);
-                subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(U2s[term][k + bX][bCol + bY]) : __float2half(0.0f);
-                if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(input[aRow + aX][k + aY] * DIVISOR) : __float2half(0.0f);
-            } else {
-                subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? S1s[term][k + bX][bCol + bY] : __float2half(0.0f);
-                subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? U2s[term][k + bX][bCol + bY] : __float2half(0.0f);
-                if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? input[aRow + aX][k + aY] : __float2half(0.0f);
-            }
+            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(S1s[term][k + bX][bCol + bY])) : __float2half(0.0f);
+            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(U2s[term][k + bX][bCol + bY])) : __float2half(0.0f);
+            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(static_cast<float>(input[aRow + aX][k + aY])) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -136,7 +129,6 @@ __global__ void sklinear_forward_output_wmma(
     if (hasBias) {
         shBias = (scalar_t*)&subTileB2[TILE_WIDTH_N * TILE_WIDTH_K];
     }
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
 
     int tx = threadIdx.x;
@@ -168,17 +160,10 @@ __global__ void sklinear_forward_output_wmma(
                 int bX = idx % TILE_WIDTH_K;
                 int bY = idx / TILE_WIDTH_K;
 
-                if (is_float) {
-                    subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[0][t][base_b + aX][k + aY])) : __float2half(0.0f);
-                    subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[1][t][base_b + aX][k + aY])) : __float2half(0.0f);
-                    subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(U1s[t][k + bX][base_o + bY])) : __float2half(0.0f);
-                    subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(S2s[t][k + bX][base_o + bY])) : __float2half(0.0f);
-                } else {
-                    subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? inter[0][t][base_b + aX][k + aY] : __float2half(0.0f);
-                    subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? inter[1][t][base_b + aX][k + aY] : __float2half(0.0f);
-                    subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? U1s[t][k + bX][base_o + bY] : __float2half(0.0f);
-                    subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? S2s[t][k + bX][base_o + bY] : __float2half(0.0f);
-                }
+                subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[0][t][base_b + aX][k + aY])) : __float2half(0.0f);
+                subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[1][t][base_b + aX][k + aY])) : __float2half(0.0f);
+                subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(U1s[t][k + bX][base_o + bY])) : __float2half(0.0f);
+                subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(S2s[t][k + bX][base_o + bY])) : __float2half(0.0f);
             }
             __syncthreads();
 
@@ -291,7 +276,6 @@ __global__ void sklinear_backward_intermediate_wmma(
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
     __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -314,15 +298,9 @@ __global__ void sklinear_backward_intermediate_wmma(
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
 
-            if (is_float) {
-                subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? __float2half(U1s[term][bCol + bY][k + bX]) : __float2half(0.0f);
-                subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? __float2half(S2s[term][bCol + bY][k + bX]) : __float2half(0.0f);
-                if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < O)) ? __float2half(grad_output[aRow + aX][k + aY]) : __float2half(0.0f);
-            } else {
-                subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? U1s[term][bCol + bY][k + bX] : __float2half(0.0f);
-                subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? S2s[term][bCol + bY][k + bX] : __float2half(0.0f);
-                if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < O)) ? grad_output[aRow + aX][k + aY] : __float2half(0.0f);
-            }
+            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? __float2half(static_cast<float>(U1s[term][bCol + bY][k + bX])) : __float2half(0.0f);
+            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? __float2half(static_cast<float>(S2s[term][bCol + bY][k + bX])) : __float2half(0.0f);
+            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < O)) ? __float2half(static_cast<float>(grad_output[aRow + aX][k + aY])) : __float2half(0.0f);
         }
         __syncthreads();
 
@@ -360,7 +338,6 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
     int B, int I, int R, int T) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // U2s
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // input
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -381,13 +358,8 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            if (is_float) {
-                subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < I)) ? __float2half(U2s[term][k + aY][aRow + aX]) : __float2half(0.0f);
-                if (term == 0) subTileB[bY][bX] = (((bCol + bY) < B) && ((k + bX) < I)) ? __float2half(input[bCol + bY][k + bX]) : __float2half(0.0f);
-            } else {
-                subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < I)) ? U2s[term][k + aY][aRow + aX] : __float2half(0.0f);
-                if (term == 0) subTileB[bY][bX] = (((bCol + bY) < B) && ((k + bX) < I)) ? input[bCol + bY][k + bX] : __float2half(0.0f);
-            }
+            subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < I)) ? __float2half(static_cast<float>(U2s[term][k + aY][aRow + aX])) : __float2half(0.0f);
+            if (term == 0) subTileB[bY][bX] = (((bCol + bY) < B) && ((k + bX) < I)) ? __float2half(static_cast<float>(input[bCol + bY][k + bX])) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -421,7 +393,6 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
     int B, int R, int T, int O) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // interm_gradS2s
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // grad_output
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -442,13 +413,8 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            if (is_float) {
-                subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < B)) ? __float2half(interm_gradS2s[term][aRow + aX][k + aY]) : __float2half(0.0f);
-                subTileB[bY][bX] = (((bCol + bY) < O) && ((k + bX) < B)) ? __float2half(grad_output[k + bX][bCol + bY]) : __float2half(0.0f);
-            } else {
-                subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < B)) ? interm_gradS2s[term][aRow + aX][k + aY] : __float2half(0.0f);
-                subTileB[bY][bX] = (((bCol + bY) < O) && ((k + bX) < B)) ? grad_output[k + bX][bCol + bY] : __float2half(0.0f);
-            }
+            subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < B)) ? __float2half(static_cast<float>(interm_gradS2s[term][aRow + aX][k + aY])) : __float2half(0.0f);
+            subTileB[bY][bX] = (((bCol + bY) < O) && ((k + bX) < B)) ? __float2half(static_cast<float>(grad_output[k + bX][bCol + bY])) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -485,7 +451,6 @@ __global__ void sklinear_backward_grad_input_wmma(
     __shared__ half subTileA2[TILE_WIDTH_K][TILE_WIDTH_M];  // interm1
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];  // S1s
     __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];  // U2s
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -507,17 +472,10 @@ __global__ void sklinear_backward_grad_input_wmma(
                 int aY = idx / TILE_WIDTH_M;
                 int bX = idx % TILE_WIDTH_K;
                 int bY = idx / TILE_WIDTH_K;
-                if (is_float) {
-                    subTileA1[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? __float2half(grad_interm[0][term][aRow + aX][k + aY]) : __float2half(0.0f);
-                    subTileA2[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? __float2half(grad_interm[1][term][aRow + aX][k + aY]) : __float2half(0.0f);
-                    subTileB1[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? __float2half(S1s[term][bCol + bY][k + bX]) : __float2half(0.0f);
-                    subTileB2[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? __float2half(U2s[term][bCol + bY][k + bX]) : __float2half(0.0f);
-                } else {
-                    subTileA1[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? grad_interm[0][term][aRow + aX][k + aY] : __float2half(0.0f);
-                    subTileA2[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? grad_interm[1][term][aRow + aX][k + aY] : __float2half(0.0f);
-                    subTileB1[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? S1s[term][bCol + bY][k + bX] : __float2half(0.0f);
-                    subTileB2[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? U2s[term][bCol + bY][k + bX] : __float2half(0.0f);
-                }
+                subTileA1[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(grad_interm[0][term][aRow + aX][k + aY])) : __float2half(0.0f);
+                subTileA2[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(grad_interm[1][term][aRow + aX][k + aY])) : __float2half(0.0f);
+                subTileB1[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? __float2half(static_cast<float>(S1s[term][bCol + bY][k + bX])) : __float2half(0.0f);
+                subTileB2[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? __float2half(static_cast<float>(U2s[term][bCol + bY][k + bX])) : __float2half(0.0f);
             }
             __syncthreads();
 #pragma unroll 1
@@ -558,7 +516,6 @@ __global__ void sklinear_backward_grad_S1_wmma(
     int B, int I, int R, int T) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // input
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // interm0
-    constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
     using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -580,13 +537,8 @@ __global__ void sklinear_backward_grad_S1_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            if (is_float) {
-                subTileA[aY][aX] = (((aRow + aX) < I) && ((k + aY) < B)) ? __float2half(input[k + aY][aRow + aX]) : __float2half(0.0f);
-                subTileB[bY][bX] = (((bCol + bY) < R) && ((k + bX) < B)) ? __float2half(interm0[term][k + bX][bCol + bY]) : __float2half(0.0f);
-            } else {
-                subTileA[aY][aX] = (((aRow + aX) < I) && ((k + aY) < B)) ? input[k + aY][aRow + aX] : __float2half(0.0f);
-                subTileB[bY][bX] = (((bCol + bY) < R) && ((k + bX) < B)) ? interm0[term][k + bX][bCol + bY] : __float2half(0.0f);
-            }
+            subTileA[aY][aX] = (((aRow + aX) < I) && ((k + aY) < B)) ? __float2half(static_cast<float>(input[k + aY][aRow + aX])) : __float2half(0.0f);
+            subTileB[bY][bX] = (((bCol + bY) < R) && ((k + bX) < B)) ? __float2half(static_cast<float>(interm0[term][k + bX][bCol + bY])) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
