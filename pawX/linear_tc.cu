@@ -23,6 +23,19 @@ static const int TILE_WIDTH_M = M * BLOCK_ROW_WARPS;
 static const int TILE_WIDTH_N = N * BLOCK_COL_WARPS;
 static const int TILE_WIDTH_K = TILE_WIDTH_M;
 
+template <typename T>
+struct wmma_accumulator_type;
+
+template <>
+struct wmma_accumulator_type<half_t> {
+    using type = half_t;
+};
+
+template <>
+struct wmma_accumulator_type<float_t> {
+    using type = float_t;
+};
+
 template <typename scalar_t>
 __global__ void sklinear_forward_intermediate_wmma(
     const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,  // [B,I]
@@ -35,6 +48,7 @@ __global__ void sklinear_forward_intermediate_wmma(
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
     __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
 
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -47,7 +61,7 @@ __global__ void sklinear_forward_intermediate_wmma(
     // WMMA fragments
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> acc1, acc2;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc1, acc2;
 
     for (int term = 0; term < T; term++) {
         wmma::fill_fragment(acc1, 0.0f);
@@ -121,6 +135,7 @@ __global__ void sklinear_forward_output_wmma(
         shBias = (scalar_t*)&subTileB2[TILE_WIDTH_N * TILE_WIDTH_K];
     }
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
 
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -131,8 +146,8 @@ __global__ void sklinear_forward_output_wmma(
 
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA1, fA2;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> acc;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> c_frag;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> c_frag;
     wmma::fill_fragment(acc, 0.0f);
 
     if (hasBias) {
@@ -275,7 +290,7 @@ __global__ void sklinear_backward_intermediate_wmma(
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
     __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
-
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int tid = ty * blockDim.x + tx;
@@ -285,7 +300,7 @@ __global__ void sklinear_backward_intermediate_wmma(
     int k = blockIdx.z * TILE_WIDTH_K;
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> acc1, acc2;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc1, acc2;
     for (int term = 0; term < T; term++) {
         wmma::fill_fragment(acc1, 0.0f);
         wmma::fill_fragment(acc2, 0.0f);
@@ -344,7 +359,7 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // U2s
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // input
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
-
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int tid = ty * blockDim.x + tx;
@@ -354,7 +369,7 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
     int k = blockIdx.z * TILE_WIDTH_K;  // -> I
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> acc;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
     for (int term = 0; term < T; term++) {
         wmma::fill_fragment(acc, 0.0f);
 #pragma unroll 1
@@ -405,7 +420,7 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // interm_gradS2s
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // grad_output
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
-
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int tid = ty * blockDim.x + tx;
@@ -415,7 +430,7 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
     int term = blockIdx.z;  // -> T
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> acc;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
     wmma::fill_fragment(acc, 0.0f);
     for (int k = 0; k < B; k += TILE_WIDTH_K) {
 #pragma unroll 1
@@ -469,7 +484,7 @@ __global__ void sklinear_backward_grad_input_wmma(
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];  // S1s
     __shared__ half subTileB2[TILE_WIDTH_N][TILE_WIDTH_K];  // U2s
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
-
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int tid = ty * blockDim.x + tx;
@@ -477,7 +492,7 @@ __global__ void sklinear_backward_grad_input_wmma(
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol -> I
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA1, fA2;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, scalar_t> acc1, acc2;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc1, acc2;
     wmma::fill_fragment(acc1, 0.0f);
     wmma::fill_fragment(acc2, 0.0f);
 
@@ -542,7 +557,7 @@ __global__ void sklinear_backward_grad_S1_wmma(
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // input
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // interm0
     constexpr bool is_float = std::is_same<scalar_t, float_t>::value;
-
+    using acc_t = typename wmma_accumulator_type<scalar_t>::type;
     int tx = threadIdx.x;
     int ty = threadIdx.y;
     int tid = ty * blockDim.x + tx;
@@ -553,7 +568,7 @@ __global__ void sklinear_backward_grad_S1_wmma(
 
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc;
+    wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
     wmma::fill_fragment(acc, 0.0f);
     for (int k = 0; k < B; k += TILE_WIDTH_K) {
 #pragma unroll 1
