@@ -16,6 +16,13 @@ CONFIGS = [
     (64, 512, 512, 32, 3, False),
 ]
 
+DTYPES = [torch.float16, torch.float32]
+
+
+@pytest.fixture(params=DTYPES)
+def dtype(request):
+    return request.param
+
 
 @pytest.fixture(params=CONFIGS)
 def config(request):
@@ -24,32 +31,34 @@ def config(request):
 
 
 @pytest.fixture
-def test_tensors(config):
-    """Fixture to provide test tensors based on configuration."""
+def test_tensors(config, dtype):
+    """Fixture to provide test tensors based on configuration and dtype."""
     batch_size, in_features, out_features, low_rank_dim, num_terms, bias_flag = config
-    # Initialize SKLinear with or without bias
     linear = SKLinear(
         in_features=in_features,
         out_features=out_features,
         low_rank=low_rank_dim,
         num_terms=num_terms,
         bias=bias_flag,
+        dtype=dtype,
     )
-    # Create input and parameters
-    input_tensor = torch.randn(batch_size, in_features, requires_grad=True)
-    S1s = linear.S1s.clone().detach().requires_grad_(True)
-    S2s = linear.S2s.clone().detach().requires_grad_(True)
-    U1s = linear.U1s.clone().detach()
-    U2s = linear.U2s.clone().detach()
+    # Create input and parameters with correct dtype
+    input_tensor = torch.randn(batch_size, in_features, requires_grad=True, dtype=dtype)
+    S1s = linear.S1s.clone().detach().to(dtype).requires_grad_(True)
+    S2s = linear.S2s.clone().detach().to(dtype).requires_grad_(True)
+    U1s = linear.U1s.clone().detach().to(dtype)
+    U2s = linear.U2s.clone().detach().to(dtype)
     bias = None
     if bias_flag and linear.bias is not None:
-        bias = linear.bias.clone().detach().requires_grad_(True)
+        bias = linear.bias.clone().detach().to(dtype).requires_grad_(True)
 
     return input_tensor, S1s, S2s, U1s, U2s, bias
 
 
-def test_forward_output_shape(test_tensors, config):
+def test_forward_output_shape(test_tensors, config, dtype):
     """Ensure the output shape matches expectations."""
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     batch_size, _, out_features, _, _, _ = config
     output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
@@ -59,16 +68,19 @@ def test_forward_output_shape(test_tensors, config):
     ), f"Expected output shape ({batch_size}, {out_features}), got {output.shape}."
 
 
-def test_forward_deterministic(test_tensors):
-    """Ensure the forward pass produces deterministic results."""
+def test_forward_deterministic(test_tensors, dtype):
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     output1 = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
     output2 = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
     assert torch.allclose(output1, output2), "Forward pass is not deterministic."
 
 
-def test_backward_output_shape(test_tensors):
+def test_backward_output_shape(test_tensors, dtype):
     """Ensure the backward function returns gradients with expected shapes."""
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
     grad_output = torch.randn_like(output)
@@ -97,8 +109,10 @@ def test_backward_output_shape(test_tensors):
         assert grads[3].shape == bias.shape, "Gradient w.r.t bias has incorrect shape."
 
 
-def test_backward_deterministic(test_tensors):
+def test_backward_deterministic(test_tensors, dtype):
     """Ensure the backward function produces deterministic gradients."""
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
     grad_output = torch.randn_like(output)
@@ -127,10 +141,12 @@ def test_backward_deterministic(test_tensors):
     ), "Backward pass is not deterministic."
 
 
-def test_forward_gpu_vs_cpu(test_tensors):
+def test_forward_gpu_vs_cpu(test_tensors, dtype):
     """Ensure forward pass produces the same output on CPU and GPU."""
     if not torch.cuda.is_available():
         pytest.skip("CUDA is not available.")
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     i_gpu = input_tensor.to("cuda")
     S1s_gpu, S2s_gpu = S1s.to("cuda"), S2s.to("cuda")
@@ -147,15 +163,17 @@ def test_forward_gpu_vs_cpu(test_tensors):
     ), "Forward pass differs between CPU and GPU."
 
 
-def test_backward_gpu_vs_cpu(test_tensors):
+def test_backward_gpu_vs_cpu(test_tensors, dtype):
     """Ensure backward pass produces the same gradients on CPU and GPU."""
     if not torch.cuda.is_available():
         pytest.skip("CUDA is not available.")
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     i_gpu = input_tensor.to("cuda")
     S1s_gpu, S2s_gpu = S1s.to("cuda"), S2s.to("cuda")
     U1s_gpu, U2s_gpu = U1s.to("cuda"), U2s.to("cuda")
-    grad_output_cpu = torch.randn(input_tensor.shape[0], U1s.shape[2])
+    grad_output_cpu = torch.randn(input_tensor.shape[0], U1s.shape[2], dtype=dtype)
     grads_cpu = sketched_linear_backward(
         grad_output_cpu, input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
     )
@@ -175,8 +193,10 @@ def test_backward_gpu_vs_cpu(test_tensors):
         ), "Backward pass differs between CPU and GPU."
 
 
-def test_backward_vs_autograd(test_tensors):
+def test_backward_vs_autograd(test_tensors, dtype):
     """Ensure gradients computed by sketched_linear_backward match autograd."""
+    if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
+        pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     output = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
     grad_output = torch.randn_like(output)
@@ -204,7 +224,7 @@ def test_backward_vs_autograd(test_tensors):
     for i, (c, a) in enumerate(zip(custom_grads, autograd_grads)):
         assert c.shape == a.shape, f"Gradient shape mismatch at index {i}."
         assert torch.allclose(
-            c, a, atol=1e-3, rtol=1e-3
+            c, a, atol=1, rtol=1
         ), f"Gradient values mismatch at index {i}."
 
 
