@@ -31,11 +31,13 @@ struct wmma_accumulator_type;
 template <>
 struct wmma_accumulator_type<c10::Half> {
     using type = half_t;
+    __device__ __host__ static inline half_t default_value() { return __float2half(0.0f); }
 };
 
 template <>
 struct wmma_accumulator_type<float_t> {
     using type = float_t;
+    __device__ __host__ static inline float_t default_value() { return 0.0f; }
 };
 
 template <typename scalar_t>
@@ -65,8 +67,8 @@ __global__ void sklinear_forward_intermediate_wmma(
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc1, acc2;
 
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc1, 0);
-        wmma::fill_fragment(acc2, 0);
+        wmma::fill_fragment(acc1, wmma_accumulator_type<scalar_t>::default_value());
+        wmma::fill_fragment(acc2, wmma_accumulator_type<scalar_t>::default_value());
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -142,7 +144,7 @@ __global__ void sklinear_forward_output_wmma(
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> c_frag;
-    wmma::fill_fragment(acc, 0);
+    wmma::fill_fragment(acc, wmma_accumulator_type<scalar_t>::default_value());
 
     if (hasBias) {
         // load bias into memory N
@@ -288,8 +290,8 @@ __global__ void sklinear_backward_intermediate_wmma(
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc1, acc2;
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc1, 0);
-        wmma::fill_fragment(acc2, 0);
+        wmma::fill_fragment(acc1, wmma_accumulator_type<scalar_t>::default_value());
+        wmma::fill_fragment(acc2, wmma_accumulator_type<scalar_t>::default_value());
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -350,7 +352,7 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc, 0);
+        wmma::fill_fragment(acc, wmma_accumulator_type<scalar_t>::default_value());
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -404,7 +406,7 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
-    wmma::fill_fragment(acc, 0);
+    wmma::fill_fragment(acc, wmma_accumulator_type<scalar_t>::default_value());
     for (int k = 0; k < B; k += TILE_WIDTH_K) {
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
@@ -460,8 +462,8 @@ __global__ void sklinear_backward_grad_input_wmma(
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA1, fA2;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc1, acc2;
-    wmma::fill_fragment(acc1, 0);
-    wmma::fill_fragment(acc2, 0);
+    wmma::fill_fragment(acc1, wmma_accumulator_type<scalar_t>::default_value());
+    wmma::fill_fragment(acc2, wmma_accumulator_type<scalar_t>::default_value());
 
     for (int term = 0; term < T; term++) {
         for (int k = 0; k < R; k += TILE_WIDTH_K) {
@@ -528,7 +530,7 @@ __global__ void sklinear_backward_grad_S1_wmma(
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
     wmma::fragment<wmma::accumulator, M, N, K, acc_t> acc;
-    wmma::fill_fragment(acc, 0);
+    wmma::fill_fragment(acc, wmma_accumulator_type<scalar_t>::default_value());
     for (int k = 0; k < B; k += TILE_WIDTH_K) {
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
