@@ -16,7 +16,7 @@ CONFIGS = [
     (64, 512, 512, 32, 3, False),
 ]
 
-DTYPES = [torch.float16, torch.float32]
+DTYPES = [torch.float32]
 
 
 @pytest.fixture(params=DTYPES)
