@@ -3,6 +3,8 @@
 #include <mma.h>
 #include <torch/extension.h>
 
+#include "linear.h"
+
 using half_t = __half;  // WMMA inputs must be half precision
 using float_t = float;  // Accumulate in FP32
 namespace wmma = nvcuda::wmma;
@@ -33,11 +35,6 @@ struct wmma_accumulator_type<half_t> {
 
 template <>
 struct wmma_accumulator_type<float_t> {
-    using type = float_t;
-};
-
-template <>
-struct wmma_accumulator_type<double> {
     using type = float_t;
 };
 
@@ -238,7 +235,7 @@ torch::Tensor sketched_linear_forward_cuda(
         dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                    numTilesI);
-        AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        AT_DISPATCH_FLOAT_AND_HALF(
             input.scalar_type(),
             "sklinear_forward_intermediate_wmma",
             [&] {
@@ -260,7 +257,7 @@ torch::Tensor sketched_linear_forward_cuda(
         auto out = torch::zeros({B, O}, input.options());
         dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
-        AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        AT_DISPATCH_FLOAT_AND_HALF(
             input.scalar_type(),
             "sklinear_forward_output_wmma",
             [&] {
@@ -650,7 +647,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
 
     auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, input.options());
 
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+    AT_DISPATCH_FLOAT_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_intermediate_wmma",
         [&] {
@@ -671,7 +668,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     dim3 grid2((R + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (B + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                numTilesI);
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+    AT_DISPATCH_FLOAT_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_S2_interm_wmma",
         [&] {
@@ -690,7 +687,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
                (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                T);
 
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+    AT_DISPATCH_FLOAT_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_S2_output_wmma",
         [&] {
@@ -711,7 +708,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     auto grad_input = torch::zeros({B, I}, input.options());
     dim3 grid3((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (I + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+    AT_DISPATCH_FLOAT_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_input_wmma",
         [&] {
@@ -736,7 +733,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     dim3 grid5((I + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                T);
-    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+    AT_DISPATCH_FLOAT_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_S1_wmma",
         [&] {
