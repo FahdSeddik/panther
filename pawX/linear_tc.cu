@@ -225,7 +225,7 @@ torch::Tensor sketched_linear_forward_cuda(
         auto out = torch::zeros({B, O}, input.options());
         dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
-        int shared_bytes = (TILE_WIDTH_K * TILE_WIDTH_M * 2 + 2 * TILE_WIDTH_N * TILE_WIDTH_K + (bias.has_value() ? TILE_WIDTH_N : 0)) * sizeof(float_t);
+        int shared_bytes = (TILE_WIDTH_K * TILE_WIDTH_M * 2 + 2 * TILE_WIDTH_N * TILE_WIDTH_K) * sizeof(half_t) + (bias.has_value() ? TILE_WIDTH_N : 0) * sizeof(float_t);
 
         sklinear_forward_output_wmma<<<grid2, block, shared_bytes>>>(
             interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),

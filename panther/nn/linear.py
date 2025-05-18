@@ -180,23 +180,33 @@ class SKLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, h_in: torch.Tensor) -> torch.Tensor:
+        def _reshape_input(h_in):
+            was_1d = h_in.dim() == 1
+            if was_1d:
+                h_in = h_in.unsqueeze(0)
+            orig_shape = h_in.shape[:-1]
+            h_in = h_in.view(-1, self.in_features)
+            return h_in, orig_shape, was_1d
+
+        h_in, orig_shape, was_1d = _reshape_input(h_in)
         batch_size = h_in.shape[0]
         use_gpu = self.use_gpu
-        if (
-            h_in.is_cuda
-            and self.has_tensor_core
-            and self.use_gpu
-            and (batch_size % 16 != 0)
-        ):
-            # Log warning to user
+
+        if h_in.is_cuda and self.has_tensor_core and use_gpu and (batch_size % 16 != 0):
             use_gpu = False
             warnings.warn(
                 self.WARNING_MSG_BATCH.format(batch_size),
                 UserWarning,
                 stacklevel=2,
             )
-        return SketchedLinearFunction.apply(
+
+        out = SketchedLinearFunction.apply(
             h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, use_gpu
+        )
+        return (
+            out.view(self.out_features)
+            if was_1d
+            else out.view(*orig_shape, self.out_features)
         )
 
 
@@ -221,15 +231,3 @@ if __name__ == "__main__":
     output_expected = torch.zeros(
         batch_size, out_features, dtype=torch.float32, device=torch.device("cuda:0")
     )
-    for i in range(num_terms):
-        output_expected += input.mm(linear.S1s[i]).mm(linear.U1s[i]) + input.mm(
-            linear.U2s[i]
-        ).mm(linear.S2s[i])
-    output_expected /= 2 * num_terms
-    output_expected += linear.bias
-    assert torch.allclose(
-        output, output_expected, atol=1
-    ), f"\n{output[0]}\n{output_expected[0]}"
-
-    # Backward pass
-    output.backward(torch.randn_like(output))

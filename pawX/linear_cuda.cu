@@ -135,15 +135,6 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     c10::optional<torch::Tensor> bias) {
-    TORCH_CHECK(input.is_contiguous(), "input tensor must be contiguous in memory.");
-    TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
-    TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous in memory.");
-    TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous in memory.");
-    TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous in memory.");
-    if (bias.has_value()) {
-        TORCH_CHECK(bias.value().is_contiguous(), "bias tensor must be contiguous in memory.");
-    }
-
     // Get dimensions.
     int batch_size = input.size(0);
     int input_dim = input.size(1);
@@ -160,7 +151,7 @@ torch::Tensor sketched_linear_forward_cuda(
 
         // allocate intermediate output tensor contigously
         output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();
-        AT_DISPATCH_FLOATING_TYPES(
+        AT_DISPATCH_FLOATING_TYPES_AND_HALF(
             input.scalar_type(),
             "sklinear_forward_intermediate",
             ([&] {
@@ -181,7 +172,7 @@ torch::Tensor sketched_linear_forward_cuda(
         dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
         auto output = torch::zeros({batch_size, output_dim}, input.options());
         // Launch the kernel.
-        AT_DISPATCH_FLOATING_TYPES(
+        AT_DISPATCH_FLOATING_TYPES_AND_HALF(
             input.scalar_type(),
             "sklinear_forward_output",
             ([&] {
@@ -496,7 +487,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
 
     auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, input.options());
 
-    AT_DISPATCH_FLOATING_TYPES(
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_intermediate",
         ([&] {
@@ -517,7 +508,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     dim3 grid2((B + TILE_DIM - 1) / TILE_DIM,
                (R + TILE_DIM - 1) / TILE_DIM,
                numTilesI);
-    AT_DISPATCH_FLOATING_TYPES(
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_S2_interm",
         ([&] {
@@ -534,7 +525,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     dim3 grid4((O + TILE_DIM - 1) / TILE_DIM,
                (R + TILE_DIM - 1) / TILE_DIM,
                T);
-    AT_DISPATCH_FLOATING_TYPES(
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_S2_output",
         ([&] {
@@ -556,7 +547,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     auto grad_input = torch::zeros({B, I}, input.options());
     dim3 grid3((I + TILE_DIM - 1) / TILE_DIM,
                (B + TILE_DIM - 1) / TILE_DIM);
-    AT_DISPATCH_FLOATING_TYPES(
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_input",
         ([&] {
@@ -580,7 +571,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     dim3 grid5((R + TILE_DIM - 1) / TILE_DIM,
                (I + TILE_DIM - 1) / TILE_DIM,
                T);
-    AT_DISPATCH_FLOATING_TYPES(
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(),
         "sklinear_backward_grad_S1",
         ([&] {
