@@ -141,6 +141,7 @@ __global__ void sklinear_forward_output_wmma(
 
     for (int t = 0; t < T; ++t) {
         for (int k = 0; k < R; k += TILE_WIDTH_K) {
+#pragma unroll 1
             for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
                 int idx = tid + i;
                 int aX = idx % TILE_WIDTH_M;
@@ -153,7 +154,7 @@ __global__ void sklinear_forward_output_wmma(
                 subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? S2s.template get<half_t>(t, k + bX, base_o + bY) : __float2half(0.0f);
             }
             __syncthreads();
-
+#pragma unroll 1
             for (int i = 0; i < TILE_WIDTH_K; i += K) {
                 int subtileARow = M * (tx / warpSize);
                 int subtileACol = i;
@@ -261,11 +262,12 @@ torch::Tensor sketched_linear_forward_cuda(
     }
 }
 
+template <typename scalar_t>
 __global__ void sklinear_backward_intermediate_wmma(
-    const torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> grad_output,  // [B,O]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U1s,          // [T,R,O]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> S2s,          // [T,R,O]
-    torch::PackedTensorAccessor32<float_t, 5, torch::RestrictPtrTraits> grad_intermediate,  // [numTilesK,2,T,B,R]
+    const FlexibleTensorAccessor<scalar_t, 2> grad_output,  // [B,O]
+    const FlexibleTensorAccessor<scalar_t, 3> U1s,          // [T,R,O]
+    const FlexibleTensorAccessor<scalar_t, 3> S2s,          // [T,R,O]
+    FlexibleTensorAccessor<scalar_t, 5> grad_intermediate,  // [numTilesK,2,T,B,R]
     int B, int O, int T, int R) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];
     __shared__ half subTileB1[TILE_WIDTH_N][TILE_WIDTH_K];
@@ -276,14 +278,15 @@ __global__ void sklinear_backward_intermediate_wmma(
     int tid = ty * blockDim.x + tx;
     int aRow = blockIdx.x * TILE_WIDTH_M;  // aRow
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol
+    auto zero = cuda_type<scalar_t>::get_zero();
 
     int k = blockIdx.z * TILE_WIDTH_K;
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc1, acc2;
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc1, acc2;
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc1, 0.0f);
-        wmma::fill_fragment(acc2, 0.0f);
+        wmma::fill_fragment(acc1, zero);
+        wmma::fill_fragment(acc2, zero);
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -291,9 +294,9 @@ __global__ void sklinear_backward_intermediate_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < O)) ? __float2half(static_cast<float>(grad_output[aRow + aX][k + aY])) : __float2half(0.0f);
-            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? __float2half(static_cast<float>(U1s[term][bCol + bY][k + bX])) : __float2half(0.0f);
-            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? __float2half(static_cast<float>(S2s[term][bCol + bY][k + bX])) : __float2half(0.0f);
+            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < O)) ? grad_output.template get<half_t>(aRow + aX, k + aY) : __float2half(0.0f);
+            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? U1s.template get<half_t>(term, bCol + bY, k + bX) : __float2half(0.0f);
+            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < O)) ? S2s.template get<half_t>(term, bCol + bY, k + bX) : __float2half(0.0f);
         }
         __syncthreads();
 
@@ -317,16 +320,17 @@ __global__ void sklinear_backward_intermediate_wmma(
         int cCol = warpN * N;
 
         if (cRow < B && cCol < R) {
-            wmma::store_matrix_sync(&grad_intermediate[blockIdx.z][0][term][cRow][cCol], acc1, R, wmma::mem_row_major);
-            wmma::store_matrix_sync(&grad_intermediate[blockIdx.z][1][term][cRow][cCol], acc2, R, wmma::mem_row_major);
+            wmma::store_matrix_sync(&grad_intermediate(blockIdx.z, 0, term, cRow, cCol), acc1, R, wmma::mem_row_major);
+            wmma::store_matrix_sync(&grad_intermediate(blockIdx.z, 1, term, cRow, cCol), acc2, R, wmma::mem_row_major);
         }
     }
 }
 
+template <typename scalar_t>
 __global__ void sklinear_backward_grad_S2_interm_wmma(
-    const torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> input,     // [B,I]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U2s,       // [T,I,R]
-    torch::PackedTensorAccessor32<float_t, 4, torch::RestrictPtrTraits> interm_gradS2s,  // [numTilesK, T, R, B]
+    const FlexibleTensorAccessor<scalar_t, 2> input,     // [B,I]
+    const FlexibleTensorAccessor<scalar_t, 3> U2s,       // [T,I,R]
+    FlexibleTensorAccessor<scalar_t, 4> interm_gradS2s,  // [numTilesK, T, R, B]
     int B, int I, int R, int T) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // U2s
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // input
@@ -336,13 +340,14 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
     int tid = ty * blockDim.x + tx;
     int aRow = blockIdx.x * TILE_WIDTH_M;  // aRow -> R
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol -> B
+    auto zero = cuda_type<scalar_t>::get_zero();
 
     int k = blockIdx.z * TILE_WIDTH_K;  // -> I
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc;
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc;
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc, 0.0f);
+        wmma::fill_fragment(acc, zero);
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -350,8 +355,8 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < I)) ? __float2half(static_cast<float>(U2s[term][k + aY][aRow + aX])) : __float2half(0.0f);
-            if (term == 0) subTileB[bY][bX] = (((bCol + bY) < B) && ((k + bX) < I)) ? __float2half(static_cast<float>(input[bCol + bY][k + bX])) : __float2half(0.0f);
+            subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < I)) ? U2s.template get<half_t>(term, k + aY, aRow + aX) : __float2half(0.0f);
+            if (term == 0) subTileB[bY][bX] = (((bCol + bY) < B) && ((k + bX) < I)) ? input.template get<half_t>(bCol + bY, k + bX) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -372,15 +377,16 @@ __global__ void sklinear_backward_grad_S2_interm_wmma(
         int cCol = warpN * N;
 
         if (cRow < R && cCol < B) {
-            wmma::store_matrix_sync(&interm_gradS2s[blockIdx.z][term][cRow][cCol], acc, B, wmma::mem_row_major);
+            wmma::store_matrix_sync(&interm_gradS2s(blockIdx.z, term, cRow, cCol), acc, B, wmma::mem_row_major);
         }
     }
 }
 
+template <typename scalar_t>
 __global__ void sklinear_backward_grad_S2_output_wmma(
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> interm_gradS2s,  // [T, R, B]
-    const torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> grad_output,     // [B, O]
-    torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> grad_S2s,              // [T, R, O]
+    const FlexibleTensorAccessor<scalar_t, 3> interm_gradS2s,  // [T, R, B]
+    const FlexibleTensorAccessor<scalar_t, 2> grad_output,     // [B, O]
+    FlexibleTensorAccessor<scalar_t, 3> grad_S2s,              // [T, R, O]
     int B, int R, int T, int O) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // interm_gradS2s
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // grad_output
@@ -390,12 +396,13 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
     int tid = ty * blockDim.x + tx;
     int aRow = blockIdx.x * TILE_WIDTH_M;  // aRow -> R
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol -> O
+    auto zero = cuda_type<scalar_t>::get_zero();
 
     int term = blockIdx.z;  // -> T
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc;
-    wmma::fill_fragment(acc, 0.0f);
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc;
+    wmma::fill_fragment(acc, zero);
     for (int k = 0; k < B; k += TILE_WIDTH_K) {
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
@@ -404,8 +411,8 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < B)) ? __float2half(static_cast<float>(interm_gradS2s[term][aRow + aX][k + aY])) : __float2half(0.0f);
-            subTileB[bY][bX] = (((bCol + bY) < O) && ((k + bX) < B)) ? __float2half(static_cast<float>(grad_output[k + bX][bCol + bY])) : __float2half(0.0f);
+            subTileA[aY][aX] = (((aRow + aX) < R) && ((k + aY) < B)) ? interm_gradS2s.template get<half_t>(term, aRow + aX, k + aY) : __float2half(0.0f);
+            subTileB[bY][bX] = (((bCol + bY) < O) && ((k + bX) < B)) ? grad_output.template get<half_t>(k + bX, bCol + bY) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -427,15 +434,16 @@ __global__ void sklinear_backward_grad_S2_output_wmma(
     int cCol = warpN * N;
 
     if (cRow < R && cCol < O) {
-        wmma::store_matrix_sync(&grad_S2s[term][cRow][cCol], acc, O, wmma::mem_row_major);
+        wmma::store_matrix_sync(&grad_S2s(term, cRow, cCol), acc, O, wmma::mem_row_major);
     }
 }
 
+template <typename scalar_t>
 __global__ void sklinear_backward_grad_input_wmma(
-    const torch::PackedTensorAccessor32<float_t, 4, torch::RestrictPtrTraits> grad_interm,  // [2,T,B,R]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> S1s,          // [T,I,R]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U2s,          // [T,I,R]
-    torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> grad_input,         // [B,I]
+    const FlexibleTensorAccessor<scalar_t, 4> grad_interm,  // [2,T,B,R]
+    const FlexibleTensorAccessor<scalar_t, 3> S1s,          // [T,I,R]
+    const FlexibleTensorAccessor<scalar_t, 3> U2s,          // [T,I,R]
+    FlexibleTensorAccessor<scalar_t, 2> grad_input,         // [B,I]
     int B, int I, int R, int T) {
     __shared__ half subTileA1[TILE_WIDTH_K][TILE_WIDTH_M];  // interm0
     __shared__ half subTileA2[TILE_WIDTH_K][TILE_WIDTH_M];  // interm1
@@ -447,11 +455,12 @@ __global__ void sklinear_backward_grad_input_wmma(
     int tid = ty * blockDim.x + tx;
     int aRow = blockIdx.x * TILE_WIDTH_M;  // aRow -> B
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol -> I
+    auto zero = cuda_type<scalar_t>::get_zero();
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA1, fA2;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc1, acc2;
-    wmma::fill_fragment(acc1, 0.0f);
-    wmma::fill_fragment(acc2, 0.0f);
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc1, acc2;
+    wmma::fill_fragment(acc1, zero);
+    wmma::fill_fragment(acc2, zero);
 
     for (int term = 0; term < T; term++) {
         for (int k = 0; k < R; k += TILE_WIDTH_K) {
@@ -462,10 +471,10 @@ __global__ void sklinear_backward_grad_input_wmma(
                 int aY = idx / TILE_WIDTH_M;
                 int bX = idx % TILE_WIDTH_K;
                 int bY = idx / TILE_WIDTH_K;
-                subTileA1[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(grad_interm[0][term][aRow + aX][k + aY])) : __float2half(0.0f);
-                subTileA2[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(grad_interm[1][term][aRow + aX][k + aY])) : __float2half(0.0f);
-                subTileB1[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? __float2half(static_cast<float>(S1s[term][bCol + bY][k + bX])) : __float2half(0.0f);
-                subTileB2[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? __float2half(static_cast<float>(U2s[term][bCol + bY][k + bX])) : __float2half(0.0f);
+                subTileA1[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? grad_interm.template get<half_t>(0, term, aRow + aX, k + aY) : __float2half(0.0f);
+                subTileA2[aY][aX] = (((aRow + aX) < B) && ((k + aY) < R)) ? grad_interm.template get<half_t>(1, term, aRow + aX, k + aY) : __float2half(0.0f);
+                subTileB1[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? S1s.template get<half_t>(term, bCol + bY, k + bX) : __float2half(0.0f);
+                subTileB2[bY][bX] = (((bCol + bY) < I) && ((k + bX) < R)) ? U2s.template get<half_t>(term, bCol + bY, k + bX) : __float2half(0.0f);
             }
             __syncthreads();
 #pragma unroll 1
@@ -492,16 +501,17 @@ __global__ void sklinear_backward_grad_input_wmma(
 
     if (cRow < B && cCol < I) {
         for (int i = 0; i < acc1.num_elements; i++) {
-            acc1.x[i] = acc1.x[i] + acc2.x[i];
+            acc1.x[i] = cuda_type<scalar_t>::add(acc1.x[i], acc2.x[i]);
         }
-        wmma::store_matrix_sync(&grad_input[cRow][cCol], acc1, I, wmma::mem_row_major);
+        wmma::store_matrix_sync(&grad_input(cRow, cCol), acc1, I, wmma::mem_row_major);
     }
 }
 
+template <typename scalar_t>
 __global__ void sklinear_backward_grad_S1_wmma(
-    const torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> input,    // [B,I]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> interm0,  // [T,B,R]
-    torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> grad_S1s,       // [T,I,R]
+    const FlexibleTensorAccessor<scalar_t, 2> input,    // [B,I]
+    const FlexibleTensorAccessor<scalar_t, 3> interm0,  // [T,B,R]
+    FlexibleTensorAccessor<scalar_t, 3> grad_S1s,       // [T,I,R]
     int B, int I, int R, int T) {
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];  // input
     __shared__ half subTileB[TILE_WIDTH_N][TILE_WIDTH_K];  // interm0
@@ -513,11 +523,12 @@ __global__ void sklinear_backward_grad_S1_wmma(
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol -> R
 
     int term = blockIdx.z;  // -> T
+    auto zero = cuda_type<scalar_t>::get_zero();
 
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc;
-    wmma::fill_fragment(acc, 0.0f);
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc;
+    wmma::fill_fragment(acc, zero);
     for (int k = 0; k < B; k += TILE_WIDTH_K) {
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
@@ -526,8 +537,8 @@ __global__ void sklinear_backward_grad_S1_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            subTileA[aY][aX] = (((aRow + aX) < I) && ((k + aY) < B)) ? __float2half(static_cast<float>(input[k + aY][aRow + aX])) : __float2half(0.0f);
-            subTileB[bY][bX] = (((bCol + bY) < R) && ((k + bX) < B)) ? __float2half(static_cast<float>(interm0[term][k + bX][bCol + bY])) : __float2half(0.0f);
+            subTileA[aY][aX] = (((aRow + aX) < I) && ((k + aY) < B)) ? input.template get<half_t>(k + aY, aRow + aX) : __float2half(0.0f);
+            subTileB[bY][bX] = (((bCol + bY) < R) && ((k + bX) < B)) ? interm0.template get<half_t>(term, k + bX, bCol + bY) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -549,7 +560,7 @@ __global__ void sklinear_backward_grad_S1_wmma(
     int cCol = warpN * N;
 
     if (cRow < I && cCol < R) {
-        wmma::store_matrix_sync(&grad_S1s[term][cRow][cCol], acc, R, wmma::mem_row_major);
+        wmma::store_matrix_sync(&grad_S1s(term, cRow, cCol), acc, R, wmma::mem_row_major);
     }
 }
 
@@ -561,13 +572,12 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& U1s,          // [T, R, O]
     const torch::Tensor& U2s,          // [T, I, R]
     const bool has_bias) {
-    TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
-    TORCH_CHECK(input.is_contiguous(), "Input tensor must be contiguous.");
+    TORCH_CHECK(input.scalar_type() == at::kFloat || input.scalar_type() == at::kHalf, "Input tensor must be float or half precision.");
+    TORCH_CHECK(grad_output.scalar_type() == at::kFloat || grad_output.scalar_type() == at::kHalf, "Gradient output tensor must be float or half precision.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous.");
     TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous.");
     TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous.");
     TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous.");
-    TORCH_CHECK(grad_output.is_contiguous(), "Gradient output tensor must be contiguous.");
     // g = grad_output.div(2 * num_terms)
     // t1 = g * U1s.T -> interm[0]
     // grad_input ->  interm[0]  * S1s.T +  interm[1]  * U2s.T
@@ -592,42 +602,57 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     cudaEventCreate(&afterGcompute);
     cudaEventRecord(afterGcompute, stream1);
 
-    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, input.options());
+    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, S1s.options());
 
-    sklinear_backward_intermediate_wmma<<<grid1, block, 0, stream1>>>(
-        g.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        U1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        S2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        grad_intermediate.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
-        B, O, T, R);
+    AT_DISPATCH_FLOAT_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_intermediate_wmma",
+        [&] {
+            sklinear_backward_intermediate_wmma<scalar_t><<<grid1, block, 0, stream1>>>(
+                tensor_utils::buildAccessor<scalar_t, 2>(g),
+                tensor_utils::buildAccessor<scalar_t, 3>(U1s),
+                tensor_utils::buildAccessor<scalar_t, 3>(S2s),
+                tensor_utils::buildAccessor<scalar_t, 5>(grad_intermediate),
+                B, O, T, R);
+        });
 
     int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
     at::cuda::CUDAStream torch_stream2 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream2 = torch_stream2.stream();
     at::cuda::setCurrentCUDAStream(torch_stream2);
-    auto interm_gradS2s = torch::zeros({numTilesI, T, R, B}, input.options());
+    auto interm_gradS2s = torch::zeros({numTilesI, T, R, B}, S1s.options());
 
     dim3 grid2((R + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (B + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                numTilesI);
-    sklinear_backward_grad_S2_interm_wmma<<<grid2, block, 0, stream2>>>(
-        input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        interm_gradS2s.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
-        B, I, R, T);
+    AT_DISPATCH_FLOAT_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_S2_interm_wmma",
+        [&] {
+            sklinear_backward_grad_S2_interm_wmma<scalar_t><<<grid2, block, 0, stream2>>>(
+                tensor_utils::buildAccessor<scalar_t, 2>(input),
+                tensor_utils::buildAccessor<scalar_t, 3>(U2s),
+                tensor_utils::buildAccessor<scalar_t, 4>(interm_gradS2s),
+                B, I, R, T);
+        });
 
     at::cuda::setCurrentCUDAStream(torch_stream2);
     auto i_gradS2s = interm_gradS2s.sum(0).contiguous();
-    auto grad_S2s = torch::zeros({T, R, O}, input.options());
+    auto grad_S2s = torch::zeros({T, R, O}, S1s.options());
     cudaStreamWaitEvent(stream2, afterGcompute);
     dim3 grid4((R + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                T);
-    sklinear_backward_grad_S2_output_wmma<<<grid4, block, 0, stream2>>>(
-        i_gradS2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        g.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        grad_S2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        B, R, T, O);
+    AT_DISPATCH_FLOAT_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_S2_output_wmma",
+        [&] {
+            sklinear_backward_grad_S2_output_wmma<scalar_t><<<grid4, block, 0, stream2>>>(
+                tensor_utils::buildAccessor<scalar_t, 3>(i_gradS2s),
+                tensor_utils::buildAccessor<scalar_t, 2>(g),
+                tensor_utils::buildAccessor<scalar_t, 3>(grad_S2s),
+                B, R, T, O);
+        });
 
     at::cuda::setCurrentCUDAStream(torch_stream1);
     auto interm = grad_intermediate.sum(0);
@@ -636,21 +661,26 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     cudaEventCreate(&afterIntermSum);
     cudaEventRecord(afterIntermSum, stream1);
 
-    auto grad_input = torch::zeros({B, I}, input.options());
+    auto grad_input = torch::zeros({B, I}, S1s.options());
     dim3 grid3((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (I + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
-    sklinear_backward_grad_input_wmma<<<grid3, block, 0, stream1>>>(
-        interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
-        S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        grad_input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        B, I, R, T);
+    AT_DISPATCH_FLOAT_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_input_wmma",
+        [&] {
+            sklinear_backward_grad_input_wmma<scalar_t><<<grid3, block, 0, stream1>>>(
+                tensor_utils::buildAccessor<scalar_t, 4>(interm),
+                tensor_utils::buildAccessor<scalar_t, 3>(S1s),
+                tensor_utils::buildAccessor<scalar_t, 3>(U2s),
+                tensor_utils::buildAccessor<scalar_t, 2>(grad_input),
+                B, I, R, T);
+        });
     // auto grad_input = (interm[0].bmm(S1s.transpose(1, 2)) + interm[1].bmm(U2s.transpose(1, 2))).sum(0);
 
     at::cuda::CUDAStream torch_stream3 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream3 = torch_stream3.stream();
     at::cuda::setCurrentCUDAStream(torch_stream3);
-    auto grad_S1s = torch::zeros({T, I, R}, input.options());
+    auto grad_S1s = torch::zeros({T, I, R}, S1s.options());
 
     cudaStreamWaitEvent(stream3, afterIntermSum);
 
@@ -659,11 +689,16 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     dim3 grid5((I + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                T);
-    sklinear_backward_grad_S1_wmma<<<grid5, block, 0, stream3>>>(
-        input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        interm0.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        grad_S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        B, I, R, T);
+    AT_DISPATCH_FLOAT_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_S1_wmma",
+        [&] {
+            sklinear_backward_grad_S1_wmma<scalar_t><<<grid5, block, 0, stream3>>>(
+                tensor_utils::buildAccessor<scalar_t, 2>(input),
+                tensor_utils::buildAccessor<scalar_t, 3>(interm0),
+                tensor_utils::buildAccessor<scalar_t, 3>(grad_S1s),
+                B, I, R, T);
+        });
 
     torch::Tensor grad_o;
     if (has_bias) {
