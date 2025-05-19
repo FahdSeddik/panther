@@ -1,12 +1,15 @@
 #include <c10/cuda/CUDAStream.h>
 #include <torch/extension.h>
 
+#include "cuda_tensor_accessor.cuh"
+#include "debug.cuh"
+#include "linear.h"
 #define TILE_DIM 16
 
 template <typename scalar_t>
 __global__ void sklinear_forward_intermediate(
-    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,  // gets loaded term number of times
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,    // gets loaded batch / TILE times
+    const FlexibleTensorAccessor<scalar_t, 2> input,                                 // gets loaded term number of times
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,  // gets loaded batch / TILE times
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,
     torch::PackedTensorAccessor32<scalar_t, 5, torch::RestrictPtrTraits> output,  // numTilesI, 2 * num * batch * low_rank
     int batch_size, int input_dim, int low_rank_dim, int num_terms) {
@@ -32,7 +35,7 @@ __global__ void sklinear_forward_intermediate(
         // Load intermediate results into shared memory.
         if (term == 0) {
             if (batchIdx < batch_size && stride + tx < input_dim) {
-                sharedInput[ty * TILE_DIM + tx] = input[batchIdx][stride + tx];
+                sharedInput[ty * TILE_DIM + tx] = input(batchIdx, stride + tx);
             } else {
                 sharedInput[ty * TILE_DIM + tx] = 0;
             }
@@ -150,13 +153,13 @@ torch::Tensor sketched_linear_forward_cuda(
         dim3 grid((low_rank_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM, numTilesI);
 
         // allocate intermediate output tensor contigously
-        output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, input.options()).contiguous();
+        output_intermediate = torch::zeros({numTilesI, 2, num_terms, batch_size, low_rank_dim}, S1s.options());
         AT_DISPATCH_FLOATING_TYPES_AND_HALF(
             input.scalar_type(),
             "sklinear_forward_intermediate",
             ([&] {
                 sklinear_forward_intermediate<scalar_t><<<grid, block, 3 * TILE_DIM * TILE_DIM * sizeof(scalar_t)>>>(
-                    input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                    tensor_utils::buildAccessor<scalar_t, 2>(input),
                     S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                     U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                     output_intermediate.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
@@ -170,7 +173,7 @@ torch::Tensor sketched_linear_forward_cuda(
 
     if (low_rank_dim <= 96) {
         dim3 grid2((output_dim + TILE_DIM - 1) / TILE_DIM, (batch_size + TILE_DIM - 1) / TILE_DIM);
-        auto output = torch::zeros({batch_size, output_dim}, input.options());
+        auto output = torch::zeros({batch_size, output_dim}, S1s.options());
         // Launch the kernel.
         AT_DISPATCH_FLOATING_TYPES_AND_HALF(
             input.scalar_type(),
@@ -253,7 +256,7 @@ __global__ void sklinear_backward_intermediate(
 
 template <typename scalar_t>
 __global__ void sklinear_backward_grad_S2_interm(
-    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,     // [B,I]
+    const FlexibleTensorAccessor<scalar_t, 2> input,                                      // [B,I]
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,       // [T,I,R]
     torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> interm_gradS2s,  // [numTilesK, T, R, B]
     int B, int I, int R, int T) {
@@ -278,7 +281,7 @@ __global__ void sklinear_backward_grad_S2_interm(
         }
         if (term == 0) {
             if (batchIdx < B && stride + ty < I) {
-                subTileB[ty * TILE_DIM + tx] = input[batchIdx][stride + ty];
+                subTileB[ty * TILE_DIM + tx] = input(batchIdx, stride + ty);
             } else {
                 subTileB[ty * TILE_DIM + tx] = 0;
             }
@@ -404,7 +407,7 @@ __global__ void sklinear_backward_grad_input(
 
 template <typename scalar_t>
 __global__ void sklinear_backward_grad_S1(
-    const torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> input,    // [B,I]
+    const FlexibleTensorAccessor<scalar_t, 2> input,                                     // [B,I]
     const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> interm0,  // [T,B,R]
     torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> grad_S1s,       // [T,I,R]
     int B, int I, int R, int T) {
@@ -421,7 +424,7 @@ __global__ void sklinear_backward_grad_S1(
     scalar_t sum = 0;
     for (int stride = 0; stride < B; stride += TILE_DIM) {
         if (inputIdx < I && stride + tx < B) {
-            subTileA[ty * TILE_DIM + tx] = input[stride + tx][inputIdx];
+            subTileA[ty * TILE_DIM + tx] = input(stride + tx, inputIdx);
         } else {
             subTileA[ty * TILE_DIM + tx] = 0;
         }
@@ -485,7 +488,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     cudaEventCreate(&afterGcompute);
     cudaEventRecord(afterGcompute, stream1);
 
-    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, input.options());
+    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, S1s.options());
 
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(),
@@ -503,7 +506,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     at::cuda::CUDAStream torch_stream2 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream2 = torch_stream2.stream();
     at::cuda::setCurrentCUDAStream(torch_stream2);
-    auto interm_gradS2s = torch::zeros({numTilesI, T, R, B}, input.options());
+    auto interm_gradS2s = torch::zeros({numTilesI, T, R, B}, S1s.options());
 
     dim3 grid2((B + TILE_DIM - 1) / TILE_DIM,
                (R + TILE_DIM - 1) / TILE_DIM,
@@ -513,14 +516,14 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
         "sklinear_backward_grad_S2_interm",
         ([&] {
             sklinear_backward_grad_S2_interm<scalar_t><<<grid2, block, 2 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream2>>>(
-                input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                tensor_utils::buildAccessor<scalar_t, 2>(input),
                 U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 interm_gradS2s.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
                 B, I, R, T);
         }));
     at::cuda::setCurrentCUDAStream(torch_stream2);
     auto i_gradS2s = interm_gradS2s.sum(0);
-    auto grad_S2s = torch::zeros({T, R, O}, input.options());
+    auto grad_S2s = torch::zeros({T, R, O}, S1s.options());
     cudaStreamWaitEvent(stream2, afterGcompute);
     dim3 grid4((O + TILE_DIM - 1) / TILE_DIM,
                (R + TILE_DIM - 1) / TILE_DIM,
@@ -544,7 +547,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     cudaEventRecord(afterIntermSum, stream1);
     cudaStreamWaitEvent(stream1, afterIntermSum);
 
-    auto grad_input = torch::zeros({B, I}, input.options());
+    auto grad_input = torch::zeros({B, I}, S1s.options());
     dim3 grid3((I + TILE_DIM - 1) / TILE_DIM,
                (B + TILE_DIM - 1) / TILE_DIM);
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
@@ -562,7 +565,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     at::cuda::CUDAStream torch_stream3 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream3 = torch_stream3.stream();
     at::cuda::setCurrentCUDAStream(torch_stream3);
-    auto grad_S1s = torch::zeros({T, I, R}, input.options());
+    auto grad_S1s = torch::zeros({T, I, R}, S1s.options());
 
     cudaStreamWaitEvent(stream3, afterIntermSum);
 
@@ -576,7 +579,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
         "sklinear_backward_grad_S1",
         ([&] {
             sklinear_backward_grad_S1<scalar_t><<<grid5, block, 2 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream3>>>(
-                input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                tensor_utils::buildAccessor<scalar_t, 2>(input),
                 interm0.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 grad_S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
                 B, I, R, T);

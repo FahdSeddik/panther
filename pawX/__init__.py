@@ -19,6 +19,7 @@ from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER
     sketched_conv2d_forward,
     sketched_linear_backward,
     sketched_linear_forward,
+    test_tensor_accessor,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "causal_numerator_backward",
     "causal_denominator_forward",
     "causal_denominator_backward",
+    "test_tensor_accessor",
 ]

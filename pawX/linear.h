@@ -62,3 +62,5 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     const bool has_bias = false);
+
+void test_tensor_accessor(const torch::Tensor& tensor);

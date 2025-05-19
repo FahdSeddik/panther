@@ -16,7 +16,7 @@ CONFIGS = [
     (64, 512, 512, 32, 3, False),
 ]
 
-DTYPES = [torch.float32]
+DTYPES = [torch.float32, torch.float16]
 
 
 @pytest.fixture(params=DTYPES)
@@ -226,6 +226,61 @@ def test_backward_vs_autograd(test_tensors, dtype):
         assert torch.allclose(
             c, a, atol=1, rtol=1
         ), f"Gradient values mismatch at index {i}."
+
+
+def test_forward_noncontiguous_input(test_tensors, config, dtype):
+    input, S1s, S2s, U1s, U2s, bias = test_tensors
+    B, in_feats, out_feats, *_ = config
+
+    # 1) allocate a buffer twice as wide
+    tmp = torch.zeros(B, 2 * in_feats, dtype=dtype, device=input.device)
+    # 2) scatter original into every-other column
+    tmp[:, ::2] = input
+    # 3) slice back to shape (B, in_feats) — this is non-contiguous
+    input = tmp[:, ::2]
+    assert input.shape == (B, in_feats)
+    assert not input.is_contiguous()
+
+    out = sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias)
+    assert out.shape == (B, out_feats)
+
+
+def test_backward_noncontiguous_input(test_tensors, dtype):
+    input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
+    B, in_feats = input_tensor.shape
+
+    tmp = torch.zeros(B, 2 * in_feats, dtype=dtype, device=input_tensor.device)
+    tmp[:, ::2] = input_tensor
+    input_tensor = tmp[:, ::2]
+    assert input_tensor.shape == (B, S1s.shape[1])
+    assert not input_tensor.is_contiguous()
+
+    out = sketched_linear_forward(input_tensor, S1s, S2s, U1s, U2s, bias)
+    grad_out = torch.randn_like(out)
+
+    G = grad_out.shape[1]
+    tmpg = torch.zeros(B, 2 * G, dtype=grad_out.dtype, device=grad_out.device)
+    tmpg[:, ::2] = grad_out
+    grad_out = tmpg[:, ::2]
+    assert grad_out.shape == out.shape
+    assert not grad_out.is_contiguous()
+
+    grads = sketched_linear_backward(
+        grad_out,
+        input_tensor,
+        S1s,
+        S2s,
+        U1s,
+        U2s,
+        has_bias=(bias is not None),
+        use_gpu=False,
+    )
+    # Check shapes for gradients that exist
+    assert grads[0].shape == input_tensor.shape
+    assert grads[1].shape == S1s.shape
+    assert grads[2].shape == S2s.shape
+    if bias is not None:
+        assert grads[3].shape == bias.shape
 
 
 if __name__ == "__main__":

@@ -3,6 +3,10 @@
 #include <mma.h>
 #include <torch/extension.h>
 
+#include "cuda_tensor_accessor.cuh"
+#include "debug.cuh"
+#include "linear.h"
+
 using half_t = __half;  // WMMA inputs must be half precision
 using float_t = float;  // Accumulate in FP32
 namespace wmma = nvcuda::wmma;
@@ -23,11 +27,12 @@ static const int TILE_WIDTH_M = M * BLOCK_ROW_WARPS;
 static const int TILE_WIDTH_N = N * BLOCK_COL_WARPS;
 static const int TILE_WIDTH_K = TILE_WIDTH_M;
 
+template <typename scalar_t>
 __global__ void sklinear_forward_intermediate_wmma(
-    const torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> input,  // [B,I]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> S1s,    // [T,I,R]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U2s,    // [T,I,R]
-    torch::PackedTensorAccessor32<float_t, 5, torch::RestrictPtrTraits> partial,      // [numTilesK,2,T,B,R]
+    const FlexibleTensorAccessor<scalar_t, 2> input,                                 // [B,I]
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,  // [T,I,R]
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,  // [T,I,R]
+    torch::PackedTensorAccessor32<scalar_t, 5, torch::RestrictPtrTraits> partial,    // [numTilesK,2,T,B,R]
     int B, int I, int R, int T, const float_t DIVISOR) {
     // Dynamic shared memory buffer:
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];
@@ -45,11 +50,11 @@ __global__ void sklinear_forward_intermediate_wmma(
     // WMMA fragments
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc1, acc2;
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc1, acc2;
 
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc1, 0.0f);
-        wmma::fill_fragment(acc2, 0.0f);
+        wmma::fill_fragment(acc1, cuda_type<scalar_t>::get_zero());
+        wmma::fill_fragment(acc2, cuda_type<scalar_t>::get_zero());
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -57,7 +62,7 @@ __global__ void sklinear_forward_intermediate_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(static_cast<float>(input[aRow + aX][k + aY]) * DIVISOR) : __float2half(0.0f);
+            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(static_cast<float>(input(aRow + aX, k + aY)) * DIVISOR) : __float2half(0.0f);
             subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(S1s[term][k + bX][bCol + bY])) : __float2half(0.0f);
             subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(U2s[term][k + bX][bCol + bY])) : __float2half(0.0f);
         }
@@ -88,13 +93,14 @@ __global__ void sklinear_forward_intermediate_wmma(
     }
 }
 
+template <typename scalar_t>
 __global__ void sklinear_forward_output_wmma(
-    const torch::PackedTensorAccessor32<float_t, 4, torch::RestrictPtrTraits> inter,  // [2,T,B,R]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> U1s,    // [T,R,O]
-    const torch::PackedTensorAccessor32<float_t, 3, torch::RestrictPtrTraits> S2s,    // [T,R,O]
-    const float_t* bias,                                                              // [O]
+    const torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> inter,  // [2,T,B,R]
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U1s,    // [T,R,O]
+    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S2s,    // [T,R,O]
+    const FlexibleTensorAccessor<scalar_t, 1> bias,                                    // [O]
     bool hasBias,
-    torch::PackedTensorAccessor32<float_t, 2, torch::RestrictPtrTraits> out,  // [B,O]
+    torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> out,  // [B,O]
     int B, int R, int T, int O) {
     // __shared__ half subTileA1[TILE_WIDTH_K][TILE_WIDTH_M];
     // __shared__ half subTileA2[TILE_WIDTH_K][TILE_WIDTH_M];
@@ -127,7 +133,7 @@ __global__ void sklinear_forward_output_wmma(
     if (hasBias) {
         // load bias into memory N
         for (int i = tx + ty * blockDim.x; i < N; i += blockDim.x * blockDim.y) {
-            shBias[i] = (base_o + i) < O ? bias[base_o + i] : 0.0f;
+            shBias[i] = (base_o + i) < O ? bias(base_o + i) : 0.0f;
         }
     }
 
@@ -186,8 +192,7 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     c10::optional<torch::Tensor> bias) {
-    TORCH_CHECK(input.scalar_type() == at::kFloat, "Only FP32 supported");
-    TORCH_CHECK(input.is_contiguous(), "Input tensor must be contiguous.");
+    TORCH_CHECK(input.scalar_type() == at::kFloat || input.scalar_type() == at::kHalf, "Input tensor must be float or half precision.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous.");
     TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous.");
     TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous.");
@@ -203,17 +208,22 @@ torch::Tensor sketched_linear_forward_cuda(
     torch::Tensor interm;
     if (T > 1) {
         int64_t numTilesI = (I + TILE_WIDTH_K - 1) / TILE_WIDTH_K;
-        auto partial = torch::zeros({numTilesI, 2, T, B, R}, input.options());
+        auto partial = torch::zeros({numTilesI, 2, T, B, R}, S1s.options());
         dim3 grid1((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (R + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
                    numTilesI);
 
-        sklinear_forward_intermediate_wmma<<<grid1, block>>>(
-            input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-            S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-            U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-            partial.packed_accessor32<float, 5, torch::RestrictPtrTraits>(),
-            B, I, R, T, (1.0f / (2.0f * T)));
+        AT_DISPATCH_FLOAT_AND_HALF(
+            input.scalar_type(),
+            "sklinear_forward_intermediate_wmma",
+            [&] {
+                sklinear_forward_intermediate_wmma<scalar_t><<<grid1, block>>>(
+                    tensor_utils::buildAccessor<scalar_t, 2>(input),
+                    S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    partial.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
+                    B, I, R, T, (1.0f / (2.0f * T)));
+            });
 
         interm = partial.sum(0);
     } else {
@@ -222,19 +232,23 @@ torch::Tensor sketched_linear_forward_cuda(
     }
 
     if (R <= 96) {
-        auto out = torch::zeros({B, O}, input.options());
+        auto out = torch::zeros({B, O}, S1s.options());
         dim3 grid2((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
                    (O + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
-        int shared_bytes = (TILE_WIDTH_K * TILE_WIDTH_M * 2 + 2 * TILE_WIDTH_N * TILE_WIDTH_K) * sizeof(half_t) + (bias.has_value() ? TILE_WIDTH_N : 0) * sizeof(float_t);
-
-        sklinear_forward_output_wmma<<<grid2, block, shared_bytes>>>(
-            interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
-            U1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-            S2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-            bias.has_value() ? bias.value().data_ptr<float>() : nullptr,
-            bias.has_value(),
-            out.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-            B, R, T, O);
+        AT_DISPATCH_FLOAT_AND_HALF(
+            interm.scalar_type(),
+            "sklinear_forward_output_wmma",
+            [&] {
+                int shared_bytes = (TILE_WIDTH_K * TILE_WIDTH_M * 2 + 2 * TILE_WIDTH_N * TILE_WIDTH_K) * sizeof(half_t) + (bias.has_value() ? TILE_WIDTH_N : 0) * sizeof(scalar_t);
+                sklinear_forward_output_wmma<scalar_t><<<grid2, block, shared_bytes>>>(
+                    interm.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
+                    U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    bias.has_value() ? tensor_utils::buildAccessor<scalar_t, 1>(bias.value()) : FlexibleTensorAccessor<scalar_t, 1>(),
+                    bias.has_value(),
+                    out.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                    B, R, T, O);
+            });
         return out;
     } else {
         auto result = (interm[0].bmm(U1s) + interm[1].bmm(S2s)).mean(0).div(2.0f);

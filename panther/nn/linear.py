@@ -211,11 +211,11 @@ class SKLinear(nn.Module):
 
 
 if __name__ == "__main__":
-    in_features = 8192
-    out_features = 32768
-    num_terms = 3
-    low_rank = 512
-    batch_size = 64
+    in_features = 3200
+    out_features = 3200
+    num_terms = 2
+    low_rank = 64
+    batch_size = 16
     linear = SKLinear(
         in_features=in_features,
         out_features=out_features,
@@ -225,9 +225,7 @@ if __name__ == "__main__":
         device=torch.device("cuda:0"),
     )
     input = torch.randn(
-        batch_size, in_features, dtype=torch.float32, device=torch.device("cuda:0")
+        batch_size, 128, in_features, dtype=torch.float32, device=torch.device("cuda:0")
     )
     output = linear(input)
-    output_expected = torch.zeros(
-        batch_size, out_features, dtype=torch.float32, device=torch.device("cuda:0")
-    )
+    print("Output shape:", output.shape)
