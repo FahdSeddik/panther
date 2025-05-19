@@ -89,6 +89,44 @@ struct FlexibleTensorAccessor {
         return off;
     }
 
+    // Read as a specified type (e.g., float, double, __half, etc.)
+    template <typename OutType = cuda_type_t<T>, typename... Args>
+    __host__ __device__ inline OutType get(Args... args) const {
+        static_assert(sizeof...(args) == N, "Invalid number of indices");
+        int64_t idx[N] = {static_cast<int64_t>(args)...};
+        auto& val = data[offset(idx)];
+        if constexpr (std::is_same_v<cuda_type_t<T>, __half> && std::is_same_v<OutType, float>) {
+            return __half2float(val);
+        } else if constexpr (std::is_same_v<cuda_type_t<T>, __half> && std::is_same_v<OutType, double>) {
+            return static_cast<double>(__half2float(val));
+        } else if constexpr (std::is_same_v<cuda_type_t<T>, float> && std::is_same_v<OutType, __half>) {
+            return __float2half(val);
+        } else if constexpr (std::is_same_v<cuda_type_t<T>, double> && std::is_same_v<OutType, __half>) {
+            return __float2half(static_cast<float>(val));
+        } else {
+            return static_cast<OutType>(val);
+        }
+    }
+
+    // Write as a specified type (e.g., float, double, __half, etc.)
+    template <typename InType = cuda_type_t<T>, typename... Args>
+    __host__ __device__ inline void set(InType value, Args... args) {
+        static_assert(sizeof...(args) == N, "Invalid number of indices");
+        int64_t idx[N] = {static_cast<int64_t>(args)...};
+        if constexpr (std::is_same_v<cuda_type_t<T>, __half> && std::is_same_v<InType, float>) {
+            data[offset(idx)] = __float2half(value);
+        } else if constexpr (std::is_same_v<cuda_type_t<T>, __half> && std::is_same_v<InType, double>) {
+            data[offset(idx)] = __float2half(static_cast<float>(value));
+        } else if constexpr (std::is_same_v<cuda_type_t<T>, float> && std::is_same_v<InType, __half>) {
+            data[offset(idx)] = __half2float(value);
+        } else if constexpr (std::is_same_v<cuda_type_t<T>, double> && std::is_same_v<InType, __half>) {
+            data[offset(idx)] = static_cast<double>(__half2float(value));
+        } else {
+            data[offset(idx)] = static_cast<cuda_type_t<T>>(value);
+        }
+    }
+
+    // Original operator() for direct access (no conversion)
     template <typename... Args>
     __host__ __device__ inline cuda_type_t<T>& operator()(Args... args) {
         static_assert(sizeof...(args) == N, "Invalid number of indices");

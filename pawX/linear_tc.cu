@@ -27,6 +27,12 @@ static const int TILE_WIDTH_M = M * BLOCK_ROW_WARPS;
 static const int TILE_WIDTH_N = N * BLOCK_COL_WARPS;
 static const int TILE_WIDTH_K = TILE_WIDTH_M;
 
+// Override __float2half for half_t
+// to make template specialization work
+__host__ __device__ inline half_t __float2half(half_t x) {
+    return x;
+}
+
 template <typename scalar_t>
 __global__ void sklinear_forward_intermediate_wmma(
     const FlexibleTensorAccessor<scalar_t, 2> input,                                 // [B,I]
@@ -46,6 +52,7 @@ __global__ void sklinear_forward_intermediate_wmma(
     int k = blockIdx.z * TILE_WIDTH_K;
     int aRow = blockIdx.x * TILE_WIDTH_M;  // aRow
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol
+    auto zero = cuda_type<scalar_t>::get_zero();
 
     // WMMA fragments
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA;
@@ -53,8 +60,8 @@ __global__ void sklinear_forward_intermediate_wmma(
     wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc1, acc2;
 
     for (int term = 0; term < T; term++) {
-        wmma::fill_fragment(acc1, cuda_type<scalar_t>::get_zero());
-        wmma::fill_fragment(acc2, cuda_type<scalar_t>::get_zero());
+        wmma::fill_fragment(acc1, zero);
+        wmma::fill_fragment(acc2, zero);
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -62,9 +69,9 @@ __global__ void sklinear_forward_intermediate_wmma(
             int aY = idx / TILE_WIDTH_M;
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
-            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(static_cast<float>(input(aRow + aX, k + aY)) * DIVISOR) : __float2half(0.0f);
-            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(S1s[term][k + bX][bCol + bY])) : __float2half(0.0f);
-            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(static_cast<float>(U2s[term][k + bX][bCol + bY])) : __float2half(0.0f);
+            if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(input.template get<float>(aRow + aX, k + aY) * DIVISOR) : __float2half(0.0f);
+            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(S1s[term][k + bX][bCol + bY]) : __float2half(0.0f);
+            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(U2s[term][k + bX][bCol + bY]) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -112,10 +119,11 @@ __global__ void sklinear_forward_output_wmma(
     half_t* subTileA2 = (half_t*)&subTileA1[TILE_WIDTH_K * TILE_WIDTH_M];
     half_t* subTileB1 = (half_t*)&subTileA2[TILE_WIDTH_K * TILE_WIDTH_M];
     half_t* subTileB2 = (half_t*)&subTileB1[TILE_WIDTH_N * TILE_WIDTH_K];
-    float_t* shBias = nullptr;
+    cuda_type_t<scalar_t>* shBias = nullptr;
     if (hasBias) {
-        shBias = (float_t*)&subTileB2[TILE_WIDTH_N * TILE_WIDTH_K];
+        shBias = (cuda_type_t<scalar_t>*)&subTileB2[TILE_WIDTH_N * TILE_WIDTH_K];
     }
+    auto zero = cuda_type<scalar_t>::get_zero();
 
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -128,12 +136,12 @@ __global__ void sklinear_forward_output_wmma(
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
     wmma::fragment<wmma::accumulator, M, N, K, float_t> acc;
     wmma::fragment<wmma::accumulator, M, N, K, float_t> c_frag;
-    wmma::fill_fragment(acc, 0.0f);
+    wmma::fill_fragment(acc, zero);
 
     if (hasBias) {
         // load bias into memory N
         for (int i = tx + ty * blockDim.x; i < N; i += blockDim.x * blockDim.y) {
-            shBias[i] = (base_o + i) < O ? bias(base_o + i) : 0.0f;
+            shBias[i] = (base_o + i) < O ? bias(base_o + i) : zero;
         }
     }
 
@@ -145,10 +153,10 @@ __global__ void sklinear_forward_output_wmma(
                 int aY = idx / TILE_WIDTH_M;
                 int bX = idx % TILE_WIDTH_K;
                 int bY = idx / TILE_WIDTH_K;
-                subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[0][t][base_b + aX][k + aY])) : __float2half(0.0f);
-                subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(static_cast<float>(inter[1][t][base_b + aX][k + aY])) : __float2half(0.0f);
-                subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(U1s[t][k + bX][base_o + bY])) : __float2half(0.0f);
-                subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(static_cast<float>(S2s[t][k + bX][base_o + bY])) : __float2half(0.0f);
+                subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(inter[0][t][base_b + aX][k + aY]) : __float2half(0.0f);
+                subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(inter[1][t][base_b + aX][k + aY]) : __float2half(0.0f);
+                subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(U1s[t][k + bX][base_o + bY]) : __float2half(0.0f);
+                subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(S2s[t][k + bX][base_o + bY]) : __float2half(0.0f);
             }
             __syncthreads();
 
