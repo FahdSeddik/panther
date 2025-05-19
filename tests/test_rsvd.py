@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from pawX import randomized_svd  # Adjust the module name as needed
+from panther.linalg import randomized_svd  # Adjust the module name as needed
 
 
 def test_shape_and_reconstruction():

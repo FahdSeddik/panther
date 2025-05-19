@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-import pawX
+from panther.linalg import cqrrpt
 
 
 # Helper function to check reconstruction accuracy.
@@ -34,7 +34,7 @@ def test_cqrrpt():
     M = torch.randn(m, n, dtype=torch.double)
 
     # Run the CQRRPT function
-    Q, R, J = pawX.cqrrpt(M)
+    Q, R, J = cqrrpt(M)
 
     # Check shapes.
     k = R.shape[0]
@@ -48,7 +48,7 @@ def test_cqrrpt_wide_matrix():
     # Wide matrix (m < n)
     m, n = 5, 10
     M = torch.randn(m, n, dtype=torch.double)
-    Q, R, J = pawX.cqrrpt(M)
+    Q, R, J = cqrrpt(M)
     # In a wide matrix the rank cannot exceed m.
     assert R.shape[0] <= m, "Computed rank exceeds expected maximum for wide matrix!"
 
@@ -60,7 +60,7 @@ def test_cqrrpt_wide_matrix():
 def test_cqrrpt_reconstruction(m, n):
     torch.manual_seed(42)
     M = torch.randn(m, n, dtype=torch.double)
-    Q, R, J = pawX.cqrrpt(M)
+    Q, R, J = cqrrpt(M)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for matrix size ({m},{n})!"
 
@@ -72,7 +72,7 @@ def test_cqrrpt_reconstruction(m, n):
 def test_q_orthonormality(m, n):
     torch.manual_seed(42)
     M = torch.randn(m, n, dtype=torch.double)
-    Q, R, J = pawX.cqrrpt(M)
+    Q, R, J = cqrrpt(M)
     err = check_q_orthonormality(Q)
     assert err < 1e-9, f"Q is not orthonormal: error {err}"
 
@@ -85,7 +85,7 @@ def test_varying_gamma(gamma):
     torch.manual_seed(42)
     m, n = 20, 10
     M = torch.randn(m, n, dtype=torch.double)
-    Q, R, J = pawX.cqrrpt(M, gamma)
+    Q, R, J = cqrrpt(M, gamma)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for gamma={gamma}!"
 
@@ -99,7 +99,7 @@ def test_low_rank_matrix():
     A = torch.randn(m, r, dtype=torch.double)
     B = torch.randn(r, n, dtype=torch.double)
     M = torch.mm(A, B)
-    Q, R, J = pawX.cqrrpt(M)
+    Q, R, J = cqrrpt(M)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for low-rank matrix!"
 
@@ -114,7 +114,7 @@ def test_statistical_consistency():
     errors = []
     for trial in range(num_trials):
         M = torch.randn(m, n, dtype=torch.double)
-        Q, R, J = pawX.cqrrpt(M)
+        Q, R, J = cqrrpt(M)
         err = check_qr_decomposition(M, Q, R, J)
         errors.append(err)
     avg_err = sum(errors) / len(errors)
@@ -136,7 +136,7 @@ def test_ill_conditioned_matrix():
     singular_values = torch.logspace(0, -8, n, dtype=torch.double)
     S = torch.diag(singular_values)
     M = U[:, :n] @ S @ V.T
-    Q, R, J = pawX.cqrrpt(M)
+    Q, R, J = cqrrpt(M)
     err = check_qr_decomposition(M, Q, R, J, tol=1e-7)
     # Allow a somewhat looser tolerance for ill-conditioned matrices.
     assert (
@@ -151,7 +151,7 @@ def test_permutation_vector():
     torch.manual_seed(42)
     m, n = 20, 10
     M = torch.randn(m, n, dtype=torch.double)
-    _, _, J = pawX.cqrrpt(M)
+    _, _, J = cqrrpt(M)
     sorted_J = torch.sort(J).values
     expected = torch.arange(0, n, dtype=J.dtype)
     assert torch.allclose(
