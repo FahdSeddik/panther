@@ -27,18 +27,12 @@ static const int TILE_WIDTH_M = M * BLOCK_ROW_WARPS;
 static const int TILE_WIDTH_N = N * BLOCK_COL_WARPS;
 static const int TILE_WIDTH_K = TILE_WIDTH_M;
 
-// Override __float2half for half_t
-// to make template specialization work
-__host__ __device__ inline half_t __float2half(half_t x) {
-    return x;
-}
-
 template <typename scalar_t>
 __global__ void sklinear_forward_intermediate_wmma(
-    const FlexibleTensorAccessor<scalar_t, 2> input,                                 // [B,I]
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S1s,  // [T,I,R]
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U2s,  // [T,I,R]
-    torch::PackedTensorAccessor32<scalar_t, 5, torch::RestrictPtrTraits> partial,    // [numTilesK,2,T,B,R]
+    const FlexibleTensorAccessor<scalar_t, 2> input,  // [B,I]
+    const FlexibleTensorAccessor<scalar_t, 3> S1s,    // [T,I,R]
+    const FlexibleTensorAccessor<scalar_t, 3> U2s,    // [T,I,R]
+    FlexibleTensorAccessor<scalar_t, 5> partial,      // [numTilesK,2,T,B,R]
     int B, int I, int R, int T, const float_t DIVISOR) {
     // Dynamic shared memory buffer:
     __shared__ half subTileA[TILE_WIDTH_K][TILE_WIDTH_M];
@@ -70,8 +64,8 @@ __global__ void sklinear_forward_intermediate_wmma(
             int bX = idx % TILE_WIDTH_K;
             int bY = idx / TILE_WIDTH_K;
             if (term == 0) subTileA[aY][aX] = (((aRow + aX) < B) && ((k + aY) < I)) ? __float2half(input.template get<float>(aRow + aX, k + aY) * DIVISOR) : __float2half(0.0f);
-            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(S1s[term][k + bX][bCol + bY]) : __float2half(0.0f);
-            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? __float2half(U2s[term][k + bX][bCol + bY]) : __float2half(0.0f);
+            subTileB1[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? S1s.template get<half_t>(term, k + bX, bCol + bY) : __float2half(0.0f);
+            subTileB2[bY][bX] = (((bCol + bY) < R) && ((k + bX) < I)) ? U2s.template get<half_t>(term, k + bX, bCol + bY) : __float2half(0.0f);
         }
         __syncthreads();
 #pragma unroll 1
@@ -94,20 +88,20 @@ __global__ void sklinear_forward_intermediate_wmma(
         int cCol = warpN * N;
 
         if (cRow < B && cCol < R) {
-            wmma::store_matrix_sync(&partial[blockIdx.z][0][term][cRow][cCol], acc1, R, wmma::mem_row_major);
-            wmma::store_matrix_sync(&partial[blockIdx.z][1][term][cRow][cCol], acc2, R, wmma::mem_row_major);
+            wmma::store_matrix_sync(&partial(blockIdx.z, 0, term, cRow, cCol), acc1, R, wmma::mem_row_major);
+            wmma::store_matrix_sync(&partial(blockIdx.z, 1, term, cRow, cCol), acc2, R, wmma::mem_row_major);
         }
     }
 }
 
 template <typename scalar_t>
 __global__ void sklinear_forward_output_wmma(
-    const torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> inter,  // [2,T,B,R]
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> U1s,    // [T,R,O]
-    const torch::PackedTensorAccessor32<scalar_t, 3, torch::RestrictPtrTraits> S2s,    // [T,R,O]
-    const FlexibleTensorAccessor<scalar_t, 1> bias,                                    // [O]
+    const FlexibleTensorAccessor<scalar_t, 4> inter,  // [2,T,B,R]
+    const FlexibleTensorAccessor<scalar_t, 3> U1s,    // [T,R,O]
+    const FlexibleTensorAccessor<scalar_t, 3> S2s,    // [T,R,O]
+    const FlexibleTensorAccessor<scalar_t, 1> bias,   // [O]
     bool hasBias,
-    torch::PackedTensorAccessor32<scalar_t, 2, torch::RestrictPtrTraits> out,  // [B,O]
+    FlexibleTensorAccessor<scalar_t, 2> out,  // [B,O]
     int B, int R, int T, int O) {
     // __shared__ half subTileA1[TILE_WIDTH_K][TILE_WIDTH_M];
     // __shared__ half subTileA2[TILE_WIDTH_K][TILE_WIDTH_M];
@@ -134,8 +128,8 @@ __global__ void sklinear_forward_output_wmma(
 
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA1, fA2;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> c_frag;
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc;
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> c_frag;
     wmma::fill_fragment(acc, zero);
 
     if (hasBias) {
@@ -153,10 +147,10 @@ __global__ void sklinear_forward_output_wmma(
                 int aY = idx / TILE_WIDTH_M;
                 int bX = idx % TILE_WIDTH_K;
                 int bY = idx / TILE_WIDTH_K;
-                subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(inter[0][t][base_b + aX][k + aY]) : __float2half(0.0f);
-                subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? __float2half(inter[1][t][base_b + aX][k + aY]) : __float2half(0.0f);
-                subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(U1s[t][k + bX][base_o + bY]) : __float2half(0.0f);
-                subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? __float2half(S2s[t][k + bX][base_o + bY]) : __float2half(0.0f);
+                subTileA1[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? inter.template get<half_t>(0, t, base_b + aX, k + aY) : __float2half(0.0f);
+                subTileA2[aY * TILE_WIDTH_M + aX] = (((base_b + aX) < B) && ((k + aY) < R)) ? inter.template get<half_t>(1, t, base_b + aX, k + aY) : __float2half(0.0f);
+                subTileB1[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? U1s.template get<half_t>(t, k + bX, base_o + bY) : __float2half(0.0f);
+                subTileB2[bY * TILE_WIDTH_K + bX] = (((base_o + bY) < O) && ((k + bX) < R)) ? S2s.template get<half_t>(t, k + bX, base_o + bY) : __float2half(0.0f);
             }
             __syncthreads();
 
@@ -185,10 +179,10 @@ __global__ void sklinear_forward_output_wmma(
         if (hasBias) {
             wmma::load_matrix_sync(c_frag, shBias, 0, wmma::mem_row_major);
             for (int i = 0; i < c_frag.num_elements; i++) {
-                acc.x[i] = acc.x[i] + c_frag.x[i];
+                acc.x[i] = cuda_type<scalar_t>::add(acc.x[i], c_frag.x[i]);
             }
         }
-        wmma::store_matrix_sync(&out[cRow][cCol], acc, O, wmma::mem_row_major);
+        wmma::store_matrix_sync(&out(cRow, cCol), acc, O, wmma::mem_row_major);
     }
 }
 
@@ -227,9 +221,9 @@ torch::Tensor sketched_linear_forward_cuda(
             [&] {
                 sklinear_forward_intermediate_wmma<scalar_t><<<grid1, block>>>(
                     tensor_utils::buildAccessor<scalar_t, 2>(input),
-                    S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                    U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                    partial.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
+                    tensor_utils::buildAccessor<scalar_t, 3>(S1s),
+                    tensor_utils::buildAccessor<scalar_t, 3>(U2s),
+                    tensor_utils::buildAccessor<scalar_t, 5>(partial),
                     B, I, R, T, (1.0f / (2.0f * T)));
             });
 
@@ -249,12 +243,12 @@ torch::Tensor sketched_linear_forward_cuda(
             [&] {
                 int shared_bytes = (TILE_WIDTH_K * TILE_WIDTH_M * 2 + 2 * TILE_WIDTH_N * TILE_WIDTH_K) * sizeof(half_t) + (bias.has_value() ? TILE_WIDTH_N : 0) * sizeof(scalar_t);
                 sklinear_forward_output_wmma<scalar_t><<<grid2, block, shared_bytes>>>(
-                    interm.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
-                    U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
-                    S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                    tensor_utils::buildAccessor<scalar_t, 4>(interm),
+                    tensor_utils::buildAccessor<scalar_t, 3>(U1s),
+                    tensor_utils::buildAccessor<scalar_t, 3>(S2s),
                     bias.has_value() ? tensor_utils::buildAccessor<scalar_t, 1>(bias.value()) : FlexibleTensorAccessor<scalar_t, 1>(),
                     bias.has_value(),
-                    out.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                    tensor_utils::buildAccessor<scalar_t, 2>(out),
                     B, R, T, O);
             });
         return out;

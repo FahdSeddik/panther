@@ -28,13 +28,15 @@ struct cuda_type {
 template <>
 struct cuda_type<c10::Half> {
     using type = __half;
-    __host__ __device__ inline const static __half get_zero() { return __float2half(0.0f); }
+    __host__ __device__ inline static __half get_zero() { return __float2half(0.0f); }
+    __host__ __device__ inline static __half add(__half a, __half b) { return __hadd(a, b); }
 };
 
 template <>
 struct cuda_type<float> {
     using type = float;
-    __host__ __device__ inline const static float get_zero() { return 0.0f; }
+    __host__ __device__ inline static float get_zero() { return 0.0f; }
+    __host__ __device__ inline static float add(float a, float b) { return a + b; }
 };
 
 template <typename T>
