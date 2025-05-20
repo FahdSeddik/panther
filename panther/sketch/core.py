@@ -2,10 +2,11 @@ from typing import Optional, Tuple, Union
 
 import torch
 
-from pawX import DistributionFamily
+from pawX import Axis, DistributionFamily
 from pawX import dense_sketch_operator as _dense_sketch_operator
 from pawX import scaled_sign_sketch as _scaled_sign_sketch
 from pawX import sketch_tensor as _sketch_tensor
+from pawX import sparse_sketch_operator as _sparse_sketch_operator
 
 
 def scaled_sign_sketch(
@@ -41,8 +42,8 @@ def scaled_sign_sketch(
         tensor([-0.1768,  0.1768])  # For m=32, 1/sqrt(32) ≈ 0.1768
 
     References:
-        - Woodruff, D. P. (2014). "Sketching as a Tool for Numerical Linear Algebra." Foundations and Trends® in Theoretical Computer Science, 10(1–2), 1–157.
-        - Liberty, E., et al. (2008). "Randomized algorithms for the low-rank approximation of matrices." Proceedings of the National Academy of Sciences, 104(51), 20167–20172.
+        - Woodruff, D. P. (2014). "Sketching as a Tool for Numerical Linear Algebra." Foundations and Trends® in Theoretical Computer Science, 10(1-2), 1-157.
+        - Liberty, E., et al. (2008). "Randomized algorithms for the low-rank approximation of matrices." Proceedings of the National Academy of Sciences, 104(51), 20167-20172.
         - https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma
     """
     return _scaled_sign_sketch(m, n, device=device, dtype=dtype)
@@ -201,3 +202,55 @@ def sketch_tensor(
             "Must specify exactly one of `distribution` or `sketch_matrix`, "
             f"got distribution={distribution} and sketch_matrix={sketch_matrix}"
         )
+
+
+def sparse_sketch_operator(
+    m: int,
+    n: int,
+    vec_nnz: int,
+    axis: Axis,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor:
+    """
+    Creates a sparse sketch operator matrix with specified number of non-zero entries per vector.
+
+    This function generates a sparse random matrix of shape `(m, n)` where each row or column (depending on the `axis`)
+    has exactly `vec_nnz` non-zero entries. This is commonly used in randomized linear algebra and sketching algorithms
+    to project high-dimensional data into a lower-dimensional space while preserving certain geometric properties.
+
+    Args:
+        m : int
+            The number of rows of the sketch operator (i.e., the target dimension after sketching).
+        n : int
+            The number of columns of the sketch operator (i.e., the original dimension of the data).
+        vec_nnz : int
+            The number of non-zero entries per vector (row or column) in the sketch operator.
+        axis : Axis
+            The axis along which to create the sparse sketch operator. Can be either `Axis.Short` or `Axis.Long`.
+        device : Optional[torch.device], default=None
+            The device on which to allocate the resulting tensor (e.g., 'cpu' or 'cuda'). If None, defaults to the current device.
+        dtype : Optional[torch.dtype], default=None
+            The desired data type of the returned tensor. If None, defaults to the default dtype of the current torch device.
+
+    Returns:
+        torch.Tensor
+            A sparse COO tensor of shape `(m, n)` with exactly `vec_nnz` non-zero entries per vector along the specified axis.
+
+    Example:
+        >>> import torch
+        >>> from panther.sketch import sparse_sketch_operator, Axis
+        >>> m, n = 100, 500
+        >>> vec_nnz = 5
+        >>> sketch = sparse_sketch_operator(m, n, vec_nnz, Axis.Short)
+        >>> print(sketch.shape)
+        torch.Size([100, 500])
+        >>> print(sketch._nnz())  # Number of non-zero entries in the sparse tensor
+
+    References:
+        - Woodruff, D. P. (2014). "Sketching as a Tool for Numerical Linear Algebra." Foundations and Trends® in Theoretical Computer Science, 10(1-2),
+            1-157.
+        - Liberty, E., et al. (2008). "Randomized algorithms for the low-rank approximation of matrices." Proceedings of the National Academy of Sciences, 104(51), 20167-20172.
+        - https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma
+    """
+    return _sparse_sketch_operator(m, n, vec_nnz, axis, device=device, dtype=dtype)

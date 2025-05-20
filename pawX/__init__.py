@@ -2,7 +2,8 @@ from .verify import ensure_load
 
 ensure_load()
 
-from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER
+from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT; BARRIER NO FORMAT
+    Axis,
     DistributionFamily,
     causal_denominator_backward,
     causal_denominator_forward,
@@ -19,6 +20,7 @@ from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER
     sketched_conv2d_forward,
     sketched_linear_backward,
     sketched_linear_forward,
+    sparse_sketch_operator,
     test_tensor_accessor,
 )
 
@@ -40,4 +42,6 @@ __all__ = [
     "causal_denominator_forward",
     "causal_denominator_backward",
     "test_tensor_accessor",
+    "sparse_sketch_operator",
+    "Axis",
 ]
