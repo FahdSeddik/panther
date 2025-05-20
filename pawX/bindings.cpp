@@ -25,6 +25,10 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         .value("Gaussian", DistributionFamily::Gaussian)
         .value("Uniform", DistributionFamily::Uniform)
         .export_values();
+    py::enum_<Axis>(m, "Axis")
+        .value("Short", Axis::Short)
+        .value("Long", Axis::Long)
+        .export_values();
 
     m.def("cqrrpt", &cqrrpt, py::arg("M"), py::arg("gamma") = 1.25, py::arg("F") = DistributionFamily::Gaussian);
     m.def("randomized_svd", &randomized_svd, py::arg("A"), py::arg("k"), py::arg("tol"));
@@ -33,6 +37,14 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("m"),
           py::arg("n"),
           py::arg("distribution"),
+          py::arg("device") = py::none(),
+          py::arg("dtype") = py::none());
+
+    m.def("sparse_sketch_operator", &sparse_sketch_operator,
+          py::arg("m"),
+          py::arg("n"),
+          py::arg("vec_nnz"),
+          py::arg("major_axis"),
           py::arg("device") = py::none(),
           py::arg("dtype") = py::none());
 
