@@ -117,6 +117,8 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "cblas.h": "c",
-        "xstddef": "cpp"
+        "xstddef": "cpp",
+        "target": "cpp",
+        "__target_macros": "cpp"
     }
 }
