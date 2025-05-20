@@ -1,112 +1,96 @@
 #include "rsvd.h"
 
-#include <algorithm>
-#include <cmath>
-#include <tuple>
-
-// Helper: QR-based orthonormalization
-static std::tuple<torch::Tensor, torch::Tensor> orthonormalize(const torch::Tensor& X) {
-    return torch::linalg_qr(X, /*mode=*/"reduced");
+extern "C" {
+#include <lapacke_config.h>
 }
 
-torch::Tensor powerSketch(const torch::Tensor& A, int64_t k, int64_t passes, int64_t stab_freq = 1) {
-    auto m = A.size(0);
-    auto n = A.size(1);
-    // initialize Omega
-    torch::Tensor Omega = torch::randn({n, k}, A.options());
-    torch::Tensor Y;
-    for (int64_t i = 0; i < passes; ++i) {
-        if (i % 2 == 0) {
-            // Y = A * Omega
-            Y = torch::matmul(A, Omega);
-        } else {
-            // Y = A^T * Omega
-            Y = torch::matmul(A.transpose(0, 1), Omega);
-        }
-        Omega = Y;
-        // optional stabilization every stab_freq iterations
-        if (stab_freq > 0 && ((i + 1) % stab_freq) == 0) {
-            Omega = std::get<0>(orthonormalize(Omega));
-        }
+extern "C" {
+#include <lapacke.h>
+}
+
+extern "C" {
+#include <lapack.h>
+}
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> randomized_svd(const torch::Tensor& A, int64_t k, double tol) {
+    // Check input properties: A must be a double 2D tensor.
+    TORCH_CHECK(A.dtype() == torch::kFloat64, "A must be a double tensor");
+    TORCH_CHECK(A.dim() == 2, "A must be a 2D matrix");
+    int64_t n = A.size(1);
+
+    // Step 1: Generate a random Gaussian matrix Omega (n x k)
+    auto options = torch::TensorOptions().dtype(torch::kFloat64).device(A.device());
+    torch::Tensor Omega = torch::randn({n, k}, options);
+
+    // Compute Y = A * Omega, Y is (m x k)
+    torch::Tensor Y = torch::mm(A, Omega);
+
+    // Step 2: Compute the QR factorization of Y using LAPACKE_dgeqp3
+    // We want an orthonormal basis Q for the range of Y.
+    // Ensure Y is contiguous in memory.
+    torch::Tensor Y_copy = Y.clone().contiguous();
+    int mY = Y_copy.size(0);  // equals m
+    int nY = Y_copy.size(1);  // equals k
+    int min_mn = std::min(mY, nY);
+
+    // Prepare the pivot array and the tau vector for the factorization.
+    std::vector<int> jpvt(nY, 0);
+    std::vector<double> tau(min_mn);
+
+    // Workspace query for dgeqp3_work (row-major layout is used)
+    int lwork = -1;
+    double work_query;
+    int info = LAPACKE_dgeqp3_work(LAPACK_ROW_MAJOR, mY, nY,
+                                   Y_copy.data_ptr<double>(), nY,
+                                   jpvt.data(), tau.data(),
+                                   &work_query, lwork);
+    if (info != 0) {
+        throw std::runtime_error("LAPACKE_dgeqp3_work workspace query failed");
     }
-    return Omega;
-}
+    lwork = static_cast<int>(work_query);
+    std::vector<double> work(lwork);
 
-// Returns Q with orthonormal columns spanning A's approximate range
-torch::Tensor rangeFinder(const torch::Tensor& A, int64_t k, int64_t power_iters = 2) {
-    // Sketch
-    auto Omega = powerSketch(A, k, power_iters);
-    // Form sample matrix Y = A * Omega
-    auto Y = torch::matmul(A, Omega);
-    return std::get<0>(orthonormalize(Y));
-}
-
-std::tuple<torch::Tensor, torch::Tensor> blockedQB(
-    const torch::Tensor& A,
-    int64_t k,
-    int64_t block_size = 64,
-    double tol = 1e-6) {
-    auto m = A.size(0);
-    auto n = A.size(1);
-    double eps = 100 * std::numeric_limits<double>::epsilon();
-    tol = std::max(tol, eps);
-
-    torch::Tensor A_res = A.clone();
-    torch::Tensor Q = torch::empty({m, 0}, A.options());
-    torch::Tensor B;
-    int64_t curr = 0;
-
-    double normA = A.norm().item<double>();
-    double normB = 0;
-    double approx_err = 0, prev_err = 0;
-
-    while (curr < k) {
-        int64_t bs = std::min(block_size, k - curr);
-        // RangeFinder on residual
-        auto Q_i = rangeFinder(A_res, bs);
-        // Re-orthogonalize against Q
-        if (curr > 0) {
-            auto proj = torch::matmul(Q.transpose(0, 1), Q_i);
-            Q_i = Q_i - torch::matmul(Q, proj);
-            Q_i = std::get<0>(orthonormalize(Q_i));
-        }
-        // Compute B_i = Q_i^T * A_res
-        auto B_i = torch::matmul(Q_i.transpose(0, 1), A_res);
-        // Update Q, B
-        Q = torch::cat({Q, Q_i}, 1);
-        B = (curr == 0 ? B_i : torch::cat({B, B_i}, 0));
-        // Update error
-        double normBi = B_i.norm().item<double>();
-        normB = std::hypot(normB, normBi);
-        prev_err = approx_err;
-        approx_err = std::sqrt(std::abs(normA * normA - normB * normB)) * (std::sqrt(normA * normA + normB * normB) / normA);
-        // Check termination
-        if (curr > 0 && approx_err > prev_err) {
-            break;  // error growing
-        }
-        if (approx_err < tol) {
-            curr += bs;
-            break;
-        }
-        // Update residual A_res = A_res - Q_i * B_i
-        A_res = A_res - torch::matmul(Q_i, B_i);
-        curr += bs;
+    // Compute the QR factorization with column pivoting.
+    info = LAPACKE_dgeqp3_work(LAPACK_ROW_MAJOR, mY, nY,
+                               Y_copy.data_ptr<double>(), nY,
+                               jpvt.data(), tau.data(),
+                               work.data(), lwork);
+    if (info != 0) {
+        throw std::runtime_error("LAPACKE_dgeqp3_work failed");
     }
-    return {Q, B};
-}
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> randomized_svd(
-    const torch::Tensor& A,
-    int64_t k,
-    double tol = 1e-6) {
-    // Blocked QB
-    auto [Q, B] = blockedQB(A, k, /*block_size=*/std::min<int64_t>(64, k), tol);
-    // SVD on small B
-    auto svd_result = torch::linalg_svd(B, /*full_matrices=*/false);
-    auto U_tilde = std::get<0>(svd_result);
-    auto S = std::get<1>(svd_result);
-    auto Vt = std::get<2>(svd_result);
-    // Compute U = Q * U_tilde
-    auto U = torch::matmul(Q, U_tilde);
-    return {U, S, Vt.transpose(0, 1)};
+    // Generate Q from the factorization using LAPACKE_dorgqr_work.
+    lwork = -1;
+    double work_query2;
+    info = LAPACKE_dorgqr_work(LAPACK_ROW_MAJOR, mY, nY, min_mn,
+                               Y_copy.data_ptr<double>(), nY,
+                               tau.data(), &work_query2, lwork);
+    if (info != 0) {
+        throw std::runtime_error("LAPACKE_dorgqr_work workspace query failed");
+    }
+    lwork = static_cast<int>(work_query2);
+    std::vector<double> work2(lwork);
+    info = LAPACKE_dorgqr_work(LAPACK_ROW_MAJOR, mY, nY, min_mn,
+                               Y_copy.data_ptr<double>(), nY,
+                               tau.data(), work2.data(), lwork);
+    if (info != 0) {
+        throw std::runtime_error("LAPACKE_dorgqr_work failed");
+    }
+    // Now Y_copy holds the orthonormal matrix Q (m x k)
+    torch::Tensor Q = Y_copy;
+
+    // Step 3: Compute the small projected matrix B = Qᵀ * A (of size k x n)
+    torch::Tensor B = torch::mm(Q.transpose(0, 1), A);
+
+    // Compute the SVD of B. Here we use torch::svd.
+    torch::Tensor U_B, S, V;
+    std::tie(U_B, S, V) = torch::svd(B, /* some compute_uv flag */ true);
+
+    // Step 4: Back-project to form U = Q * U_B (of size m x k)
+    torch::Tensor U = torch::mm(Q, U_B);
+
+    // Optionally, you could enforce the tolerance tol here to truncate singular values.
+    // For simplicity, we return the full computed SVD.
+
+    return std::make_tuple(U, S, V);
 }

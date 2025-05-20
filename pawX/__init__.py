@@ -2,13 +2,10 @@ from .verify import ensure_load
 
 ensure_load()
 
-from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT; BARRIER NO FORMAT
-    Axis,
+from .pawX import (  # noqa: E402
     DistributionFamily,
-    causal_denominator_backward,
-    causal_denominator_forward,
-    causal_numerator_backward,
-    causal_numerator_forward,
+    causal_denominator_apply,
+    causal_numerator_apply,
     cqrrpt,
     create_projection_matrix,
     dense_sketch_operator,
@@ -20,8 +17,6 @@ from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT
     sketched_conv2d_forward,
     sketched_linear_backward,
     sketched_linear_forward,
-    sparse_sketch_operator,
-    test_tensor_accessor,
 )
 
 __all__ = [
@@ -34,14 +29,9 @@ __all__ = [
     "dense_sketch_operator",
     "sketch_tensor",
     "rmha_forward",
+    "causal_denominator_apply",
     "create_projection_matrix",
+    "causal_numerator_apply",
     "sketched_conv2d_backward",
     "sketched_conv2d_forward",
-    "causal_numerator_forward",
-    "causal_numerator_backward",
-    "causal_denominator_forward",
-    "causal_denominator_backward",
-    "test_tensor_accessor",
-    "sparse_sketch_operator",
-    "Axis",
 ]

@@ -22,24 +22,16 @@ class SketchedLinearFunction(Function):
         U1s: torch.Tensor,
         U2s: torch.Tensor,
         bias: torch.Tensor,
-        use_gpu: bool = False,
+        use_tensor_core: bool = False,
     ):
-        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, use_gpu)
+        return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, use_tensor_core)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
     # output is the output of the forward().
     def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
-        input, S1s, S2s, U1s, U2s, bias, use_gpu = inputs
-        ctx.save_for_backward(
-            input,
-            S1s,
-            S2s,
-            U1s,
-            U2s,
-            torch.tensor(use_gpu, dtype=torch.bool),
-            torch.tensor(bias is not None, dtype=torch.bool),
-        )
+        input, S1s, S2s, U1s, U2s, _, _ = inputs
+        ctx.save_for_backward(input, S1s, S2s, U1s, U2s)
 
     @staticmethod
     def backward(ctx: Any, *grad_output: Any) -> Any:
@@ -47,8 +39,7 @@ class SketchedLinearFunction(Function):
         # dl/dS1_i = g h_in^T U2_i^T / 2 * l
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
         # dl/db = g
-        input, S1s, S2s, U1s, U2s, use_gpu_tensor, has_bias = ctx.saved_tensors
-        use_gpu = use_gpu_tensor.item()
+        input, S1s, S2s, U1s, U2s = ctx.saved_tensors
         grads = sketched_linear_backward(
             grad_output=grad_output[0],
             input=input,
@@ -56,8 +47,6 @@ class SketchedLinearFunction(Function):
             S2s=S2s,
             U1s=U1s,
             U2s=U2s,
-            has_bias=has_bias.item(),
-            use_gpu=use_gpu,
         )
         return (
             grads[0],  # h_in
@@ -65,7 +54,7 @@ class SketchedLinearFunction(Function):
             grads[2],  # S2s
             None,  # U1s
             None,  # U2s
-            grads[3] if has_bias.item() else None,  # bias
+            grads[3],  # bias
             None,  # boolean for use_tensor_core
         )
 
@@ -112,13 +101,13 @@ class SKLinear(nn.Module):
                 category=UserWarning,
                 stacklevel=2,
             )
-        self.has_tensor_core = has_tensor_core_support()
-        self.use_gpu = True
-        if self.has_tensor_core and (
+
+        self.will_use_tensor_core = has_tensor_core_support()
+        if self.will_use_tensor_core and (
             in_features % 16 != 0 or out_features % 16 != 0 or low_rank % 16 != 0
         ):
             # Log warning to user
-            self.use_gpu = False
+            self.will_use_tensor_core = False
             warnings.warn(
                 self.WARNING_MSG_TC.format(in_features, out_features, low_rank),
                 UserWarning,
@@ -180,41 +169,26 @@ class SKLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, h_in: torch.Tensor) -> torch.Tensor:
-        def _reshape_input(h_in):
-            was_1d = h_in.dim() == 1
-            if was_1d:
-                h_in = h_in.unsqueeze(0)
-            orig_shape = h_in.shape[:-1]
-            h_in = h_in.view(-1, self.in_features)
-            return h_in, orig_shape, was_1d
-
-        h_in, orig_shape, was_1d = _reshape_input(h_in)
         batch_size = h_in.shape[0]
-        use_gpu = self.use_gpu
-
-        if h_in.is_cuda and self.has_tensor_core and use_gpu and (batch_size % 16 != 0):
-            use_gpu = False
+        use_tensor_core = self.will_use_tensor_core
+        if h_in.is_cuda and use_tensor_core and (batch_size % 16 != 0):
+            # Log warning to user
+            use_tensor_core = False
             warnings.warn(
                 self.WARNING_MSG_BATCH.format(batch_size),
                 UserWarning,
                 stacklevel=2,
             )
-
-        out = SketchedLinearFunction.apply(
-            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, use_gpu
-        )
-        return (
-            out.view(self.out_features)
-            if was_1d
-            else out.view(*orig_shape, self.out_features)
+        return SketchedLinearFunction.apply(
+            h_in, self.S1s, self.S2s, self.U1s, self.U2s, self.bias, use_tensor_core
         )
 
 
 if __name__ == "__main__":
-    in_features = 3200
-    out_features = 3200
-    num_terms = 2
-    low_rank = 64
+    in_features = 16
+    out_features = 16
+    num_terms = 1
+    low_rank = 16
     batch_size = 16
     linear = SKLinear(
         in_features=in_features,
@@ -225,7 +199,18 @@ if __name__ == "__main__":
         device=torch.device("cuda:0"),
     )
     input = torch.randn(
-        batch_size, 128, in_features, dtype=torch.float32, device=torch.device("cuda:0")
+        batch_size, in_features, dtype=torch.float32, device=torch.device("cuda:0")
     )
     output = linear(input)
-    print("Output shape:", output.shape)
+    output_expected = torch.zeros(
+        batch_size, out_features, dtype=torch.float32, device=torch.device("cuda:0")
+    )
+    for i in range(num_terms):
+        output_expected += input.mm(linear.S1s[i]).mm(linear.U1s[i]) + input.mm(
+            linear.U2s[i]
+        ).mm(linear.S2s[i])
+    output_expected /= 2 * num_terms
+    output_expected += linear.bias
+    assert torch.allclose(
+        output, output_expected, atol=1
+    ), f"\n{output[0]}\n{output_expected[0]}"

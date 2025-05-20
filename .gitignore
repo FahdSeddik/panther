@@ -166,5 +166,3 @@ cython_debug/
 #.idea/
 
 .ruff_cache/
-*.csv
-*.png
