@@ -457,8 +457,6 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     const bool has_bias) {
-    TORCH_CHECK(grad_output.is_contiguous(), "grad_output tensor must be contiguous in memory.");
-    TORCH_CHECK(input.is_contiguous(), "input tensor must be contiguous in memory.");
     TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
     TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous in memory.");
     TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous in memory.");
