@@ -1,11 +1,16 @@
+from typing import Dict
+
 import pytest
 import torch
 
 from panther.nn import SKLinear
+from panther.utils.compatibility import has_tensor_core_support
 from pawX import sketched_linear_backward, sketched_linear_forward
 
 # Set random seed for reproducibility
 torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+torch.cuda.manual_seed_all(42)
 
 # Test configurations: dimensions are multiples of 16, with and without bias
 CONFIGS = [
@@ -17,6 +22,23 @@ CONFIGS = [
 ]
 
 DTYPES = [torch.float32, torch.float16]
+
+tc_comp = has_tensor_core_support()
+
+
+def get_dtype_tols(dtype: torch.dtype) -> Dict[str, float]:
+    if dtype == torch.float16:
+        atol = 1 if tc_comp else 1e-1
+        rtol = 1 if tc_comp else 1e-2
+    elif dtype == torch.float32:
+        atol = 1e-1 if tc_comp else 1e-4
+        rtol = 1e-1 if tc_comp else 1e-3
+    elif dtype == torch.float64:
+        atol = 1e-5
+        rtol = 1e-4
+    else:
+        raise ValueError(f"Unsupported dtype: {dtype}")
+    return {"atol": atol, "rtol": rtol}
 
 
 @pytest.fixture(params=DTYPES)
@@ -141,7 +163,8 @@ def test_backward_deterministic(test_tensors, dtype):
     ), "Backward pass is not deterministic."
 
 
-def test_forward_gpu_vs_cpu(test_tensors, dtype):
+@pytest.mark.parametrize("contiguous", [True, False])
+def test_forward_gpu_vs_cpu(test_tensors, dtype, contiguous):
     """Ensure forward pass produces the same output on CPU and GPU."""
     if not torch.cuda.is_available():
         pytest.skip("CUDA is not available.")
@@ -149,6 +172,16 @@ def test_forward_gpu_vs_cpu(test_tensors, dtype):
         pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
     i_gpu = input_tensor.to("cuda")
+
+    if not contiguous:
+        B, in_feats = i_gpu.shape
+
+        tmp = torch.zeros(B, 2 * in_feats, dtype=dtype, device=i_gpu.device)
+        tmp[:, ::2] = i_gpu
+        i_gpu = tmp[:, ::2]
+        assert i_gpu.shape == (B, S1s.shape[1])
+        assert not i_gpu.is_contiguous()
+
     S1s_gpu, S2s_gpu = S1s.to("cuda"), S2s.to("cuda")
     U1s_gpu, U2s_gpu = U1s.to("cuda"), U2s.to("cuda")
     bias_gpu = bias.to("cuda") if bias is not None else None
@@ -159,26 +192,54 @@ def test_forward_gpu_vs_cpu(test_tensors, dtype):
         input_tensor, S1s, S2s, U1s, U2s, bias, use_gpu=False
     )
     assert torch.allclose(
-        out_cpu, out_gpu, atol=1, rtol=1
+        out_cpu, out_gpu, **get_dtype_tols(dtype)
     ), "Forward pass differs between CPU and GPU."
 
 
-def test_backward_gpu_vs_cpu(test_tensors, dtype):
+@pytest.mark.parametrize("contiguous", [True, False])
+def test_backward_gpu_vs_cpu(test_tensors, dtype, contiguous):
     """Ensure backward pass produces the same gradients on CPU and GPU."""
     if not torch.cuda.is_available():
         pytest.skip("CUDA is not available.")
     if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
         pytest.skip("bfloat16 not supported on this device.")
     input_tensor, S1s, S2s, U1s, U2s, bias = test_tensors
-    i_gpu = input_tensor.to("cuda")
+
     S1s_gpu, S2s_gpu = S1s.to("cuda"), S2s.to("cuda")
     U1s_gpu, U2s_gpu = U1s.to("cuda"), U2s.to("cuda")
     grad_output_cpu = torch.randn(input_tensor.shape[0], U1s.shape[2], dtype=dtype)
     grads_cpu = sketched_linear_backward(
-        grad_output_cpu, input_tensor, S1s, S2s, U1s, U2s, use_gpu=False
+        grad_output_cpu,
+        input_tensor,
+        S1s,
+        S2s,
+        U1s,
+        U2s,
+        has_bias=bias is not None,
+        use_gpu=False,
     )
+
+    i_gpu = input_tensor.to("cuda")
+    grad_output = grad_output_cpu.to("cuda")
+
+    if not contiguous:
+        B, in_feats = i_gpu.shape
+
+        tmp = torch.zeros(B, 2 * in_feats, dtype=dtype, device=i_gpu.device)
+        tmp[:, ::2] = i_gpu
+        i_gpu = tmp[:, ::2]
+        assert i_gpu.shape == (B, S1s.shape[1])
+        assert not i_gpu.is_contiguous()
+        # do same for grad_output
+        B, G = grad_output.shape
+        tmpg = torch.zeros(B, 2 * G, dtype=grad_output.dtype, device=grad_output.device)
+        tmpg[:, ::2] = grad_output
+        grad_output = tmpg[:, ::2]
+        assert grad_output.shape == grad_output_cpu.shape
+        assert not grad_output.is_contiguous()
+
     grads_gpu = sketched_linear_backward(
-        grad_output_cpu.to("cuda"),
+        grad_output,
         i_gpu,
         S1s_gpu,
         S2s_gpu,
@@ -187,10 +248,12 @@ def test_backward_gpu_vs_cpu(test_tensors, dtype):
         has_bias=bias is not None,
         use_gpu=True,
     )
-    for g_cpu, g_gpu in zip(grads_cpu, grads_gpu):
+    tols = get_dtype_tols(dtype)
+    atol, rtol = tols["atol"], tols["rtol"]
+    for i, (g_cpu, g_gpu) in enumerate(zip(grads_cpu, grads_gpu)):
         assert torch.allclose(
-            g_cpu, g_gpu.cpu(), atol=1, rtol=1
-        ), "Backward pass differs between CPU and GPU."
+            g_cpu, g_gpu.cpu(), atol=atol, rtol=rtol
+        ), f"Gradient mismatch at index {i}."
 
 
 def test_backward_vs_autograd(test_tensors, dtype):
@@ -224,7 +287,7 @@ def test_backward_vs_autograd(test_tensors, dtype):
     for i, (c, a) in enumerate(zip(custom_grads, autograd_grads)):
         assert c.shape == a.shape, f"Gradient shape mismatch at index {i}."
         assert torch.allclose(
-            a, c, atol=1, rtol=1
+            a, c, **get_dtype_tols(dtype)
         ), f"Gradient values mismatch at index {i}."
 
 
