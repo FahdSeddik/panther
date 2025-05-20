@@ -224,7 +224,7 @@ def test_backward_vs_autograd(test_tensors, dtype):
     for i, (c, a) in enumerate(zip(custom_grads, autograd_grads)):
         assert c.shape == a.shape, f"Gradient shape mismatch at index {i}."
         assert torch.allclose(
-            c, a, atol=1, rtol=1
+            a, c, atol=1, rtol=1
         ), f"Gradient values mismatch at index {i}."
 
 
