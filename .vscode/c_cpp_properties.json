@@ -4,10 +4,9 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:\\Users\\${env:USERNAME}\\AppData\\Local\\Programs\\Python\\Python312\\include",
-                "C:\\Program Files\\Python312\\include",
-                "C:\\Python312\\include",
-                "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.8\\include",
+                "C:/Users/${env:USERNAME}/AppData/Local/Programs/Python/Python312/include",
+                "C:/Program Files/Python312/include",
+                "C:/Python312/include"
             ],
             "defines": [
                 "_DEBUG",
