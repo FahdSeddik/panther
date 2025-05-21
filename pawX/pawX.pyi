@@ -7,6 +7,11 @@ class DistributionFamily(Enum):
     Gaussian = "Gaussian"
     Uniform = "Uniform"
 
+class Axis(Enum):
+    Long = "Long"
+    Short = "Short"
+
+def test_tensor_accessor(tensor: torch.Tensor) -> None: ...
 def scaled_sign_sketch(
     m: int,
     n: int,
@@ -44,6 +49,14 @@ def dense_sketch_operator(
     m: int,
     n: int,
     distribution: DistributionFamily,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def sparse_sketch_operator(
+    m: int,
+    n: int,
+    vec_nnz: int,
+    axis: Axis,
     device: Optional[torch.device] = None,
     dtype: Optional[torch.dtype] = None,
 ) -> torch.Tensor: ...

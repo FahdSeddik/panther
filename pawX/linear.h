@@ -2,6 +2,14 @@
 
 #include <torch/extension.h>
 
+#define AT_DISPATCH_CASE_FLOAT_AND_HALF(...)             \
+    AT_DISPATCH_CASE(at::ScalarType::Float, __VA_ARGS__) \
+    AT_DISPATCH_CASE(at::ScalarType::Half, __VA_ARGS__)
+
+#define AT_DISPATCH_FLOAT_AND_HALF(TYPE, NAME, ...) \
+    AT_DISPATCH_SWITCH(                             \
+        TYPE, NAME, AT_DISPATCH_CASE_FLOAT_AND_HALF(__VA_ARGS__))
+
 torch::Tensor sketched_linear_forward(
     const torch::Tensor& input,
     const torch::Tensor& S1s,
@@ -54,3 +62,5 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     const bool has_bias = false);
+
+void test_tensor_accessor(const torch::Tensor& tensor);
