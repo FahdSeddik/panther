@@ -8,10 +8,12 @@ def apply_spre(
     qbar: torch.Tensor,
     kbar: torch.Tensor,
 ):
-    pass
+    qhat = (qbar * query.unsqueeze(-1)).sum(dim=-2)
+    khat = (kbar * key.unsqueeze(-1)).sum(dim=-2)
+    return qhat, khat
 
 
-class SRPE(nn.Module):
+class sinSRPE(nn.Module):
     freqs: torch.nn.Parameter
     phases: torch.nn.Parameter
     scales: torch.nn.Parameter
@@ -26,7 +28,7 @@ class SRPE(nn.Module):
         device=None,
         dtype=None,
     ):
-        super(SRPE, self).__init__()
+        super(sinSRPE, self).__init__()
         self.num_heads = num_heads
         self.perHead_in = perHead_in
         self.num_realizations = num_realizations

@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
 from panther.nn.pawXimpl import create_projection_matrix, rmha_forward
+from panther.nn.srpe import sinSRPE
 
 
 def verify_rmha_inputs(
@@ -57,6 +58,7 @@ class RandMultiHeadAttention(nn.Module):
         bias: bool = True,
         kernel_fn: str = "softmax",
         iscausal: bool = False,
+        SRPE: sinSRPE | None = None,
         device=None,
         dtype=None,
     ) -> None:
@@ -82,11 +84,15 @@ class RandMultiHeadAttention(nn.Module):
             self.b0 = nn.Parameter(torch.empty(embed_dim, **factory_kwargs))
         else:
             self.bq = self.bk = self.bv = self.b0 = None
-
+        self.srpe = SRPE
         self.register_buffer(
             "projection_matrix",
             create_projection_matrix(
-                num_random_features, embed_dim // num_heads, **factory_kwargs
+                num_random_features,
+                embed_dim // num_heads
+                if self.srpe is None
+                else self.srpe.num_realizations,
+                **factory_kwargs,
             ),
         )
 
