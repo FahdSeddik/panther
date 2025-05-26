@@ -8,6 +8,7 @@ def apply_spre(
     qbar: torch.Tensor,
     kbar: torch.Tensor,
 ):
+    print(qbar.shape, query.shape)
     qhat = (qbar * query.unsqueeze(-1)).sum(dim=-2)
     khat = (kbar * key.unsqueeze(-1)).sum(dim=-2)
     return qhat, khat
@@ -80,17 +81,20 @@ class sinSRPE(nn.Module):
         )
         freqs = torch.sigmoid(self.freqs) / 2
         freqs = freqs.unsqueeze(-2)
-        phases_q = 2 * torch.pi * indices * freqs + self.phases
-        omega_q = torch.stack(
+
+        phases_q = 2 * torch.pi * indices * freqs + self.phases.unsqueeze(-2)
+        omega_q = torch.cat(
             [torch.cos(phases_q), torch.sin(phases_q)], dim=-1
         ).unsqueeze(0)
-        print(omega_q.shape)
         phases_k = 2 * torch.pi * indices * freqs
-        omega_k = torch.stack(
+        omega_k = torch.cat(
             [torch.cos(phases_k), torch.sin(phases_k)], dim=-1
         ).unsqueeze(0)
         scales = nn.functional.softplus(self.scales)
+
+        scales = torch.cat([scales, scales], dim=-1)
         scales = scales.unsqueeze(0).unsqueeze(-1)
+
         z = self.z * scales
         qbar = torch.matmul(omega_q, z)
         kbar = torch.matmul(omega_k, z)
@@ -100,3 +104,13 @@ class sinSRPE(nn.Module):
         qbar = qbar / scale
         kbar = kbar / scale
         return qbar, kbar
+
+
+if __name__ == "__main__":
+    srpe = sinSRPE(8, 64, 16)
+    qbar, kbar = srpe(10)
+    print(qbar.shape, kbar.shape)
+    query = torch.randn(2, 10, 1, 64)
+    key = torch.randn(2, 10, 1, 64)
+    qhat, khat = apply_spre(query, key, qbar, kbar)
+    print(qhat.shape, khat.shape)
