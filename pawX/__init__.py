@@ -15,6 +15,7 @@ from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT
     randomized_svd,
     rmha_forward,
     scaled_sign_sketch,
+    sinSRPE,
     sketch_tensor,
     sketched_conv2d_backward,
     sketched_conv2d_forward,
@@ -44,4 +45,5 @@ __all__ = [
     "test_tensor_accessor",
     "sparse_sketch_operator",
     "Axis",
+    "sinSRPE",
 ]

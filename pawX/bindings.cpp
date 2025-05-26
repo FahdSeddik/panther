@@ -4,8 +4,14 @@
 #include "linear.h"
 #include "rsvd.h"
 #include "skops.h"
+#include "spre.h"
+#include <torch/extension.h>
+// PYBIND11_DECLARE_HOLDER_TYPE(T, SmartPtr<T>)
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    py::module::import("torch");
+    py::module::import("torch.nn");
+
     m.def("scaled_sign_sketch", &scaled_sign_sketch,
           py::arg("m"), py::arg("n"),
           py::arg("device") = py::none(), py::arg("dtype") = py::none());
@@ -81,7 +87,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("attention_mask") = c10::nullopt,
           py::arg("bq") = c10::nullopt, py::arg("bk") = c10::nullopt,
           py::arg("bv") = c10::nullopt, py::arg("b0") = c10::nullopt,
-          py::arg("projection_matrix") = c10::nullopt);
+          py::arg("projection_matrix") = c10::nullopt,
+          py::arg("spre_model") = nullptr);
 
     m.def("create_projection_matrix", &create_projection_matrix,
           py::arg("m"), py::arg("d"), py::arg("seed") = 42, py::arg("scaling") = false,
@@ -100,4 +107,51 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
     m.def("test_tensor_accessor", &test_tensor_accessor,
           py::arg("tensor"));
+    
+    py::class_<torch::nn::Module, std::shared_ptr<torch::nn::Module>>(m, "Module");
+
+    py::class_<sinSRPEImpl,                 /* C++ type */
+           torch::nn::Module,           /* base class */
+           std::shared_ptr<sinSRPEImpl> /* holder */> (m, "sinSRPE")
+    // Register the parameters
+    .def_readwrite("freqs", &sinSRPEImpl::freqs)
+    .def_readwrite("phases", &sinSRPEImpl::phases)
+    .def_readwrite("scales", &sinSRPEImpl::scales)
+    .def_readwrite("z", &sinSRPEImpl::z)
+    .def_readwrite("num_realizations", &sinSRPEImpl::num_realizations)
+    .def_readwrite("num_heads", &sinSRPEImpl::num_heads)
+    .def_readwrite("perHead_in", &sinSRPEImpl::perHead_in)
+    .def_readwrite("sines", &sinSRPEImpl::sines)
+    .def_readwrite("device", &sinSRPEImpl::device)
+    .def_readwrite("dtype", &sinSRPEImpl::dtype)
+
+    // Register the constructor with parameters
+    .def(py::init<int64_t, int64_t, int64_t, int64_t, torch::Device, torch::Dtype>(),
+       py::arg("num_heads"),
+       py::arg("perHead_in"),
+       py::arg("sines"),
+       py::arg("num_realizations"),
+       py::arg("device"),
+       py::arg("dtype"))
+    // an overload that omits device and dtype, filling in defaults in C++:
+    .def(py::init(
+      [](int64_t num_heads,
+         int64_t perHead_in,
+         int64_t sines,
+         int64_t num_realizations) {
+        return std::make_shared<sinSRPEImpl>(
+            num_heads,
+            perHead_in,
+            sines,
+            num_realizations,
+            torch::kCPU,
+            torch::kFloat);
+      }),
+       py::arg("num_heads"),
+       py::arg("perHead_in"),
+       py::arg("sines"),
+       py::arg("num_realizations") = 256)
+
+    .def("forward", &sinSRPEImpl::forward);
+
 }
