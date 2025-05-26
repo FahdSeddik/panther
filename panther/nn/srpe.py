@@ -69,6 +69,7 @@ class sinSRPE(nn.Module):
                 )
             ),
         )
+
         self.scales.data /= torch.sqrt(self.scales.norm(dim=-1, keepdim=True)) / 2.0
         self.freqs.data -= 4.0
 
@@ -107,10 +108,14 @@ class sinSRPE(nn.Module):
 
 
 if __name__ == "__main__":
-    srpe = sinSRPE(8, 64, 16)
-    qbar, kbar = srpe(10)
-    print(qbar.shape, kbar.shape)
-    query = torch.randn(2, 10, 1, 64)
-    key = torch.randn(2, 10, 1, 64)
+    length = 10
+    num_heads = 8
+    perHead_in = 128
+    batch_size = 2
+    srpe = sinSRPE(num_heads, perHead_in, 16)
+    qbar, kbar = srpe(length)
+
+    query = torch.randn(batch_size, length, num_heads, perHead_in)
+    key = torch.randn(batch_size, length, num_heads, perHead_in)
     qhat, khat = apply_spre(query, key, qbar, kbar)
     print(qhat.shape, khat.shape)
