@@ -2,6 +2,8 @@
 
 #include <torch/extension.h>
 
+class sinSRPEImpl;
+
 torch::Tensor create_projection_matrix(
     int m, int d, int seed = 42, bool scaling = false,
     c10::optional<torch::ScalarType> dtype = c10::nullopt,
@@ -45,4 +47,6 @@ torch::Tensor rmha_forward(
     c10::optional<torch::Tensor> bk = c10::nullopt,
     c10::optional<torch::Tensor> bv = c10::nullopt,
     c10::optional<torch::Tensor> b0 = c10::nullopt,
-    c10::optional<torch::Tensor> projection_matrix = c10::nullopt);
+    c10::optional<torch::Tensor> projection_matrix = c10::nullopt,
+    std::shared_ptr<sinSRPEImpl> spre_model = nullptr
+);

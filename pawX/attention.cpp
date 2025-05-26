@@ -1,4 +1,5 @@
 #include "attention.h"
+#include "spre.h"
 
 #include <c10/util/Optional.h>
 
@@ -400,7 +401,9 @@ torch::Tensor rmha_forward(
     c10::optional<torch::Tensor> bk,
     c10::optional<torch::Tensor> bv,
     c10::optional<torch::Tensor> b0,
-    c10::optional<torch::Tensor> projection_matrix)
+    c10::optional<torch::Tensor> projection_matrix,
+    std::shared_ptr<sinSRPEImpl> spre_model
+)
 {
     if (attention_mask.has_value())
     {
@@ -420,6 +423,14 @@ torch::Tensor rmha_forward(
     auto q = q_proj.view({query.size(0), query.size(1), num_heads, head_dim});
     auto k = k_proj.view({key.size(0), key.size(1), num_heads, head_dim});
     auto v = v_proj.view({value.size(0), value.size(1), num_heads, head_dim});
+
+    if (spre_model) {
+        TORCH_CHECK(q.size(1) == k.size(1),
+                    "Query and Key must be same length (i.e. self-attention) to use SPRE");
+        auto [qbar, kbar] = spre_model->forward(q.size(1));
+        q = (qbar * q.unsqueeze(-1)).sum(-2);
+        k = (kbar * k.unsqueeze(-1)).sum(-2);
+    }
 
     // Apply FAVOR attention
     auto attn_out = favor_attention(q, k, v, kernel_fn, attention_mask, causal, projection_matrix);

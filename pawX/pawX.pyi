@@ -117,6 +117,7 @@ def rmha_forward(
     bv: Optional[torch.Tensor] = None,
     b0: Optional[torch.Tensor] = None,
     projection_matrix: Optional[torch.Tensor] = None,
+    spre_model: Optional["sinSRPE"] = None,
 ) -> torch.Tensor: ...
 def create_projection_matrix(
     m: int,
@@ -147,3 +148,15 @@ def sketched_conv2d_backward(
     in_shape: Tuple[int, int],
     grad_out: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
+
+class sinSRPE(torch.nn.Module):
+    def __init__(
+        self,
+        num_heads: int,
+        perHead_in: int,
+        sines: int,
+        num_realizations: int = 256,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None: ...
+    def forward(self, x: int) -> torch.Tensor: ...

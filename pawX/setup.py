@@ -119,6 +119,7 @@ setup(
                 "attention.cpp",
                 "conv2d.cpp",
                 "timing.cu",
+                "spre.cpp",
                 *cuda_file,
             ],
             include_dirs=config["include_dirs"],

@@ -2,17 +2,38 @@
 
 #include <torch/extension.h>
 
-class Spre : public torch::
-{
-private:
-    int num_heads;
-    int perHead_in;
-    int sines;
-    int num_realizations;
+#include <torch/torch.h>
+#include <cmath>
+#include <iostream>
 
-public:
-    Spre(int num_heads, int perHead_in, int sines, int num_realizations = 256)
-        : num_heads(num_heads), perHead_in(perHead_in), sines(sines), num_realizations(num_realizations)
-    {
-    }
-}
+struct sinSRPEImpl : torch::nn::Module{
+    // Parameters
+    torch::Tensor freqs;
+    torch::Tensor phases;
+    torch::Tensor scales;
+    torch::Tensor z;
+
+    // Hyperparameters
+    int64_t num_heads;
+    int64_t perHead_in;
+    int64_t sines;
+    int64_t num_realizations;
+    torch::Device device;
+    torch::Dtype dtype;
+
+    sinSRPEImpl(int64_t num_heads_,
+            int64_t perHead_in_,
+            int64_t sines_,
+            int64_t num_realizations_ = 256,
+            torch::Device device_ = torch::kCPU,
+            torch::Dtype dtype_ = torch::kFloat);
+
+    // Forward returns a pair of Tensors: qbar and kbar
+    std::pair<torch::Tensor, torch::Tensor> forward(int64_t len);
+};
+
+TORCH_MODULE(sinSRPE);
+
+// Usage example (in some function):
+// auto model = std::make_shared<sinSRPE>(8, 64, 16, 256, torch::kCUDA, torch::kFloat);
+// auto [qbar, kbar] = model->forward(128);

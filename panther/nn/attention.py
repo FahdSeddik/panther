@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
-from panther.nn.pawXimpl import create_projection_matrix, rmha_forward
-from panther.nn.srpe import sinSRPE
+from panther.nn.pawXimpl import create_projection_matrix, rmha_forward, sinSRPE
 
 
 def verify_rmha_inputs(
@@ -141,6 +140,7 @@ class RandMultiHeadAttention(nn.Module):
             bv=self.bv,
             b0=self.b0,
             projection_matrix=self.projection_matrix,
+            spre_model=self.srpe,
         ), None
 
 
