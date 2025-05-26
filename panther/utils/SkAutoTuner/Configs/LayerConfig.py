@@ -1,20 +1,24 @@
-from typing import Dict, List, Union, Any
+from typing import Dict, List, Union
+
 
 class LayerConfig:
     """
     Configuration object for a single layer or group of layers.
     Contains the layer names, parameters to tune and whether these layers should be tuned separately.
     """
+
     def __init__(
-        self, 
-        layer_names: Union[str, List[str], Dict[str, Union[str, List[str], int, List[int]]]], 
-        params: Dict[str, List], 
+        self,
+        layer_names: Union[
+            str, List[str], Dict[str, Union[str, List[str], int, List[int]]]
+        ],
+        params: Dict[str, List],
         separate: bool = True,
         copy_weights: bool = True,
     ):
         """
         Initialize a layer configuration.
-        
+
         Args:
             layer_names: Layer selector, can be:
                 - A string: Regex pattern or substring (e.g., "encoder", "layer1.*conv")
@@ -34,6 +38,6 @@ class LayerConfig:
         self.params = params
         self.separate = separate
         self.copy_weights = copy_weights
-    
+
     def __repr__(self):
         return f"LayerConfig(layer_names={self.layer_names}, params={self.params}, separate={self.separate}, copy_weights={self.copy_weights})"

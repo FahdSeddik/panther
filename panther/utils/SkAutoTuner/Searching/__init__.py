@@ -8,14 +8,24 @@ This module provides different search algorithms that can be used for hyperparam
 - BayesianOptimization: Advanced optimization using Gaussian Processes
 """
 
-from .SearchAlgorithm import SearchAlgorithm
-from .RandomSearch import RandomSearch
-from .GridSearch import GridSearch
 from .BayesianOptimization import BayesianOptimization
+from .EvolutionaryAlgorithm import EvolutionaryAlgorithm
+from .GridSearch import GridSearch
+from .Hyperband import Hyperband
+from .ParticleSwarmOptimization import ParticleSwarmOptimization
+from .RandomSearch import RandomSearch
+from .SearchAlgorithm import SearchAlgorithm
+from .SimulatedAnnealing import SimulatedAnnealing
+from .TreeParzenEstimator import TreeParzenEstimator
 
 __all__ = [
-    'SearchAlgorithm',
-    'RandomSearch',
-    'GridSearch',
-    'BayesianOptimization',
+    "SearchAlgorithm",
+    "RandomSearch",
+    "GridSearch",
+    "BayesianOptimization",
+    "SimulatedAnnealing",
+    "Hyperband",
+    "EvolutionaryAlgorithm",
+    "ParticleSwarmOptimization",
+    "TreeParzenEstimator",
 ]
