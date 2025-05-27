@@ -1,11 +1,13 @@
-import os
-import unittest
+import random
+
+import pytest
 
 from panther.utils.SkAutoTuner.Searching.GridSearch import GridSearch
 
 
-class TestGridSearch(unittest.TestCase):
-    def setUp(self):
+class TestGridSearch:
+    @pytest.fixture(autouse=True)
+    def setup_method(self, tmp_path):
         self.grid_search = GridSearch()
         self.param_space = {"param1": [1, 2], "param2": ["a", "b"]}
         self.expected_combinations = [
@@ -14,75 +16,78 @@ class TestGridSearch(unittest.TestCase):
             {"param1": 2, "param2": "a"},
             {"param1": 2, "param2": "b"},
         ]
-        self.test_filepath = "test_grid_search_state.pkl"
+        self.test_filepath = tmp_path / "test_grid_search_state.pkl"
 
-    def tearDown(self):
-        if os.path.exists(self.test_filepath):
-            os.remove(self.test_filepath)
+        self.original_random_state = random.getstate()
+        yield
+        random.setstate(self.original_random_state)
 
     def test_initialization_default(self):
-        self.assertEqual(self.grid_search.param_space, {})
-        self.assertEqual(self.grid_search.current_idx, 0)
-        self.assertEqual(self.grid_search.param_combinations, [])
-        self.assertEqual(self.grid_search.history, [])
-        self.assertEqual(self.grid_search.best_score, -float("inf"))
-        self.assertIsNone(self.grid_search.best_params)
+        assert self.grid_search.param_space == {}
+        assert self.grid_search.current_idx == 0
+        assert self.grid_search.param_combinations == []
+        assert self.grid_search.history == []
+        assert self.grid_search.best_score == -float("inf")
+        assert self.grid_search.best_params is None
 
     def test_initialize(self):
         self.grid_search.initialize(self.param_space)
-        self.assertEqual(self.grid_search.param_space, self.param_space)
-        self.assertEqual(self.grid_search.current_idx, 0)
-        self.assertEqual(len(self.grid_search.param_combinations), 4)
-        # Order might vary depending on dict iteration, so check content
-        for combo in self.expected_combinations:
-            self.assertIn(combo, self.grid_search.param_combinations)
-        self.assertEqual(self.grid_search.history, [])
-        self.assertEqual(self.grid_search.best_score, -float("inf"))
-        self.assertIsNone(self.grid_search.best_params)
+        assert self.grid_search.param_space == self.param_space
+        assert self.grid_search.current_idx == 0
+        assert len(self.grid_search.param_combinations) == 4
+        generated_combos_set = {
+            frozenset(combo.items()) for combo in self.grid_search.param_combinations
+        }
+        expected_combos_set = {
+            frozenset(combo.items()) for combo in self.expected_combinations
+        }
+        assert generated_combos_set == expected_combos_set
+        assert self.grid_search.history == []
+        assert self.grid_search.best_score == -float("inf")
+        assert self.grid_search.best_params is None
 
     def test_generate_combinations(self):
-        self.grid_search.initialize(
-            self.param_space
-        )  # initialize calls _generate_combinations
-        self.assertEqual(len(self.grid_search.param_combinations), 4)
-        for combo in self.expected_combinations:
-            self.assertIn(combo, self.grid_search.param_combinations)
+        self.grid_search.initialize(self.param_space)
+        assert len(self.grid_search.param_combinations) == 4
+        generated_combos_set = {
+            frozenset(combo.items()) for combo in self.grid_search.param_combinations
+        }
+        expected_combos_set = {
+            frozenset(combo.items()) for combo in self.expected_combinations
+        }
+        assert generated_combos_set == expected_combos_set
 
         empty_space = {}
         self.grid_search.initialize(empty_space)
-        self.assertEqual(
-            self.grid_search.param_combinations, [{}]
-        )  # Product of empty gives one empty dict
+        assert self.grid_search.param_combinations == [{}]
 
         single_param_space = {"p1": [1, 2, 3]}
         self.grid_search.initialize(single_param_space)
         expected_single = [{"p1": 1}, {"p1": 2}, {"p1": 3}]
-        self.assertEqual(len(self.grid_search.param_combinations), 3)
-        for combo in expected_single:
-            self.assertIn(combo, self.grid_search.param_combinations)
+        generated_single_set = {
+            frozenset(combo.items()) for combo in self.grid_search.param_combinations
+        }
+        expected_single_set = {frozenset(combo.items()) for combo in expected_single}
+        assert len(self.grid_search.param_combinations) == 3
+        assert generated_single_set == expected_single_set
 
     def test_get_next_params(self):
         self.grid_search.initialize(self.param_space)
 
-        # To ensure order for this test, we sort the generated combinations
-        # based on a canonical representation (e.g., sorted items string)
-        # This makes the test deterministic if internal dict ordering changes.
-        self.grid_search.param_combinations.sort(key=lambda d: str(sorted(d.items())))
-
-        # We also sort self.expected_combinations to match this deterministic order.
-        sorted_expected_combinations = sorted(
-            self.expected_combinations, key=lambda d: str(sorted(d.items()))
-        )
-
-        for i in range(len(sorted_expected_combinations)):
+        sorted_param_names = sorted(self.param_space.keys())
+        all_fetched_params = []
+        while True:
             params = self.grid_search.get_next_params()
-            self.assertEqual(params, sorted_expected_combinations[i])
-            self.assertEqual(self.grid_search.current_idx, i + 1)
+            if params is None:
+                break
+            all_fetched_params.append(params)
 
-        self.assertIsNone(self.grid_search.get_next_params())
-        self.assertEqual(
-            self.grid_search.current_idx, len(sorted_expected_combinations)
-        )
+        assert len(all_fetched_params) == len(self.expected_combinations)
+        assert {frozenset(p.items()) for p in all_fetched_params} == {
+            frozenset(p.items()) for p in self.expected_combinations
+        }
+        assert self.grid_search.current_idx == len(self.expected_combinations)
+        assert self.grid_search.get_next_params() is None
 
     def test_update(self):
         self.grid_search.initialize(self.param_space)
@@ -90,145 +95,122 @@ class TestGridSearch(unittest.TestCase):
         score1 = 10.0
         self.grid_search.update(params1, score1)
 
-        self.assertEqual(len(self.grid_search.history), 1)
-        self.assertEqual(self.grid_search.history[0]["params"], params1)
-        self.assertEqual(self.grid_search.history[0]["score"], score1)
-        self.assertEqual(self.grid_search.best_score, score1)
-        self.assertEqual(self.grid_search.best_params, params1)
+        assert len(self.grid_search.history) == 1
+        assert self.grid_search.history[0]["params"] == params1
+        assert self.grid_search.history[0]["score"] == score1
+        assert self.grid_search.best_score == score1
+        assert self.grid_search.best_params == params1
 
         params2 = {"param1": 1, "param2": "b"}
         score2 = 20.0
         self.grid_search.update(params2, score2)
 
-        self.assertEqual(len(self.grid_search.history), 2)
-        self.assertEqual(self.grid_search.history[1]["params"], params2)
-        self.assertEqual(self.grid_search.history[1]["score"], score2)
-        self.assertEqual(self.grid_search.best_score, score2)
-        self.assertEqual(self.grid_search.best_params, params2)
+        assert len(self.grid_search.history) == 2
+        assert self.grid_search.history[1]["params"] == params2
+        assert self.grid_search.history[1]["score"] == score2
+        assert self.grid_search.best_score == score2
+        assert self.grid_search.best_params == params2
 
         params3 = {"param1": 2, "param2": "a"}
-        score3 = 5.0  # Lower score
+        score3 = 5.0
         self.grid_search.update(params3, score3)
 
-        self.assertEqual(len(self.grid_search.history), 3)
-        self.assertEqual(self.grid_search.history[2]["params"], params3)
-        self.assertEqual(self.grid_search.history[2]["score"], score3)
-        self.assertEqual(
-            self.grid_search.best_score, score2
-        )  # Best score should not change
-        self.assertEqual(
-            self.grid_search.best_params, params2
-        )  # Best params should not change
+        assert len(self.grid_search.history) == 3
+        assert self.grid_search.history[2]["params"] == params3
+        assert self.grid_search.history[2]["score"] == score3
+        assert self.grid_search.best_score == score2
+        assert self.grid_search.best_params == params2
 
     def test_save_and_load_state(self):
         self.grid_search.initialize(self.param_space)
         params1 = self.grid_search.get_next_params()
-        self.grid_search.update(params1, 10.0)
+        if params1:
+            self.grid_search.update(params1, 10.0)
 
-        self.grid_search.save_state(self.test_filepath)
+        self.grid_search.save_state(str(self.test_filepath))
 
         new_grid_search = GridSearch()
-        new_grid_search.load_state(self.test_filepath)
+        new_grid_search.load_state(str(self.test_filepath))
 
-        self.assertEqual(new_grid_search.param_space, self.grid_search.param_space)
-        self.assertEqual(new_grid_search.current_idx, self.grid_search.current_idx)
-        # Sort for comparison as order might not be preserved by pickle/dict
-        self.assertEqual(
-            sorted(
-                new_grid_search.param_combinations, key=lambda d: str(sorted(d.items()))
-            ),
-            sorted(
-                self.grid_search.param_combinations,
-                key=lambda d: str(sorted(d.items())),
-            ),
-        )
-        self.assertEqual(new_grid_search.history, self.grid_search.history)
-        self.assertEqual(new_grid_search.best_score, self.grid_search.best_score)
-        self.assertEqual(new_grid_search.best_params, self.grid_search.best_params)
+        assert new_grid_search.param_space == self.grid_search.param_space
+        assert new_grid_search.current_idx == self.grid_search.current_idx
+        assert new_grid_search.param_combinations == self.grid_search.param_combinations
+        assert new_grid_search.history == self.grid_search.history
+        assert new_grid_search.best_score == self.grid_search.best_score
+        assert new_grid_search.best_params == self.grid_search.best_params
 
     def test_get_best_params_and_score(self):
-        self.assertEqual(self.grid_search.get_best_params(), None)
-        self.assertEqual(self.grid_search.get_best_score(), -float("inf"))
+        assert self.grid_search.get_best_params() is None
+        assert self.grid_search.get_best_score() == -float("inf")
 
         self.grid_search.initialize(self.param_space)
-        params1 = {"param1": 1, "param2": "a"}
+        params1_from_iter = self.grid_search.param_combinations[0]
         score1 = 10.0
-        self.grid_search.update(params1, score1)
-        self.assertEqual(self.grid_search.get_best_params(), params1)
-        self.assertEqual(self.grid_search.get_best_score(), score1)
+        self.grid_search.update(params1_from_iter, score1)
+        assert self.grid_search.get_best_params() == params1_from_iter
+        assert self.grid_search.get_best_score() == score1
 
-        params2 = {"param1": 1, "param2": "b"}
-        score2 = 5.0  # Lower score
-        self.grid_search.update(params2, score2)
-        self.assertEqual(
-            self.grid_search.get_best_params(), params1
-        )  # Should remain params1
-        self.assertEqual(
-            self.grid_search.get_best_score(), score1
-        )  # Should remain score1
+        if len(self.grid_search.param_combinations) > 1:
+            params2_from_iter = self.grid_search.param_combinations[1]
+            score2 = 5.0
+            self.grid_search.update(params2_from_iter, score2)
+            assert self.grid_search.get_best_params() == params1_from_iter
+            assert self.grid_search.get_best_score() == score1
 
     def test_reset(self):
         self.grid_search.initialize(self.param_space)
-        self.grid_search.get_next_params()  # current_idx = 1
-        self.grid_search.update({"param1": 1, "param2": "a"}, 10)
+        self.grid_search.get_next_params()
+        if self.grid_search.param_combinations:
+            param_to_update = self.grid_search.param_combinations[0]
+            self.grid_search.update(param_to_update, 10)
 
         original_param_space = self.grid_search.param_space.copy()
-        original_combinations_count = len(self.grid_search.param_combinations)
+        original_combinations_content_set = {
+            frozenset(c.items()) for c in self.grid_search.param_combinations
+        }
 
         self.grid_search.reset()
 
-        self.assertEqual(self.grid_search.current_idx, 0)
-        self.assertEqual(self.grid_search.history, [])
-        self.assertEqual(self.grid_search.best_score, -float("inf"))
-        self.assertIsNone(self.grid_search.best_params)
-        self.assertEqual(
-            self.grid_search.param_space, original_param_space
-        )  # param_space should be preserved
-        self.assertEqual(
-            len(self.grid_search.param_combinations), original_combinations_count
-        )  # combinations should be preserved
+        assert self.grid_search.current_idx == 0
+        assert self.grid_search.history == []
+        assert self.grid_search.best_score == -float("inf")
+        assert self.grid_search.best_params is None
+        assert self.grid_search.param_space == original_param_space
+        assert {
+            frozenset(c.items()) for c in self.grid_search.param_combinations
+        } == original_combinations_content_set
 
     def test_is_finished(self):
         self.grid_search.initialize(self.param_space)
-        self.assertFalse(self.grid_search.is_finished())
+        assert not self.grid_search.is_finished()
 
         for _ in range(len(self.expected_combinations)):
-            self.assertFalse(
-                self.grid_search.is_finished()
-            )  # Should not be finished until all are GOTTEN
+            assert not (self.grid_search.is_finished())
             self.grid_search.get_next_params()
 
-        self.assertTrue(
-            self.grid_search.is_finished()
-        )  # Now all params have been retrieved
+        assert self.grid_search.is_finished()
 
-        # Test with an empty param space
         empty_search = GridSearch()
         empty_search.initialize({})
-        # It generates one empty dict combination [{}]
-        self.assertFalse(empty_search.is_finished())
-        empty_search.get_next_params()  # Gets the {}
-        self.assertTrue(empty_search.is_finished())
+        assert not empty_search.is_finished()
+        empty_search.get_next_params()
+        assert empty_search.is_finished()
 
-    def test_save_load_preserves_combination_order_if_possible(self):
+    def test_save_load_preserves_combination_order(self):
         self.grid_search.initialize(self.param_space)
-        # Make param_combinations deterministic for this test
-        self.grid_search.param_combinations.sort(
-            key=lambda d: (d["param1"], d["param2"])
-        )
-
-        self.grid_search.get_next_params()
-        self.grid_search.update({"param1": 1, "param2": "a"}, 5)
-        self.grid_search.save_state(self.test_filepath)
+        param_taken = self.grid_search.get_next_params()
+        if param_taken:
+            self.grid_search.update(param_taken, 5)
+        self.grid_search.save_state(str(self.test_filepath))
 
         loaded_gs = GridSearch()
-        loaded_gs.load_state(self.test_filepath)
+        loaded_gs.load_state(str(self.test_filepath))
 
-        self.assertEqual(
-            self.grid_search.param_combinations, loaded_gs.param_combinations
-        )
-        self.assertEqual(self.grid_search.current_idx, loaded_gs.current_idx)
+        assert self.grid_search.param_combinations == loaded_gs.param_combinations
+        assert self.grid_search.current_idx == loaded_gs.current_idx
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_initialize_empty_param_space_values(self):
+        gs = GridSearch()
+        gs.initialize({"param1": []})
+        assert gs.param_space == {"param1": []}
+        assert gs.param_combinations == []

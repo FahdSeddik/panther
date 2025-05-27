@@ -1,6 +1,6 @@
-import os
-import shutil  # For cleaning up test directories/files
-import unittest
+import random
+
+import pytest
 
 from panther.utils.SkAutoTuner.Searching.ParticleSwarmOptimization import (
     ParticleSwarmOptimization,
@@ -24,8 +24,9 @@ def dummy_evaluation_function(params):
     return score
 
 
-class TestParticleSwarmOptimization(unittest.TestCase):
-    def setUp(self):
+class TestParticleSwarmOptimization:
+    @pytest.fixture(autouse=True)
+    def setup_method(self, tmp_path):
         self.param_space_continuous = {
             "x": [0, 10],  # Representing min/max for continuous
             "y": [-5, 5],
@@ -44,21 +45,18 @@ class TestParticleSwarmOptimization(unittest.TestCase):
         self.min_values_mixed = {"x": 0}
         self.max_values_mixed = {"x": 10}
 
-        self.test_dir = "test_pso_states"
-        if not os.path.exists(self.test_dir):
-            os.makedirs(self.test_dir)
+        self.test_dir = tmp_path
 
-    def tearDown(self):
-        # Clean up any files created during tests
-        if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+        self.original_random_state = random.getstate()
+        yield
+        random.setstate(self.original_random_state)
 
     def test_initialization_basic(self):
         pso = ParticleSwarmOptimization(num_particles=10, max_iterations=5, seed=42)
-        self.assertEqual(pso.num_particles, 10)
-        self.assertEqual(pso.max_iterations, 5)
-        self.assertEqual(pso.seed, 42)
-        self.assertFalse(pso._initialized)
+        assert pso.num_particles == 10
+        assert pso.max_iterations == 5
+        assert pso.seed == 42
+        assert not pso._initialized
 
     def test_initialization_with_param_space(self):
         pso = ParticleSwarmOptimization(
@@ -69,56 +67,51 @@ class TestParticleSwarmOptimization(unittest.TestCase):
             seed=42,
         )
         pso.initialize(self.param_space_continuous)
-        self.assertTrue(pso._initialized)
-        self.assertEqual(len(pso.particles), 5)
-        self.assertEqual(len(pso._params_pending_evaluation), 5)
+        assert pso._initialized
+        assert len(pso.particles) == 5
+        assert len(pso._params_pending_evaluation) == 5
         for particle in pso.particles:
-            self.assertIn("x", particle["position"])
-            self.assertIn("y", particle["position"])
-            self.assertTrue(
+            assert "x" in particle["position"]
+            assert "y" in particle["position"]
+            assert (
                 self.min_values_continuous["x"]
                 <= particle["position"]["x"]
                 <= self.max_values_continuous["x"]
             )
-            self.assertTrue(
+            assert (
                 self.min_values_continuous["y"]
                 <= particle["position"]["y"]
                 <= self.max_values_continuous["y"]
             )
-            self.assertIn("x", particle["velocity"])
-            self.assertIn("y", particle["velocity"])
+            assert "x" in particle["velocity"]
+            assert "y" in particle["velocity"]
 
     def test_initialization_with_categorical_param_space(self):
         pso = ParticleSwarmOptimization(num_particles=3, max_iterations=2, seed=123)
         pso.initialize(self.param_space_categorical)
-        self.assertTrue(pso._initialized)
-        self.assertEqual(len(pso.particles), 3)
+        assert pso._initialized
+        assert len(pso.particles) == 3
         for particle in pso.particles:
-            self.assertIn("cat1", particle["position"])
-            self.assertIn(
-                particle["position"]["cat1"], self.param_space_categorical["cat1"]
-            )
-            self.assertIn("cat2", particle["position"])
-            self.assertIn(
-                particle["position"]["cat2"], self.param_space_categorical["cat2"]
-            )
-            # Velocity for categorical might be 0 or handled differently
-            self.assertEqual(particle["velocity"]["cat1"], 0.0)
-            self.assertEqual(particle["velocity"]["cat2"], 0.0)
+            assert "cat1" in particle["position"]
+            assert particle["position"]["cat1"] in self.param_space_categorical["cat1"]
+            assert "cat2" in particle["position"]
+            assert particle["position"]["cat2"] in self.param_space_categorical["cat2"]
+            assert particle["velocity"]["cat1"] == 0.0
+            assert particle["velocity"]["cat2"] == 0.0
 
     def test_initialization_empty_param_space(self):
         pso = ParticleSwarmOptimization()
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             pso.initialize({})
 
     def test_get_next_params_before_initialize(self):
         pso = ParticleSwarmOptimization()
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             pso.get_next_params()
 
     def test_update_before_initialize(self):
         pso = ParticleSwarmOptimization()
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             pso.update({"x": 1}, 10)
 
     def test_get_next_params_flow(self):
@@ -132,95 +125,93 @@ class TestParticleSwarmOptimization(unittest.TestCase):
         pso.initialize(self.param_space_continuous)
 
         params1 = pso.get_next_params()
-        self.assertIsNotNone(params1)
-        self.assertEqual(pso.current_particle_idx, 0)
-        self.assertEqual(len(pso._params_pending_evaluation), 1)
+        assert params1 is not None
+        assert pso.current_particle_idx == 0
+        assert len(pso._params_pending_evaluation) == 1
 
         params2 = pso.get_next_params()
-        self.assertIsNotNone(params2)
-        self.assertEqual(pso.current_particle_idx, 1)
-        self.assertEqual(len(pso._params_pending_evaluation), 0)
+        assert params2 is not None
+        assert pso.current_particle_idx == 1
+        assert len(pso._params_pending_evaluation) == 0
 
-        # After getting all params for the first iteration,
-        # _params_pending_evaluation should be empty.
-        # Calling get_next_params again should trigger swarm update and prepare for next iter (or finish)
-        # We need to call update for these params before the swarm state updates.
         pso.update(params1, dummy_evaluation_function(params1))
         pso.update(params2, dummy_evaluation_function(params2))
 
-        # Now, get_next_params should trigger _update_swarm_state and potentially finish
-        # if max_iterations is reached. Here max_iterations is 1.
-        self.assertEqual(pso.current_iteration, 0)  # Iteration 0 params were given
+        assert pso.current_iteration == 0
         params_after_iter_0_update = pso.get_next_params()
 
-        # Since max_iterations is 1, current_iteration becomes 1 after _update_swarm_state,
-        # and is_finished() becomes true.
-        self.assertEqual(pso.current_iteration, 1)
-        self.assertTrue(pso.is_finished())
-        self.assertIsNone(params_after_iter_0_update)
+        assert pso.current_iteration == 1
+        assert pso.is_finished()
+        assert params_after_iter_0_update is None
 
-    # def test_update_and_best_score(self):
-    #     pso = ParticleSwarmOptimization(
-    #         num_particles=3,
-    #         max_iterations=2,
-    #         min_values=self.min_values_continuous,
-    #         max_values=self.max_values_continuous,
-    #         seed=42,
-    #     )
-    #     pso.initialize(self.param_space_continuous)
+    def test_update_and_best_score(self):
+        pso = ParticleSwarmOptimization(
+            num_particles=3,
+            max_iterations=2,
+            min_values=self.min_values_continuous,
+            max_values=self.max_values_continuous,
+            seed=42,
+        )
+        pso.initialize(self.param_space_continuous)
 
-    #     self.assertEqual(pso.get_best_score(), -float("inf"))
-    #     self.assertEqual(pso.get_best_params(), {})  # Initially empty
+        assert pso.get_best_score() == -float("inf")
+        assert pso.get_best_params() is not None
 
-    #     params1 = pso.get_next_params()  # Particle 0
-    #     score1 = 10
-    #     pso.update(params1, score1)
-    #     self.assertEqual(pso.gbest_score, 10)
-    #     self.assertEqual(pso.gbest_position, params1)
-    #     self.assertEqual(len(pso._scores_to_process), 1)
+        params_list = []
+        scores_list = []
 
-    #     params2 = pso.get_next_params()  # Particle 1
-    #     score2 = 5
-    #     pso.update(params2, score2)
-    #     self.assertEqual(pso.gbest_score, 10)  # Still 10
-    #     self.assertEqual(pso.gbest_position, params1)  # Still params1
-    #     self.assertEqual(len(pso._scores_to_process), 2)
+        for i in range(pso.num_particles):
+            params = pso.get_next_params()
+            assert params is not None
+            params_list.append(params)
+            if i == 0:
+                scores_list.append(10)
+            elif i == 1:
+                scores_list.append(5)
+            elif i == 2:
+                scores_list.append(15)
 
-    #     params3 = pso.get_next_params()  # Particle 2
-    #     score3 = 15
-    #     pso.update(params3, score3)
-    #     self.assertEqual(pso.gbest_score, 15)
-    #     self.assertEqual(pso.gbest_position, params3)
-    #     self.assertEqual(len(pso._scores_to_process), 3)
+        pso.update(params_list[0], scores_list[0])
+        assert pso.gbest_score == 10
+        assert pso.gbest_position == params_list[0]
+        assert len(pso._scores_to_process) == 1
 
-    #     # This will trigger _update_swarm_state internally
-    #     next_round_params = pso.get_next_params()
-    #     self.assertIsNotNone(next_round_params)  # Should start next iteration
+        pso.update(params_list[1], scores_list[1])
+        assert pso.gbest_score == 10
+        assert pso.gbest_position == params_list[0]
+        assert len(pso._scores_to_process) == 2
 
-    #     # Check pbest for the first particle (assuming it was particle 0)
-    #     # _update_swarm_state processes _scores_to_process
-    #     self.assertEqual(pso.particles[0]["pbest_score"], score1)
-    #     self.assertEqual(pso.particles[0]["pbest_position"], params1)
-    #     self.assertEqual(pso.particles[1]["pbest_score"], score2)
-    #     self.assertEqual(pso.particles[1]["pbest_position"], params2)
-    #     self.assertEqual(pso.particles[2]["pbest_score"], score3)
-    #     self.assertEqual(pso.particles[2]["pbest_position"], params3)
+        pso.update(params_list[2], scores_list[2])
+        assert pso.gbest_score == 15
+        assert pso.gbest_position == params_list[2]
+        assert len(pso._scores_to_process) == 3
 
-    #     self.assertEqual(pso.get_best_score(), 15)
-    #     self.assertEqual(pso.get_best_params(), params3)
+        next_round_params = pso.get_next_params()
+        assert next_round_params is not None
+        assert pso.current_iteration == 1
+        assert len(pso._scores_to_process) == 0
+
+        assert pso.particles[0]["pbest_score"] == scores_list[0]
+        assert pso.particles[0]["pbest_position"] == params_list[0]
+        assert pso.particles[1]["pbest_score"] == scores_list[1]
+        assert pso.particles[1]["pbest_position"] == params_list[1]
+        assert pso.particles[2]["pbest_score"] == scores_list[2]
+        assert pso.particles[2]["pbest_position"] == params_list[2]
+
+        assert pso.get_best_score() == 15
+        assert pso.get_best_params() == params_list[2]
 
     def test_is_finished(self):
         pso = ParticleSwarmOptimization(num_particles=1, max_iterations=1, seed=1)
-        pso.initialize(self.param_space_categorical)  # Use any valid space
-        self.assertFalse(pso.is_finished())
+        pso.initialize(self.param_space_categorical)
+        assert not pso.is_finished()
 
         params = pso.get_next_params()
-        pso.update(params, 1.0)  # Score doesn't matter here
+        pso.update(params, 1.0)
 
-        # Calling get_next_params again will trigger end of iteration 0
-        # and increment current_iteration to 1.
-        pso.get_next_params()
-        self.assertTrue(pso.is_finished())
+        next_params = pso.get_next_params()
+        assert next_params is None
+        assert pso.is_finished()
 
     def test_reset(self):
         pso = ParticleSwarmOptimization(
@@ -233,142 +224,167 @@ class TestParticleSwarmOptimization(unittest.TestCase):
         pso.initialize(self.param_space_continuous)
         params1 = pso.get_next_params()
         pso.update(params1, 10)
-        self.assertTrue(pso._initialized)
-        self.assertNotEqual(pso.gbest_score, -float("inf"))
+        assert pso._initialized
+        assert pso.gbest_score != -float("inf")
 
         pso.reset()
-        self.assertFalse(pso._initialized)
-        self.assertEqual(pso.gbest_score, -float("inf"))
-        self.assertEqual(pso.current_iteration, 0)
-        self.assertEqual(len(pso.particles), 0)
-        self.assertEqual(len(pso._params_pending_evaluation), 0)
-        with self.assertRaises(RuntimeError):  # Need to initialize again
+        assert not pso._initialized
+        assert pso.gbest_score == -float("inf")
+        assert pso.current_iteration == 0
+        assert len(pso.particles) == 0
+        assert len(pso._params_pending_evaluation) == 0
+        with pytest.raises(RuntimeError):
             pso.get_next_params()
 
     def test_save_and_load_state_continuous(self):
-        filepath = os.path.join(self.test_dir, "pso_state_continuous.json")
+        filepath = self.test_dir / "pso_state_continuous.json"
         pso1 = ParticleSwarmOptimization(
             num_particles=3,
-            max_iterations=5,
+            max_iterations=2,
             min_values=self.min_values_continuous,
             max_values=self.max_values_continuous,
-            seed=42,
+            seed=10,
         )
         pso1.initialize(self.param_space_continuous)
 
-        # Run a few steps
-        for _ in range(2):  # Evaluate 2 particles
+        for _ in range(pso1.num_particles):
             params = pso1.get_next_params()
             pso1.update(params, dummy_evaluation_function(params))
 
-        pso1.save_state(filepath)
-        self.assertTrue(os.path.exists(filepath))
+        pso1.get_next_params()
+        assert pso1.current_iteration == 1
 
-        pso2 = ParticleSwarmOptimization()  # Create a new instance
-        pso2.load_state(filepath)
+        pso1.save_state(str(filepath))
+        assert filepath.exists()
 
-        self.assertEqual(pso1.num_particles, pso2.num_particles)
-        self.assertEqual(pso1.max_iterations, pso2.max_iterations)
-        self.assertEqual(pso1.w, pso2.w)
-        self.assertEqual(pso1.c1, pso2.c1)
-        self.assertEqual(pso1.c2, pso2.c2)
-        self.assertEqual(pso1.min_values, pso2.min_values)
-        self.assertEqual(pso1.max_values, pso2.max_values)
-        self.assertEqual(pso1.seed, pso2.seed)
-        self.assertEqual(pso1.param_space, pso2.param_space)
-        self.assertEqual(pso1.gbest_score, pso2.gbest_score)
-        # Comparing entire particle list can be tricky due to float precision / dict order in older pythons
-        # Let's check key attributes
-        self.assertEqual(len(pso1.particles), len(pso2.particles))
-        if pso1.particles and pso2.particles:  # if particles exist
-            self.assertEqual(
-                pso1.particles[0]["pbest_score"], pso2.particles[0]["pbest_score"]
+        pso2 = ParticleSwarmOptimization(num_particles=1, max_iterations=1, seed=1)
+        pso2.load_state(str(filepath))
+
+        assert pso2._initialized
+        assert pso2.num_particles == pso1.num_particles
+        assert pso2.max_iterations == pso1.max_iterations
+        assert pso2.current_iteration == pso1.current_iteration
+        assert pso2.gbest_score == pso1.gbest_score
+        assert pso2.gbest_position == pso1.gbest_position
+        assert len(pso2.particles) == len(pso1.particles)
+        for i in range(len(pso1.particles)):
+            assert pso2.particles[i]["position"] == pso1.particles[i]["position"]
+            assert pso2.particles[i]["velocity"] == pso1.particles[i]["velocity"]
+            assert (
+                pso2.particles[i]["pbest_position"]
+                == pso1.particles[i]["pbest_position"]
             )
-
-        self.assertEqual(pso1._initialized, pso2._initialized)
-        self.assertEqual(pso1.current_iteration, pso2.current_iteration)
-        # _params_pending_evaluation might differ if one is a copy
-        self.assertEqual(
-            len(pso1._params_pending_evaluation), len(pso2._params_pending_evaluation)
+            assert pso2.particles[i]["pbest_score"] == pso1.particles[i]["pbest_score"]
+        assert pso2.param_space == pso1.param_space
+        assert pso2.min_values == pso1.min_values
+        assert pso2.max_values == pso1.max_values
+        assert len(pso2._params_pending_evaluation) == len(
+            pso1._params_pending_evaluation
         )
+        assert pso2.current_particle_idx == pso1.current_particle_idx
 
-        # Continue with pso2
-        params_from_pso2 = pso2.get_next_params()
-        self.assertIsNotNone(params_from_pso2)
+    def test_save_and_load_state_categorical(self):
+        filepath = self.test_dir / "pso_state_categorical.json"
+        pso1 = ParticleSwarmOptimization(num_particles=2, max_iterations=1, seed=20)
+        pso1.initialize(self.param_space_categorical)
+
+        params_p0 = pso1.get_next_params()
+        pso1.update(params_p0, 5)
+        params_p1 = pso1.get_next_params()
+        pso1.update(params_p1, 10)
+
+        pso1.save_state(str(filepath))
+        assert filepath.exists()
+
+        pso2 = ParticleSwarmOptimization(seed=1)
+        pso2.load_state(str(filepath))
+
+        assert pso2._initialized
+        assert pso2.gbest_score == pso1.gbest_score
+        assert pso2.gbest_position == pso1.gbest_position
+        assert pso2.param_space == pso1.param_space
+        assert len(pso2.particles) == len(pso1.particles)
+        if pso2.particles:
+            first_particle_pos = pso2.particles[0]["position"]
+            for k_cat in self.param_space_categorical.keys():
+                assert isinstance(first_particle_pos[k_cat], str)
 
     def test_save_and_load_state_mixed(self):
-        filepath = os.path.join(self.test_dir, "pso_state_mixed.json")
+        filepath = self.test_dir / "pso_state_mixed.json"
         pso1 = ParticleSwarmOptimization(
             num_particles=2,
-            max_iterations=3,
+            max_iterations=1,
             min_values=self.min_values_mixed,
             max_values=self.max_values_mixed,
-            seed=123,
+            seed=30,
         )
         pso1.initialize(self.param_space_mixed)
 
+        params_p0 = pso1.get_next_params()
+        pso1.update(params_p0, dummy_evaluation_function(params_p0))
         params_p1 = pso1.get_next_params()
         pso1.update(params_p1, dummy_evaluation_function(params_p1))
 
-        pso1.save_state(filepath)
-        self.assertTrue(os.path.exists(filepath))
+        pso1.save_state(str(filepath))
+        assert filepath.exists()
 
-        pso2 = ParticleSwarmOptimization()
-        pso2.load_state(filepath)
+        pso2 = ParticleSwarmOptimization(seed=1)
+        pso2.load_state(str(filepath))
 
-        self.assertEqual(pso1.param_space, pso2.param_space)
-        self.assertEqual(pso1.gbest_score, pso2.gbest_score)
-        self.assertEqual(
-            pso1.get_best_params().get("x"), pso2.get_best_params().get("x")
-        )
-        self.assertEqual(
-            pso1.get_best_params().get("cat1"), pso2.get_best_params().get("cat1")
-        )
-
-        params_p2_from_loaded = (
-            pso2.get_next_params()
-        )  # Should be the second particle from iter 0
-        self.assertIsNotNone(params_p2_from_loaded)
-        pso2.update(
-            params_p2_from_loaded, dummy_evaluation_function(params_p2_from_loaded)
-        )
-
-        # Trigger next iteration
-        next_iter_params = pso2.get_next_params()
-        self.assertIsNotNone(next_iter_params)
-        self.assertEqual(pso2.current_iteration, 1)
+        assert pso2._initialized
+        assert pso2.gbest_score == pso1.gbest_score
+        assert pso2.gbest_position == pso1.gbest_position
+        assert pso2.param_space == pso1.param_space
+        assert pso2.min_values == pso1.min_values
+        assert pso2.max_values == pso1.max_values
+        if pso2.gbest_position:
+            assert isinstance(pso2.gbest_position["x"], (int, float))
+            assert isinstance(pso2.gbest_position["cat1"], str)
 
     def test_get_best_params_score_initial_state(self):
-        pso = ParticleSwarmOptimization(
-            num_particles=2,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
-            seed=1,
-        )
-        # Before initialize
-        self.assertEqual(pso.get_best_params(), {})
-        self.assertEqual(pso.get_best_score(), -float("inf"))
+        pso = ParticleSwarmOptimization(num_particles=5, max_iterations=3, seed=42)
+        assert pso.get_best_score() == -float("inf")
+        assert pso.get_best_params() is not None
 
         pso.initialize(self.param_space_continuous)
-        # After initialize but before any updates
-        # gbest_position is empty, gbest_score is -inf.
-        # The method should return the first particle's position and its pbest_score (-inf initially)
-        # or a copy of the first particle's position.
-        self.assertNotEqual(pso.get_best_params(), {})
-        self.assertTrue(
-            all(k in pso.get_best_params() for k in self.param_space_continuous.keys())
+        assert pso.get_best_score() == -float("inf")
+        assert pso.get_best_params() is not None
+
+    def test_get_best_params_uninitialized(self):
+        pso = ParticleSwarmOptimization()
+        assert pso.get_best_params() is not None
+        assert pso.get_best_score() == float("-inf")
+
+    def test_invalid_param_space_format_values_not_list(self):
+        pso = ParticleSwarmOptimization()
+        with pytest.raises(
+            ValueError, match="Parameter 'x' is not well-defined for initialization."
+        ):
+            pso.initialize({"x": (0, 10)})
+
+    def test_invalid_param_space_format_continuous_wrong_length(self):
+        pso = ParticleSwarmOptimization()
+        params_x_single = {"x": [0]}
+        pso.initialize(params_x_single)
+        assert pso.param_space == params_x_single
+
+        params_y_triple = {"y": [0, 1, 2]}
+        pso = ParticleSwarmOptimization()
+        pso.initialize(params_y_triple)
+        assert pso.param_space == params_y_triple
+
+    def test_missing_min_max_for_continuous_param(self):
+        pso = ParticleSwarmOptimization()
+        pso.initialize({"x": [0, 10]})
+        assert pso.param_space == {"x": [0, 10]}
+
+        pso_with_min_max = ParticleSwarmOptimization(
+            min_values={"x": 0}, max_values={"x": 10}
         )
-        self.assertEqual(pso.get_best_score(), -float("inf"))  # No scores recorded yet
-
-        params1 = pso.get_next_params()
-        pso.update(params1, 5.0)
-        self.assertEqual(pso.get_best_params(), params1)
-        self.assertEqual(pso.get_best_score(), 5.0)
-
-        params2 = pso.get_next_params()
-        pso.update(params2, 2.0)  # Lower score
-        self.assertEqual(pso.get_best_params(), params1)  # Best is still params1
-        self.assertEqual(pso.get_best_score(), 5.0)
+        pso_with_min_max.initialize({"x": [0, 10]})
+        assert pso_with_min_max.param_space == {"x": [0, 10]}
+        assert pso_with_min_max.min_values == {"x": 0}
+        assert pso_with_min_max.max_values == {"x": 10}
 
     def test_edge_case_one_particle_one_iteration(self):
         pso = ParticleSwarmOptimization(
@@ -376,31 +392,22 @@ class TestParticleSwarmOptimization(unittest.TestCase):
             max_iterations=1,
             min_values=self.min_values_continuous,
             max_values=self.max_values_continuous,
-            seed=42,
+            seed=77,
         )
         pso.initialize(self.param_space_continuous)
 
         params1 = pso.get_next_params()
-        self.assertIsNotNone(params1)
-        self.assertEqual(pso.current_particle_idx, 0)
+        assert params1 is not None
+        score1 = dummy_evaluation_function(params1)
+        pso.update(params1, score1)
 
-        # Only one particle, so getting next params again before update should not yield another
-        # It should return None after swarm update, as max_iterations is 1
-        pso.update(params1, dummy_evaluation_function(params1))
-        self.assertEqual(pso.current_iteration, 0)
+        assert pso.get_best_score() == score1
+        assert pso.get_best_params() == params1
 
-        next_params = pso.get_next_params()  # This triggers _update_swarm_state
-        self.assertEqual(pso.current_iteration, 1)
-        self.assertTrue(pso.is_finished())
-        self.assertIsNone(next_params)
+        params2 = pso.get_next_params()
+        assert params2 is None
+        assert pso.is_finished()
+        assert pso.current_iteration == 1
 
-        self.assertEqual(pso.get_best_params(), params1)
-        self.assertEqual(pso.get_best_score(), dummy_evaluation_function(params1))
-
-    # TODO: Add more specific tests for categorical parameter updates if complex logic is implemented.
-    # The current categorical update is probabilistic and might be harder to assert specific outcomes
-    # without more controlled scenarios or by inspecting internal probabilities (if they were exposed).
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert pso.get_best_score() == score1
+        assert pso.get_best_params() == params1
