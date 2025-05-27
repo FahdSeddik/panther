@@ -7,6 +7,11 @@ class DistributionFamily(Enum):
     Gaussian = "Gaussian"
     Uniform = "Uniform"
 
+class Axis(Enum):
+    Long = "Long"
+    Short = "Short"
+
+def test_tensor_accessor(tensor: torch.Tensor) -> None: ...
 def scaled_sign_sketch(
     m: int,
     n: int,
@@ -19,8 +24,8 @@ def sketched_linear_forward(
     S2s: torch.Tensor,
     U1s: torch.Tensor,
     U2s: torch.Tensor,
-    bias: torch.Tensor,
-    use_tensor_core: bool = False,
+    bias: Optional[torch.Tensor] = None,
+    use_gpu: bool = False,
 ) -> torch.Tensor: ...
 def sketched_linear_backward(
     grad_output: torch.Tensor,
@@ -29,7 +34,9 @@ def sketched_linear_backward(
     S2s: torch.Tensor,
     U1s: torch.Tensor,
     U2s: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, torch.Tensor]: ...
+    has_bias: bool = False,
+    use_gpu: bool = False,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 def cqrrpt(
     M: torch.Tensor,
     gamma: float = 1.25,
@@ -42,6 +49,14 @@ def dense_sketch_operator(
     m: int,
     n: int,
     distribution: DistributionFamily,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def sparse_sketch_operator(
+    m: int,
+    n: int,
+    vec_nnz: int,
+    axis: Axis,
     device: Optional[torch.device] = None,
     dtype: Optional[torch.dtype] = None,
 ) -> torch.Tensor: ...
@@ -63,15 +78,27 @@ def sketch_tensor(
     device: Optional[torch.device] = None,
     dtype: Optional[torch.dtype] = None,
 ) -> torch.Tensor: ...
-def causal_numerator_apply(
-    query_prime: torch.Tensor,
-    key_prime: torch.Tensor,
-    value_prime: torch.Tensor,
-) -> torch.Tensor: ...
-def causal_denominator_apply(
-    query_prime: torch.Tensor,
-    key_prime: torch.Tensor,
-) -> torch.Tensor: ...
+def causal_numerator_forward(
+    qs: torch.Tensor,
+    ks: torch.Tensor,
+    vs: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]: ...
+def causal_numerator_backward(
+    res_grad: torch.Tensor,
+    sums: torch.Tensor,
+    qs: torch.Tensor,
+    ks: torch.Tensor,
+    vs: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
+def causal_denominator_forward(
+    qs: torch.Tensor,
+    ks: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]: ...
+def causal_denominator_backward(
+    res_grad: torch.Tensor,
+    sums: torch.Tensor,
+    qs: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]: ...
 def rmha_forward(
     query: torch.Tensor,
     key: torch.Tensor,

@@ -1,26 +1,53 @@
 import pytest
 import torch
 import torch.nn as nn
-from torch.autograd import gradcheck
 
 from panther.nn.attention import RandMultiHeadAttention, verify_rmha_inputs
-from pawX import causal_denominator_apply, causal_numerator_apply
+from pawX import (
+    causal_denominator_backward,
+    causal_denominator_forward,
+    causal_numerator_backward,
+    causal_numerator_forward,
+)
 
 
-# -----------------------------------------------------------------------------
-# Test 1: Check output shape and a basic comparison against torch's MultiheadAttention.
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Test 1: Check output shape and a basic comparison against torch's MultiheadAttention
+# with independent query (L) and key/value (S) sequence lengths.
+# --------------------------------------------------------------------------
 @pytest.mark.parametrize(
-    "batch_size, seq_len, embed_dim, num_heads, num_random_features, bias",
+    "batch_size, len_q, len_kv, embed_dim, num_heads, num_random_features, bias, iscausal, kernel_fn",
     [
-        (2, 10, 32, 4, 16, True),
-        (4, 20, 64, 8, 32, False),
-        (1, 5, 16, 2, 8, True),
-        (3, 15, 48, 6, 24, False),
+        # (batch, L,  S,  dim, heads, m_feats, bias, causal,  kernel)
+        (2, 10, 10, 32, 4, 16, True, True, "softmax"),
+        (4, 20, 20, 64, 8, 32, False, True, "softmax"),
+        (1, 5, 5, 16, 2, 8, True, True, "softmax"),
+        (3, 15, 15, 48, 6, 24, False, True, "softmax"),
+        (2, 10, 8, 32, 4, 16, True, False, "softmax"),
+        (4, 20, 15, 64, 8, 32, False, False, "softmax"),
+        (1, 5, 5, 16, 2, 8, True, False, "softmax"),
+        (3, 15, 10, 48, 6, 24, False, False, "softmax"),
+        # --- relu kernel variants ---
+        (2, 10, 10, 32, 4, 16, True, True, "relu"),
+        (4, 20, 20, 64, 8, 32, False, True, "relu"),
+        (1, 5, 5, 16, 2, 8, True, True, "relu"),
+        (3, 15, 15, 48, 6, 24, False, True, "relu"),
+        (2, 10, 8, 32, 4, 16, True, False, "relu"),
+        (4, 20, 15, 64, 8, 32, False, False, "relu"),
+        (1, 5, 5, 16, 2, 8, True, False, "relu"),
+        (3, 15, 10, 48, 6, 24, False, False, "relu"),
     ],
 )
 def test_forward_output_shape_and_mha_comparison(
-    batch_size, seq_len, embed_dim, num_heads, num_random_features, bias
+    batch_size,
+    len_q,
+    len_kv,
+    embed_dim,
+    num_heads,
+    num_random_features,
+    bias,
+    iscausal,
+    kernel_fn,
 ):
     torch.manual_seed(0)
 
@@ -31,95 +58,178 @@ def test_forward_output_shape_and_mha_comparison(
         num_random_features=num_random_features,
         dropout=0.0,
         bias=bias,
-        kernel_fn="softmax",
-        iscausal=False,
+        kernel_fn=kernel_fn,
+        iscausal=iscausal,
     )
     rmha.eval()
 
-    # Create random input tensor (batch_size, seq_len, embed_dim)
-    query = torch.randn(batch_size, seq_len, embed_dim, dtype=torch.float32)
-    key = torch.randn(batch_size, seq_len, embed_dim, dtype=torch.float32)
-    value = torch.randn(batch_size, seq_len, embed_dim, dtype=torch.float32)
+    # Create random input tensor
+    #   query: (batch_size, len_q,  embed_dim)
+    #   key:   (batch_size, len_kv, embed_dim)
+    #   value: (batch_size, len_kv, embed_dim)
+    query = torch.randn(batch_size, len_q, embed_dim, dtype=torch.float32)
+    key = torch.randn(batch_size, len_kv, embed_dim, dtype=torch.float32)
+    value = torch.randn(batch_size, len_kv, embed_dim, dtype=torch.float32)
 
     # Compute RMHA output.
     perf_out, _ = rmha(query, key, value)
 
-    # Verify the output shape.
-    assert perf_out.shape == (batch_size, seq_len, embed_dim)
+    # Verify the output shape is (batch_size, len_q, embed_dim)
+    assert perf_out.shape == (batch_size, len_q, embed_dim)
 
     # --- Basic comparison with torch.nn.MultiheadAttention ---
-    # Note:
-    # 1. torch.nn.MultiheadAttention expects input as (seq_len, batch_size, embed_dim)
-    # 2. The RMHA module applies its own linear layers.
-    # To do a rough comparison of dimensions and interface compatibility we
-    # copy the linear projection weights and biases from performer to a MultiheadAttention.
+    # torch.nn.MultiheadAttention expects (L, B, D) for query, key, value
     mha = nn.MultiheadAttention(
         embed_dim=embed_dim, num_heads=num_heads, dropout=0.0, bias=bias
     )
     mha.eval()
 
-    # Copy weights from RMHA to the MHA module.
-    # For MultiheadAttention, the in_proj_weight is a concatenation of query, key, and value weights.
+    # Copy Performer projections into MHA
     with torch.no_grad():
         in_proj_weight = torch.cat([rmha.Wq, rmha.Wk, rmha.Wv], dim=0)
         mha.in_proj_weight.copy_(in_proj_weight)
-        in_proj_bias = torch.cat([rmha.bq, rmha.bk, rmha.bv], dim=0) if bias else None
         if bias:
+            in_proj_bias = torch.cat([rmha.bq, rmha.bk, rmha.bv], dim=0)
             mha.in_proj_bias.copy_(in_proj_bias)
         mha.out_proj.weight.copy_(rmha.W0)
         if bias:
             mha.out_proj.bias.copy_(rmha.b0)
 
-    # Transpose input shape to match MHA: (seq_len, batch_size, embed_dim)
-    query_mha = query.transpose(0, 1)
-    key_mha = key.transpose(0, 1)
-    value_mha = value.transpose(0, 1)
+    # Transpose shapes: (len, batch, dim)
+    q_mha = query.transpose(0, 1)  # (len_q, batch, dim)
+    k_mha = key.transpose(0, 1)  # (len_kv, batch, dim)
+    v_mha = value.transpose(0, 1)  # (len_kv, batch, dim)
 
-    # Compute MultiheadAttention output.
-    mha_out, _ = mha(query_mha, key_mha, value_mha)
-    # Bring back to (batch, seq, embed_dim) for comparison.
-    mha_out = mha_out.transpose(0, 1)
+    # Compute MHA output
+    mha_out, _ = mha(q_mha, k_mha, v_mha)
+    mha_out = mha_out.transpose(0, 1)  # back to (batch, len_q, dim)
 
-    # Check that the shapes match.
-    assert mha_out.shape == (batch_size, seq_len, embed_dim)
-    assert perf_out.shape == mha_out.shape
-
-    # print norm diff
-    norm_diff = torch.norm(perf_out - mha_out, p=2).item()
-    print(f"Norm difference between RMHA and MHA: {norm_diff:.6f}")
+    # Check that the shapes match
+    assert mha_out.shape == perf_out.shape == (batch_size, len_q, embed_dim)
 
 
-# -----------------------------------------------------------------------------
-# Test 2: gradcheck for the custom CausalNumeratorFunction.
-# -----------------------------------------------------------------------------
-def test_gradcheck_causal_numerator():
+@pytest.mark.parametrize(
+    "D,I,J,K,L",
+    [
+        (1, 1, 1, 1, 1),
+        (2, 2, 2, 2, 2),
+        (3, 1, 4, 5, 6),
+        (3, 4, 1, 5, 6),
+        (3, 4, 5, 1, 6),
+        (3, 4, 5, 6, 1),
+        (2, 2, 2, 2, 2),
+        (3, 2, 4, 1, 5),
+        (4, 3, 1, 6, 2),
+        (5, 6, 7, 8, 9),
+    ],
+)
+@pytest.mark.parametrize(
+    "device", ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
+)
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_causal_numerator_correctness(D, I, J, K, L, device, dtype):  # noqa: E741
     torch.manual_seed(0)
-    # Set dimensions:
-    # Let: D = 2, I = 3, J = 4, C = 5, E = 6.
-    D, I, J, C, E = 2, 3, 4, 5, 6  # noqa: E741
+    qs = torch.randn(I, D, J, K, dtype=dtype, device=device, requires_grad=True)
+    ks = torch.randn(I, D, J, K, dtype=dtype, device=device, requires_grad=True)
+    vs = torch.randn(I, D, J, L, dtype=dtype, device=device, requires_grad=True)
 
-    # Create input tensors with requires_grad, in double precision.
-    qs = torch.randn(D, I, J, C, dtype=torch.double, requires_grad=True)
-    ks = torch.randn(D, I, J, C, dtype=torch.double, requires_grad=True)
-    vs = torch.randn(D, I, J, E, dtype=torch.double, requires_grad=True)
+    # Reference implementation
+    KV = torch.einsum("idjk,idjl->idjkl", ks, vs)  # [D,I,J,K,L]
+    sums2 = torch.cumsum(KV, dim=1)  # [D,I,J,K,L]
+    expected = torch.einsum("idjkl,idjk->idjl", sums2, qs)
 
-    # Run gradcheck on the custom autograd function.
-    # Note: gradcheck requires the function to be run with double precision.
-    assert gradcheck(causal_numerator_apply, (qs, ks, vs), eps=1e-6, atol=1e-4)
+    # Your custom forward
+    out, sums = causal_numerator_forward(qs, ks, vs)
+    assert out.shape == (I, D, J, L), "Output shape mismatch"
+    assert torch.allclose(
+        out, expected, atol=1e-6, rtol=1e-5
+    ), f"Output mismatch: max|diff|={(out-expected).abs().max():.3e}"
+
+    # backward‐gradient check
+    grad_out = torch.randn_like(out)
+    # autograd‐computed grads
+    # custom‐backend grads
+    custom_q, custom_k, custom_v = causal_numerator_backward(
+        res_grad=grad_out,
+        sums=sums,
+        qs=qs,
+        ks=ks,
+        vs=vs,
+    )
+    auto_q, auto_k, auto_v = torch.autograd.grad(
+        outputs=out,
+        inputs=(qs, ks, vs),
+        grad_outputs=grad_out,
+        create_graph=True,
+    )
+
+    for a, c, name in [
+        (auto_q, custom_q, "qs"),
+        (auto_k, custom_k, "ks"),
+        (auto_v, custom_v, "vs"),
+    ]:
+        assert a.shape == c.shape, f"grad {name} has wrong shape"
+        assert torch.allclose(a, c, atol=1e-6, rtol=1e-5), (
+            f"Backward gradient mismatch for {name}: "
+            f"max|diff|={(a-c).abs().max():.3e}"
+        )
 
 
-# -----------------------------------------------------------------------------
-# Test 3: gradcheck for the custom CausalDenominator function.
-# -----------------------------------------------------------------------------
-def test_gradcheck_causal_denominator():
+@pytest.mark.parametrize(
+    "D,I,J,K",
+    [
+        (1, 1, 1, 1),
+        (3, 1, 4, 5),
+        (3, 4, 1, 5),
+        (3, 4, 5, 1),
+        (2, 2, 2, 2),
+        (3, 2, 4, 1),
+        (4, 3, 1, 6),
+        (5, 6, 7, 8),
+    ],
+)
+@pytest.mark.parametrize(
+    "device", ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
+)
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_causal_denominator_correctness(D, I, J, K, device, dtype):  # noqa: E741
     torch.manual_seed(0)
-    # Use dimensions: D = 2, I = 3, J = 4, C = 5.
-    D, I, J, C = 2, 3, 4, 5  # noqa: E741
+    # Create inputs
+    qs = torch.randn(I, D, J, K, dtype=dtype, device=device, requires_grad=True)
+    ks = torch.randn(I, D, J, K, dtype=dtype, device=device, requires_grad=True)
 
-    qs = torch.randn(D, I, J, C, dtype=torch.double, requires_grad=True)
-    ks = torch.randn(D, I, J, C, dtype=torch.double, requires_grad=True)
+    # Reference: sums over sequence axis then contract
+    sums = torch.cumsum(ks, dim=1)  # [D,I,J,K]
+    expected = torch.einsum("idjk,idjk->idj", sums, qs)  # [D,I,J]
 
-    assert gradcheck(causal_denominator_apply, (qs, ks), eps=1e-6, atol=1e-4)
+    # Custom forward
+    out, _ = causal_denominator_forward(qs, ks)
+    assert out.shape == (I, D, J), "Output shape mismatch"
+    assert torch.allclose(
+        out, expected, atol=1e-6, rtol=1e-5
+    ), f"Output mismatch: max|diff|={(out-expected).abs().max():.3e}"
+
+    # Backward: compare autograd vs custom
+    grad_out = torch.randn_like(out)
+    auto_q, auto_k = torch.autograd.grad(
+        outputs=out,
+        inputs=(qs, ks),
+        grad_outputs=grad_out,
+        create_graph=True,
+    )
+    custom_q, custom_k = causal_denominator_backward(
+        res_grad=grad_out.unsqueeze(-1),
+        sums=sums,
+        qs=qs,
+    )
+
+    # Check shapes and values
+    for name, a, c in [("qs", auto_q, custom_q), ("ks", auto_k, custom_k)]:
+        assert a.shape == c.shape, f"Gradient for {name} has wrong shape"
+        diff = (a - c).abs().max()
+        assert torch.allclose(
+            a, c, atol=1e-6, rtol=1e-5
+        ), f"Backward gradient mismatch for {name}, max|diff|={diff:.3e}"
 
 
 # -----------------------------------------------------------------------------
