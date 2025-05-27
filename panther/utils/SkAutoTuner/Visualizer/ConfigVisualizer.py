@@ -1,73 +1,69 @@
 # filepath: d:\Gaser\Univeristy\GP\myPanther\panther\panther\utils\SkAutoTuner\ConfigVisualizer.py
-import torch.nn as nn
-import os
 import json
-import tempfile
-import webbrowser
 import logging
-from typing import Dict, Any, Optional, List, Union
+import webbrowser
+from typing import Any, Dict, List, Optional
+
+import torch.nn as nn
+
+from ..layer_type_mapping import LAYER_TYPE_MAPPING
 from .ModelVisualizer import ModelVisualizer
-from .Configs.LayerConfig import LayerConfig
-from .Configs.TuningConfigs import TuningConfigs
-from .layer_type_mapping import LAYER_TYPE_MAPPING
 
 # Setup a logger for this module
 logger = logging.getLogger(__name__)
+
 
 class ConfigVisualizer(ModelVisualizer):
     """
     An extension of ModelVisualizer that allows users to generate
     SkAutoTuner configurations visual interface.
     """
-    
+
     @staticmethod
-    def create_config_visualization(model: nn.Module, output_path: Optional[str] = None, 
-                                   open_browser: bool = False) -> str:
+    def create_config_visualization(
+        model: nn.Module, output_path: Optional[str] = None, open_browser: bool = False
+    ) -> str:
         """
         Creates an interactive visualization that allows users to select layers and
         generate SkAutoTuner configurations.
-        
+
         Args:
             model: The neural network model to visualize and configure
             output_path: Path to save the generated HTML file (if None, a temporary file is created)
             open_browser: Whether to automatically open the visualization in a browser
-            
+
         Returns:
             The path to the generated HTML file
         """
         # Generate basic model visualization HTML
         visualization_path = ModelVisualizer.create_interactive_visualization(
-            model=model,
-            output_path=output_path,
-            open_browser=False
+            model=model, output_path=output_path, open_browser=False
         )
-        
+
         # Identify layers that support sketching
         layer_types = ConfigVisualizer._get_mappable_layer_types(model)
-        
+
         # Available parameter options per layer type
         layer_config_options = ConfigVisualizer._get_layer_config_options()
-        
+
         # Inject configuration UI into the HTML
         ConfigVisualizer._enhance_visualization_with_config_ui(
-            visualization_path,
-            layer_types,
-            layer_config_options
+            visualization_path, layer_types, layer_config_options
         )
-        
+
         # Optionally open the result in a browser
         if open_browser:
             webbrowser.open(f"file://{visualization_path}")
         return visualization_path
-    
+
     @staticmethod
     def _get_mappable_layer_types(model: nn.Module) -> Dict[str, List[str]]:
         """
         Gets a dictionary mapping layer types found in the model to their sketchable parameters.
-        
+
         Args:
             model: The neural network model
-            
+
         Returns:
             Dictionary mapping layer types to their sketchable parameters
         """
@@ -79,12 +75,12 @@ class ConfigVisualizer(ModelVisualizer):
                 type_name = layer_type.__name__
                 layer_types.setdefault(type_name, []).append(name)
         return layer_types
-    
+
     @staticmethod
     def _get_layer_config_options() -> Dict[str, Dict[str, List[Any]]]:
         """
         Gets the configuration options for each layer type.
-        
+
         Returns:
             Dictionary mapping layer types to their configuration options
         """
@@ -94,61 +90,63 @@ class ConfigVisualizer(ModelVisualizer):
         config_options = {
             "Linear": {
                 "sketch": ["qr", "svd", "srd"],
-                "sketch_ratio": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+                "sketch_ratio": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
             },
             "Conv2d": {
                 "sketch": ["qr", "svd", "srd"],
                 "sketch_ratio": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-                "kernel_type": ["full", "sr"]
+                "kernel_type": ["full", "sr"],
             },
             "MultiheadAttention": {
                 "sketch": ["qr", "svd", "srd"],
                 "sketch_ratio": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-                "head_ratio": [0.25, 0.5, 0.75]
+                "head_ratio": [0.25, 0.5, 0.75],
             },
             # Add more layer types and their options as needed
         }
-        
+
         return config_options
-    
+
     @staticmethod
     def _enhance_visualization_with_config_ui(
-        visualization_path: str, 
+        visualization_path: str,
         layer_types: Dict[str, List[str]],
-        config_options: Dict[str, Dict[str, List[Any]]]
+        config_options: Dict[str, Dict[str, List[Any]]],
     ) -> None:
         """
         Enhances the HTML visualization with a configuration UI.
-        
+
         Args:
             visualization_path: Path to the visualization HTML file
             layer_types: Dictionary mapping layer types to layer names
             config_options: Dictionary mapping layer types to configuration options
         """
         # Load existing HTML
-        with open(visualization_path, 'r', encoding='utf-8') as f:
+        with open(visualization_path, "r", encoding="utf-8") as f:
             html_content = f.read()
-        
+
         # Prepare UI fragments
-        config_ui_js = ConfigVisualizer._generate_config_ui_js(layer_types, config_options)
+        config_ui_js = ConfigVisualizer._generate_config_ui_js(
+            layer_types, config_options
+        )
         config_ui_css = ConfigVisualizer._generate_config_ui_css()
         config_ui_html = ConfigVisualizer._generate_config_ui_html()
-        
+
         # Inject CSS into existing <style> block
-        html_content = html_content.replace('</style>', config_ui_css + '</style>')
+        html_content = html_content.replace("</style>", config_ui_css + "</style>")
         # Insert panel HTML and JS before closing body
-        insertion = config_ui_html + '<script>' + config_ui_js + '</script>'
-        html_content = html_content.replace('</body>', insertion + '</body>')
-        
+        insertion = config_ui_html + "<script>" + config_ui_js + "</script>"
+        html_content = html_content.replace("</body>", insertion + "</body>")
+
         # Save modifications
-        with open(visualization_path, 'w', encoding='utf-8') as f:
+        with open(visualization_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-    
+
     @staticmethod
     def _generate_config_ui_html() -> str:
         """
         Generates the HTML for the configuration UI.
-        
+
         Returns:
             HTML string for the configuration UI
         """
@@ -205,12 +203,12 @@ class ConfigVisualizer(ModelVisualizer):
         </div>        <button id="showConfig" class="show-config-button">Generate Layer Config</button>
         <div id="multiSelectTooltip" class="multi-select-tooltip">Hold Ctrl/Cmd for multi-select</div>
         """
-    
+
     @staticmethod
     def _generate_config_ui_css() -> str:
         """
         Generates the CSS for the configuration UI.
-        
+
         Returns:
             CSS string for the configuration UI
         """
@@ -530,23 +528,26 @@ class ConfigVisualizer(ModelVisualizer):
             transition: opacity 0.3s ease;
         }
         """
-    
+
     @staticmethod
-    def _generate_config_ui_js(layer_types: Dict[str, List[str]], config_options: Dict[str, Dict[str, List[Any]]]) -> str:
+    def _generate_config_ui_js(
+        layer_types: Dict[str, List[str]],
+        config_options: Dict[str, Dict[str, List[Any]]],
+    ) -> str:
         """
         Generates the JavaScript for the configuration UI.
-        
+
         Args:
             layer_types: Dictionary mapping layer types to layer names
             config_options: Dictionary mapping layer types to configuration options
-            
+
         Returns:
             JavaScript string for the configuration UI
         """
         # Convert data to JSON strings for JavaScript
         layer_types_json = json.dumps(layer_types)
         config_options_json = json.dumps(config_options)
-        
+
         return f"""
         // Layer types data from Python
         const layerTypes = {layer_types_json};
@@ -944,6 +945,9 @@ class ConfigVisualizer(ModelVisualizer):
         }});
         """
 
+
 # Register this module to make it available via import
 if __name__ == "__main__":
-    print("ConfigVisualizer module loaded. Use ConfigVisualizer.create_config_visualization() to create an interactive configuration tool.")
+    print(
+        "ConfigVisualizer module loaded. Use ConfigVisualizer.create_config_visualization() to create an interactive configuration tool."
+    )

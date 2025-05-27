@@ -1,9 +1,17 @@
-from Visualizer.ConfigVisualizer import ConfigVisualizer
-from Visualizer.ModelVisualizer import ModelVisualizer
-
 from .Configs import LayerConfig, TuningConfigs
-from .Searching import BayesianOptimization, GridSearch, RandomSearch, SearchAlgorithm
+from .Searching import (
+    BayesianOptimization,
+    EvolutionaryAlgorithm,
+    GridSearch,
+    Hyperband,
+    ParticleSwarmOptimization,
+    RandomSearch,
+    SearchAlgorithm,
+    SimulatedAnnealing,
+    TreeParzenEstimator,
+)
 from .SKAutoTuner import SKAutoTuner
+from .Visualizer import ConfigVisualizer, ModelVisualizer
 
 __all__ = [
     "SKAutoTuner",
@@ -15,4 +23,9 @@ __all__ = [
     "BayesianOptimization",
     "ModelVisualizer",
     "ConfigVisualizer",
+    "TreeParzenEstimator",
+    "Hyperband",
+    "EvolutionaryAlgorithm",
+    "ParticleSwarmOptimization",
+    "SimulatedAnnealing",
 ]
