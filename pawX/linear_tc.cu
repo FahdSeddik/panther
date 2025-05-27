@@ -403,9 +403,9 @@ __global__ void sklinear_backward_grad_input_wmma(
     int bCol = blockIdx.y * TILE_WIDTH_N;  // bCol -> I
     wmma::fragment<wmma::matrix_a, M, N, K, half_t, wmma::col_major> fA1, fA2;
     wmma::fragment<wmma::matrix_b, M, N, K, half_t, wmma::col_major> fB1, fB2;
-    wmma::fragment<wmma::accumulator, M, N, K, float_t> acc1, acc2;
-    wmma::fill_fragment(acc1, 0.0f);
-    wmma::fill_fragment(acc2, 0.0f);
+    wmma::fragment<wmma::accumulator, M, N, K, cuda_type_t<scalar_t>> acc1, acc2;
+    wmma::fill_fragment(acc1, zero);
+    // wmma::fill_fragment(acc2, zero);
 
     for (int term = 0; term < T; term++) {
         for (int k = 0; k < R; k += TILE_WIDTH_K) {
@@ -434,7 +434,7 @@ __global__ void sklinear_backward_grad_input_wmma(
                 wmma::load_matrix_sync(fB1, (half_t*)subTileB1 + subtileBRow + subtileBCol * TILE_WIDTH_K, TILE_WIDTH_K);
                 wmma::load_matrix_sync(fB2, (half_t*)subTileB2 + subtileBRow + subtileBCol * TILE_WIDTH_K, TILE_WIDTH_K);
                 wmma::mma_sync(acc1, fA1, fB1, acc1);
-                wmma::mma_sync(acc2, fA2, fB2, acc2);
+                wmma::mma_sync(acc1, fA2, fB2, acc1);
             }
         }
     }
@@ -445,10 +445,10 @@ __global__ void sklinear_backward_grad_input_wmma(
     int cCol = warpN * N;
 
     if (cRow < B && cCol < I) {
-        for (int i = 0; i < acc1.num_elements; i++) {
-            acc1.x[i] = acc1.x[i] + acc2.x[i];
-        }
-        wmma::store_matrix_sync(&grad_input[cRow][cCol], acc1, I, wmma::mem_row_major);
+        // for (int i = 0; i < acc1.num_elements; i++) {
+        //     acc1.x[i] = cuda_type<scalar_t>::add(acc1.x[i], acc2.x[i]);
+        // }
+        wmma::store_matrix_sync(&grad_input(cRow, cCol), acc1, I, wmma::mem_row_major);
     }
 }
 
@@ -580,16 +580,21 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     cudaEventCreate(&afterIntermSum);
     cudaEventRecord(afterIntermSum, stream1);
 
-    auto grad_input = torch::zeros({B, I}, input.options());
-    dim3 grid3((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
-               (I + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
-    sklinear_backward_grad_input_wmma<<<grid3, block, 0, stream1>>>(
-        interm.packed_accessor32<float, 4, torch::RestrictPtrTraits>(),
-        S1s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        U2s.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        grad_input.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
-        B, I, R, T);
-    // auto grad_input = (interm[0].bmm(S1s.transpose(1, 2)) + interm[1].bmm(U2s.transpose(1, 2))).sum(0);
+    // auto grad_input = torch::zeros({B, I}, S1s.options());
+    // dim3 grid3((B + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
+    //            (I + TILE_WIDTH_N - 1) / TILE_WIDTH_N);
+    // AT_DISPATCH_FLOAT_AND_HALF(
+    //     input.scalar_type(),
+    //     "sklinear_backward_grad_input_wmma",
+    //     [&] {
+    //         sklinear_backward_grad_input_wmma<scalar_t><<<grid3, block, 0, stream1>>>(
+    //             tensor_utils::buildAccessor<scalar_t, 4>(interm),
+    //             tensor_utils::buildAccessor<scalar_t, 3>(S1s),
+    //             tensor_utils::buildAccessor<scalar_t, 3>(U2s),
+    //             tensor_utils::buildAccessor<scalar_t, 2>(grad_input),
+    //             B, I, R, T);
+    //     });
+    auto grad_input = (interm[0].bmm(S1s.transpose(1, 2)) + interm[1].bmm(U2s.transpose(1, 2))).sum(0);
 
     at::cuda::CUDAStream torch_stream3 = at::cuda::getStreamFromPool(false, device_id);
     cudaStream_t stream3 = torch_stream3.stream();

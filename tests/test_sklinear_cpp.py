@@ -1,12 +1,17 @@
+from typing import Dict
+
 import pytest
 import torch
 
 from panther.nn import SKLinear
 from panther.utils.compatibility import has_tensor_core_support
+from panther.utils.compatibility import has_tensor_core_support
 from pawX import sketched_linear_backward, sketched_linear_forward
 
 # Set random seed for reproducibility
 torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+torch.cuda.manual_seed_all(42)
 
 # Test parameters
 BATCH_SIZE = 32
@@ -167,8 +172,8 @@ def test_backward_gpu_vs_cpu(test_tensors):
 
     for g_cpu, g_gpu in zip(grads_cpu, grads_gpu):
         assert torch.allclose(
-            g_cpu, g_gpu.cpu(), atol=1, rtol=1
-        ), "Backward pass differs between CPU and GPU."
+            g_cpu, g_gpu.cpu(), atol=atol, rtol=rtol
+        ), f"Gradient mismatch at index {i}."
 
 
 def test_backward_vs_autograd(test_tensors):

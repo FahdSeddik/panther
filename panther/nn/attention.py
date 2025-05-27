@@ -30,6 +30,8 @@ def verify_rmha_inputs(
 
 
 class RandMultiHeadAttention(nn.Module):
+    """holds the parameters of the random multihead attention layer"""
+
     projection_matrix: torch.Tensor
     Wq: torch.Tensor
     Wk: torch.Tensor

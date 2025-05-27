@@ -179,8 +179,153 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& S1s,
     const torch::Tensor& S2s,
     const torch::Tensor& U1s,
-    const torch::Tensor& U2s) {
-    // raise not implemented error
-    throw std::runtime_error("sketched_linear_backward_cuda not implemented yet.");
-    return std::vector<torch::Tensor>{};
+    const torch::Tensor& U2s,
+    const bool has_bias) {
+    TORCH_CHECK(S1s.is_contiguous(), "S1s tensor must be contiguous in memory.");
+    TORCH_CHECK(S2s.is_contiguous(), "S2s tensor must be contiguous in memory.");
+    TORCH_CHECK(U1s.is_contiguous(), "U1s tensor must be contiguous in memory.");
+    TORCH_CHECK(U2s.is_contiguous(), "U2s tensor must be contiguous in memory.");
+    // g = grad_output.div(2 * num_terms)
+    // t1 = g * U1s.T -> interm[0]
+    // grad_input ->  interm[0]  * S1s.T +  interm[1]  * U2s.T
+    // grad_input = ([g * U1s.T] * S1s.T + [g * S2s.T] * U2s.T).sum(0)
+    // grad_S2s = U2s.T * input.T * g
+    // grad_S1s = input.t * interm[0]
+    auto device_id = input.get_device();
+
+    int64_t I = input.size(1), O = grad_output.size(1);
+    int64_t T = S1s.size(0), R = S1s.size(2), B = grad_output.size(0);
+    int64_t numTilesO = (O + TILE_DIM - 1) / TILE_DIM;
+    torch::cuda::synchronize(device_id);
+
+    dim3 block(TILE_DIM, TILE_DIM);
+    dim3 grid1((R + TILE_DIM - 1) / TILE_DIM,
+               (B + TILE_DIM - 1) / TILE_DIM,
+               numTilesO);
+    at::cuda::CUDAStream torch_stream1 = at::cuda::getStreamFromPool(false, device_id);
+    cudaStream_t stream1 = torch_stream1.stream();
+    at::cuda::setCurrentCUDAStream(torch_stream1);
+    auto g = grad_output.div(2.0f * T).contiguous();
+    cudaEvent_t afterGcompute;
+    cudaEventCreate(&afterGcompute);
+    cudaEventRecord(afterGcompute, stream1);
+
+    auto grad_intermediate = torch::zeros({numTilesO, 2, T, B, R}, S1s.options());
+
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_intermediate",
+        ([&] {
+            sklinear_backward_intermediate<scalar_t><<<grid1, block, 3 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream1>>>(
+                g.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                U1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                grad_intermediate.packed_accessor32<scalar_t, 5, torch::RestrictPtrTraits>(),
+                B, O, T, R);
+        }));
+
+    int64_t numTilesI = (I + TILE_DIM - 1) / TILE_DIM;
+    at::cuda::CUDAStream torch_stream2 = at::cuda::getStreamFromPool(false, device_id);
+    cudaStream_t stream2 = torch_stream2.stream();
+    at::cuda::setCurrentCUDAStream(torch_stream2);
+    auto interm_gradS2s = torch::zeros({numTilesI, T, R, B}, S1s.options());
+
+    dim3 grid2((B + TILE_DIM - 1) / TILE_DIM,
+               (R + TILE_DIM - 1) / TILE_DIM,
+               numTilesI);
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_S2_interm",
+        ([&] {
+            sklinear_backward_grad_S2_interm<scalar_t><<<grid2, block, 2 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream2>>>(
+                tensor_utils::buildAccessor<scalar_t, 2>(input),
+                U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                interm_gradS2s.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
+                B, I, R, T);
+        }));
+    at::cuda::setCurrentCUDAStream(torch_stream2);
+    auto i_gradS2s = interm_gradS2s.sum(0);
+    auto grad_S2s = torch::zeros({T, R, O}, S1s.options());
+    cudaStreamWaitEvent(stream2, afterGcompute);
+    dim3 grid4((O + TILE_DIM - 1) / TILE_DIM,
+               (R + TILE_DIM - 1) / TILE_DIM,
+               T);
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_S2_output",
+        ([&] {
+            sklinear_backward_grad_S2_output<scalar_t><<<grid4, block, 2 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream2>>>(
+                i_gradS2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                g.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                grad_S2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                B, R, T, O);
+        }));
+
+    at::cuda::setCurrentCUDAStream(torch_stream1);
+    auto interm = grad_intermediate.sum(0).contiguous();
+
+    cudaEvent_t afterIntermSum;
+    cudaEventCreate(&afterIntermSum);
+    cudaEventRecord(afterIntermSum, stream1);
+    cudaStreamWaitEvent(stream1, afterIntermSum);
+
+    auto grad_input = torch::zeros({B, I}, S1s.options());
+    dim3 grid3((I + TILE_DIM - 1) / TILE_DIM,
+               (B + TILE_DIM - 1) / TILE_DIM);
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_input",
+        ([&] {
+            sklinear_backward_grad_input<scalar_t><<<grid3, block, 4 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream1>>>(
+                interm.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
+                S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                U2s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                grad_input.packed_accessor32<scalar_t, 2, torch::RestrictPtrTraits>(),
+                B, I, R, T);
+        }));
+
+    at::cuda::CUDAStream torch_stream3 = at::cuda::getStreamFromPool(false, device_id);
+    cudaStream_t stream3 = torch_stream3.stream();
+    at::cuda::setCurrentCUDAStream(torch_stream3);
+    auto grad_S1s = torch::zeros({T, I, R}, S1s.options());
+
+    cudaStreamWaitEvent(stream3, afterIntermSum);
+
+    auto interm0 = interm[0].contiguous();
+
+    dim3 grid5((R + TILE_DIM - 1) / TILE_DIM,
+               (I + TILE_DIM - 1) / TILE_DIM,
+               T);
+    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+        input.scalar_type(),
+        "sklinear_backward_grad_S1",
+        ([&] {
+            sklinear_backward_grad_S1<scalar_t><<<grid5, block, 2 * TILE_DIM * TILE_DIM * sizeof(scalar_t), stream3>>>(
+                tensor_utils::buildAccessor<scalar_t, 2>(input),
+                interm0.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                grad_S1s.packed_accessor32<scalar_t, 3, torch::RestrictPtrTraits>(),
+                B, I, R, T);
+        }));
+
+    torch::Tensor grad_o;
+    if (has_bias) {
+        at::cuda::CUDAStream torch_stream4 = at::cuda::getStreamFromPool(false, device_id);
+        cudaStream_t stream4 = torch_stream4.stream();
+        at::cuda::setCurrentCUDAStream(torch_stream4);
+        grad_o = grad_output.sum(0);
+        at::cuda::stream_synchronize(stream4);
+    }
+
+    at::cuda::stream_synchronize(stream1);
+    at::cuda::stream_synchronize(stream2);
+    at::cuda::stream_synchronize(stream3);
+    torch::cuda::synchronize(device_id);
+    at::cuda::setCurrentCUDAStream(at::cuda::getDefaultCUDAStream(device_id));
+    cudaEventDestroy(afterIntermSum);
+    cudaEventDestroy(afterGcompute);
+
+    if (has_bias) {
+        return {grad_input, grad_S1s, grad_S2s, grad_o};
+    }
+    return {grad_input, grad_S1s, grad_S2s};
 }
