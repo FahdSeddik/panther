@@ -1,5 +1,3 @@
-"""Linear algebra operations for randomized matrix decompositions and sketching."""
+from pawX import cqrrpt, randomized_svd
 
-from .core import DistributionFamily, cqrrpt, randomized_svd
-
-__all__ = ["cqrrpt", "randomized_svd", "DistributionFamily"]
+__all__ = ["cqrrpt", "randomized_svd"]

@@ -47,6 +47,7 @@ class RandMultiHeadAttention(nn.Module):
     bias: bool
     kernel_fn: str
     causal: bool
+    num_random_features: int
 
     def __init__(
         self,
@@ -68,6 +69,7 @@ class RandMultiHeadAttention(nn.Module):
         self.bias: bool = bias
         self.kernel_fn: str = kernel_fn
         self.causal: bool = iscausal
+        self.num_random_features: int = num_random_features
         factory_kwargs = {"dtype": dtype, "device": device}
 
         self.Wq = nn.Parameter(torch.empty(embed_dim, embed_dim, **factory_kwargs))
@@ -175,111 +177,27 @@ def make_performer(
 
 
 if __name__ == "__main__":
-    import os
-    import time
-
-    import psutil
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # helper to measure CPU memory if you ever need it
-    def get_cpu_mem():
-        p = psutil.Process(os.getpid())
-        return p.memory_info().rss
-
-    def benchmark_attention(
-        attn_module, query, key, value, add_isCausal=False, iters=20, warmups=10
-    ):
-        attn_module = attn_module.to(device).eval()
-        attn_mask = None
-        if add_isCausal:
-            # generate_square_subsequent_mask
-            attn_mask = torch.nn.Transformer.generate_square_subsequent_mask(
-                query.shape[1], device=device
-            ).to(device)
-        # warm-up to JIT / kernel-cache everything
-        with torch.no_grad():
-            for _ in range(warmups):
-                if add_isCausal:
-                    _ = attn_module(
-                        query, key, value, is_causal=True, attn_mask=attn_mask
-                    )
-                else:
-                    _ = attn_module(query, key, value)
-
-        times = []
-        mems = []
-        with torch.no_grad():
-            for _ in range(iters):
-                if device.type == "cuda":
-                    torch.cuda.empty_cache()
-                    torch.cuda.reset_peak_memory_stats(device)
-                    torch.cuda.synchronize()
-                else:
-                    before = get_cpu_mem()
-
-                start = time.time()
-                if add_isCausal:
-                    _ = attn_module(
-                        query, key, value, is_causal=True, attn_mask=attn_mask
-                    )
-                else:
-                    _ = attn_module(query, key, value)
-                if device.type == "cuda":
-                    torch.cuda.synchronize()
-                elapsed = time.time() - start
-
-                if device.type == "cuda":
-                    used = torch.cuda.max_memory_allocated(device)
-                else:
-                    used = get_cpu_mem() - before
-
-                times.append(elapsed)
-                mems.append(used)
-
-        return sum(times) / len(times), sum(mems) / len(mems)
-
-    # create some data
-    batch, seq_len, dim = 1, 2048, 768
-    num_heads = 12
-    causal = False
-    query = torch.randn(batch, seq_len, dim, device=device)
-    key = torch.randn_like(query)
-    value = torch.randn_like(query)
-
-    # instantiate exactly equivalent modules
-    custom = RandMultiHeadAttention(
-        embed_dim=dim,
-        num_heads=num_heads,
-        num_random_features=128,
-        dropout=0.0,
+    model = RandMultiHeadAttention(
+        embed_dim=8,
+        num_heads=2,
+        num_random_features=10,
+        dropout=0.1,
         kernel_fn="softmax",
-        iscausal=causal,
+        iscausal=False,
         device=device,
         dtype=torch.float32,
-    )
+    ).to(device)
 
-    torch_mha = nn.MultiheadAttention(
-        embed_dim=dim,
-        num_heads=num_heads,
-        dropout=0.0,
-        batch_first=True,
-        device=device,
-        dtype=torch.float32,
+    output = model(
+        query=torch.randn(1, 2, 8).to(device),
+        key=torch.randn(1, 3, 8).to(device),
+        value=torch.randn(1, 3, 8).to(device),
+        attention_mask=torch.tensor([[[0, 0, 0], [0, 0, 0]]], dtype=torch.bool).to(
+            device
+        ),
+        # attention_mask=None,
     )
-
-    # note: no masks, no need_weights, both non-causal
-    # run benchmarks
-    custom_t, custom_mem = benchmark_attention(
-        custom, query, key, value, add_isCausal=False
-    )
-    torch_t, torch_mem = benchmark_attention(
-        torch_mha, query, key, value, add_isCausal=causal
-    )
-
-    print(
-        f"Custom RF-Attention —  avg time: {custom_t:.4f}s, avg mem: {custom_mem/1024:.1f} KB"
-    )
-    print(
-        f" PyTorch MHA      —  avg time: {torch_t:.4f}s, avg mem: {torch_mem/1024:.1f} KB"
-    )
+    print(output[0].shape)
+    print(output[0])

@@ -1,9 +1,7 @@
 import pytest
 import torch
 
-from panther.linalg import cqrrpt
-
-DTYPES = [torch.float64]
+import pawX
 
 
 # Helper function to check reconstruction accuracy.
@@ -28,16 +26,15 @@ def check_q_orthonormality(Q, tol=1e-9):
 #########################################
 # Basic tests (from the original suite)
 #########################################
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_cqrrpt(dtype):
+def test_cqrrpt():
     torch.manual_seed(42)  # reproducibility
 
     # Tall matrix: m > n
     m, n = 10, 5
-    M = torch.randn(m, n, dtype=dtype)
+    M = torch.randn(m, n, dtype=torch.double)
 
     # Run the CQRRPT function
-    Q, R, J = cqrrpt(M)
+    Q, R, J = pawX.cqrrpt(M)
 
     # Check shapes.
     k = R.shape[0]
@@ -46,13 +43,12 @@ def test_cqrrpt(dtype):
     assert J.shape == (n,), f"Unexpected J shape: got {J.shape}, expected ({n},)"
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_cqrrpt_wide_matrix(dtype):
+def test_cqrrpt_wide_matrix():
     torch.manual_seed(42)
     # Wide matrix (m < n)
     m, n = 5, 10
-    M = torch.randn(m, n, dtype=dtype)
-    Q, R, J = cqrrpt(M)
+    M = torch.randn(m, n, dtype=torch.double)
+    Q, R, J = pawX.cqrrpt(M)
     # In a wide matrix the rank cannot exceed m.
     assert R.shape[0] <= m, "Computed rank exceeds expected maximum for wide matrix!"
 
@@ -61,11 +57,10 @@ def test_cqrrpt_wide_matrix(dtype):
 # Parameterized tests for reconstruction.
 #########################################
 @pytest.mark.parametrize("m,n", [(10, 5), (20, 10), (15, 15), (5, 10)])
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_cqrrpt_reconstruction(m, n, dtype):
+def test_cqrrpt_reconstruction(m, n):
     torch.manual_seed(42)
-    M = torch.randn(m, n, dtype=dtype)
-    Q, R, J = cqrrpt(M)
+    M = torch.randn(m, n, dtype=torch.double)
+    Q, R, J = pawX.cqrrpt(M)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for matrix size ({m},{n})!"
 
@@ -74,11 +69,10 @@ def test_cqrrpt_reconstruction(m, n, dtype):
 # Test orthonormality of Q.
 #########################################
 @pytest.mark.parametrize("m,n", [(10, 5), (20, 10), (15, 15), (5, 10)])
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_q_orthonormality(m, n, dtype):
+def test_q_orthonormality(m, n):
     torch.manual_seed(42)
-    M = torch.randn(m, n, dtype=dtype)
-    Q, R, J = cqrrpt(M)
+    M = torch.randn(m, n, dtype=torch.double)
+    Q, R, J = pawX.cqrrpt(M)
     err = check_q_orthonormality(Q)
     assert err < 1e-9, f"Q is not orthonormal: error {err}"
 
@@ -87,12 +81,11 @@ def test_q_orthonormality(m, n, dtype):
 # Test varying the gamma parameter.
 #########################################
 @pytest.mark.parametrize("gamma", [1.0, 1.25, 1.5, 2.0])
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_varying_gamma(gamma, dtype):
+def test_varying_gamma(gamma):
     torch.manual_seed(42)
     m, n = 20, 10
-    M = torch.randn(m, n, dtype=dtype)
-    Q, R, J = cqrrpt(M, gamma)
+    M = torch.randn(m, n, dtype=torch.double)
+    Q, R, J = pawX.cqrrpt(M, gamma)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for gamma={gamma}!"
 
@@ -100,14 +93,13 @@ def test_varying_gamma(gamma, dtype):
 #########################################
 # Test low-rank input matrices.
 #########################################
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_low_rank_matrix(dtype):
+def test_low_rank_matrix():
     torch.manual_seed(42)
     m, n, r = 50, 30, 5
-    A = torch.randn(m, r, dtype=dtype)
-    B = torch.randn(r, n, dtype=dtype)
+    A = torch.randn(m, r, dtype=torch.double)
+    B = torch.randn(r, n, dtype=torch.double)
     M = torch.mm(A, B)
-    Q, R, J = cqrrpt(M)
+    Q, R, J = pawX.cqrrpt(M)
     err = check_qr_decomposition(M, Q, R, J)
     assert err < 1e-9, f"Reconstruction error {err} too high for low-rank matrix!"
 
@@ -115,15 +107,14 @@ def test_low_rank_matrix(dtype):
 #########################################
 # Statistical consistency test.
 #########################################
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_statistical_consistency(dtype):
+def test_statistical_consistency():
     torch.manual_seed(42)
     m, n = 50, 30
     num_trials = 20
     errors = []
     for trial in range(num_trials):
-        M = torch.randn(m, n, dtype=dtype)
-        Q, R, J = cqrrpt(M)
+        M = torch.randn(m, n, dtype=torch.double)
+        Q, R, J = pawX.cqrrpt(M)
         err = check_qr_decomposition(M, Q, R, J)
         errors.append(err)
     avg_err = sum(errors) / len(errors)
@@ -137,16 +128,15 @@ def test_statistical_consistency(dtype):
 #########################################
 # Test with an ill-conditioned matrix.
 #########################################
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_ill_conditioned_matrix(dtype):
+def test_ill_conditioned_matrix():
     torch.manual_seed(42)
     m, n = 30, 30
-    U, _ = torch.linalg.qr(torch.randn(m, m, dtype=dtype))
-    V, _ = torch.linalg.qr(torch.randn(n, n, dtype=dtype))
-    singular_values = torch.logspace(0, -8, n, dtype=dtype)
+    U, _ = torch.linalg.qr(torch.randn(m, m, dtype=torch.double))
+    V, _ = torch.linalg.qr(torch.randn(n, n, dtype=torch.double))
+    singular_values = torch.logspace(0, -8, n, dtype=torch.double)
     S = torch.diag(singular_values)
     M = U[:, :n] @ S @ V.T
-    Q, R, J = cqrrpt(M)
+    Q, R, J = pawX.cqrrpt(M)
     err = check_qr_decomposition(M, Q, R, J, tol=1e-7)
     # Allow a somewhat looser tolerance for ill-conditioned matrices.
     assert (
@@ -157,12 +147,11 @@ def test_ill_conditioned_matrix(dtype):
 #########################################
 # Test validity of the permutation vector.
 #########################################
-@pytest.mark.parametrize("dtype", DTYPES)
-def test_permutation_vector(dtype):
+def test_permutation_vector():
     torch.manual_seed(42)
     m, n = 20, 10
-    M = torch.randn(m, n, dtype=dtype)
-    _, _, J = cqrrpt(M)
+    M = torch.randn(m, n, dtype=torch.double)
+    _, _, J = pawX.cqrrpt(M)
     sorted_J = torch.sort(J).values
     expected = torch.arange(0, n, dtype=J.dtype)
     assert torch.allclose(

@@ -68,7 +68,6 @@ class SKConv2d(nn.Module):
         kernel_size: Tuple = (3, 3),
         stride: Tuple = (1, 1),
         padding: str | Tuple | int = (1, 1),
-        bias: bool = True,
         num_terms: int = 6,
         low_rank: int = 8,
         layer: Optional[nn.Conv2d] = None,
@@ -122,16 +121,10 @@ class SKConv2d(nn.Module):
             kernels = torch.empty(
                 (in_channels, *self.kernel_size, out_channels), **factory_kwargs
             )
-            init.kaiming_uniform_(kernels, a=math.sqrt(5))
-
-            if bias:
-                self.bias = nn.Parameter(torch.empty(out_channels, **factory_kwargs))
-                fan_in, _ = init._calculate_fan_in_and_fan_out(kernels)
-                bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-                init.uniform_(self.bias, -bound, bound)
-            else:
-                self.register_parameter("bias", None)
-
+            self.bias = nn.Parameter(torch.empty(out_channels, **factory_kwargs))
+            fan_in, _ = init._calculate_fan_in_and_fan_out(kernels)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            init.uniform_(self.bias, -bound, bound)
         elif isinstance(layer, nn.Conv2d):
             assert layer.groups == 1, "Groups must be 1 for SKConv2d"
             assert layer.dilation == (1, 1), "Dilation must be (1, 1) for SKConv2d"
@@ -150,6 +143,8 @@ class SKConv2d(nn.Module):
             raise ValueError(
                 "Layer must be a torch.nn.Conv2d layer or None. If None, a new kernel will be created."
             )
+
+        init.kaiming_uniform_(kernels, a=math.sqrt(5))
 
         def mode4_unfold(tensor: torch.Tensor) -> torch.Tensor:
             """Computes mode-4 matricization (unfolding along the last dimension)."""

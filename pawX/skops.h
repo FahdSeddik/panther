@@ -13,11 +13,6 @@ enum class DistributionFamily {
     Uniform
 };
 
-enum class Axis {
-    Short,
-    Long
-};
-
 inline std::ostream& operator<<(std::ostream& os, const DistributionFamily& df) {
     switch (df) {
         case DistributionFamily::Gaussian:
@@ -25,24 +20,6 @@ inline std::ostream& operator<<(std::ostream& os, const DistributionFamily& df) 
             break;
         case DistributionFamily::Uniform:
             os << "Uniform";
-            break;
-        default:
-            os << "Unknown";
-            break;
-    }
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Axis& df) {
-    switch (df) {
-        case Axis::Short:
-            os << "Short";
-            break;
-        case Axis::Long:
-            os << "Long";
-            break;
-        default:
-            os << "Unknown";
             break;
     }
     return os;
@@ -52,11 +29,6 @@ torch::Tensor dense_sketch_operator(int64_t m, int64_t n,
                                     DistributionFamily distribution,
                                     c10::optional<torch::Device> device = c10::nullopt,
                                     c10::optional<torch::Dtype> dtype = c10::nullopt);
-
-torch::Tensor sparse_sketch_operator(int64_t m, int64_t n, int64_t vec_nnz,
-                                     Axis major_axis,
-                                     c10::optional<torch::Device> device = c10::nullopt,
-                                     c10::optional<torch::Dtype> dtype = c10::nullopt);
 
 std::tuple<torch::Tensor, torch::Tensor> sketch_tensor(const torch::Tensor& input,
                                                        int64_t axis,

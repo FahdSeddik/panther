@@ -1,10 +1,8 @@
-from pawX import Axis, DistributionFamily
-
-from .core import (
+from pawX import (
+    DistributionFamily,
     dense_sketch_operator,
     scaled_sign_sketch,
     sketch_tensor,
-    sparse_sketch_operator,
 )
 
 __all__ = [
@@ -12,6 +10,4 @@ __all__ = [
     "DistributionFamily",
     "dense_sketch_operator",
     "sketch_tensor",
-    "sparse_sketch_operator",
-    "Axis",
 ]
