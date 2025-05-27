@@ -1241,3 +1241,301 @@ def calc_grad_S2s(U2s_hin, g):
     )
 
     return grad_S2s
+
+
+@triton.autotune(
+    configs=[
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 256,
+                "BLOCK_SIZE_d2": 64,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=1,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 64,
+                "BLOCK_SIZE_BSIZE": 256,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 128,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 64,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 64,
+                "BLOCK_SIZE_BSIZE": 128,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 32,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 64,
+                "BLOCK_SIZE_BSIZE": 32,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=5,
+            num_warps=2,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 32,
+                "BLOCK_SIZE_BSIZE": 64,
+                "BLOCK_SIZE_d2": 32,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=5,
+            num_warps=2,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 256,
+                "BLOCK_SIZE_d2": 128,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=3,
+            num_warps=8,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 256,
+                "BLOCK_SIZE_BSIZE": 128,
+                "BLOCK_SIZE_d2": 128,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=3,
+            num_warps=8,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 256,
+                "BLOCK_SIZE_BSIZE": 64,
+                "BLOCK_SIZE_d2": 128,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 64,
+                "BLOCK_SIZE_BSIZE": 256,
+                "BLOCK_SIZE_d2": 128,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 128,
+                "BLOCK_SIZE_d2": 128,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 64,
+                "BLOCK_SIZE_d2": 64,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 64,
+                "BLOCK_SIZE_BSIZE": 128,
+                "BLOCK_SIZE_d2": 64,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+        triton.Config(
+            {
+                "BLOCK_SIZE_K": 128,
+                "BLOCK_SIZE_BSIZE": 32,
+                "BLOCK_SIZE_d2": 64,
+                "GROUP_SIZE_K": 8,
+            },
+            num_stages=4,
+            num_warps=4,
+        ),
+    ],
+    key=["K", "d2", "BSIZE", "L"],
+)
+@triton.jit
+def first_pass_U2s_hin_kernel(
+    hin_ptr,
+    U2s_ptr,
+    U2s_h_in_ptr,
+    K,
+    d2,
+    BSIZE,
+    L,
+    stride_hin_d2,
+    stride_hin_BSIZE,
+    stride_su_l,
+    stride_su_K,
+    stride_su_d2,
+    stride_out_l,
+    stride_out_K,
+    stride_out_BSIZE,
+    BLOCK_SIZE_K: tl.constexpr,
+    BLOCK_SIZE_BSIZE: tl.constexpr,
+    BLOCK_SIZE_d2: tl.constexpr,
+    GROUP_SIZE_K: tl.constexpr,
+):
+    """
+    Computes the product of U2s and hin in a tiled manner.
+
+    This kernel performs the first pass computation for a larger operation,
+    specifically calculating U2s_h_in = U2s @ hin.
+
+    Args:
+        hin_ptr: Pointer to the input tensor hin (d2, BSIZE).
+        U2s_ptr: Pointer to the input tensor U2s (L, K, d2).
+        U2s_h_in_ptr: Pointer to the output tensor U2s_h_in (L, K, BSIZE).
+        K: Dimension K of the U2s tensor.
+        d2: Dimension d2 of the U2s and hin tensors.
+        BSIZE: Dimension BSIZE of the hin tensor.
+        L: Dimension L (batch dimension) of the U2s and U2s_h_in tensors.
+        stride_hin_d2: Stride of the hin tensor along dimension d2.
+        stride_hin_BSIZE: Stride of the hin tensor along dimension BSIZE.
+        stride_su_l: Stride of the U2s tensor along dimension L.
+        stride_su_K: Stride of the U2s tensor along dimension K.
+        stride_su_d2: Stride of the U2s tensor along dimension d2.
+        stride_out_l: Stride of the U2s_h_in tensor along dimension L.
+        stride_out_K: Stride of the U2s_h_in tensor along dimension K.
+        stride_out_BSIZE: Stride of the U2s_h_in tensor along dimension BSIZE.
+        BLOCK_SIZE_K: Tile size for dimension K.
+        BLOCK_SIZE_BSIZE: Tile size for dimension BSIZE.
+        BLOCK_SIZE_d2: Tile size for dimension d2.
+        GROUP_SIZE_K: Group size for K dimension, used for managing thread blocks.
+    """
+    # Get program IDs for batch and other dimensions
+    pid = tl.program_id(axis=1)
+    batch_id = tl.program_id(axis=0)  # This corresponds to L
+
+    # Calculate the number of program IDs (blocks) for K and BSIZE dimensions
+    num_pid_K = tl.cdiv(K, BLOCK_SIZE_K)
+    num_pid_BSIZE = tl.cdiv(BSIZE, BLOCK_SIZE_BSIZE)
+
+    # Grouping logic for managing thread blocks, particularly for the K dimension
+    num_pid_in_group = GROUP_SIZE_K * num_pid_BSIZE
+    group_id = pid // num_pid_in_group
+    first_pid_K = group_id * GROUP_SIZE_K
+
+    # Determine the actual size of the current group for K dimension (can be smaller at the boundary)
+    group_size_BSIZE = min(
+        num_pid_K - first_pid_K, GROUP_SIZE_K
+    )  # Note: Name seems misleading, it's related to K blocks
+
+    # Calculate specific program ID for K and BSIZE within the group
+    pid_K = first_pid_K + ((pid % num_pid_in_group) % group_size_BSIZE)
+    pid_BSIZE = (pid % num_pid_in_group) // group_size_BSIZE
+
+    # Define offsets for K, BSIZE, and d2 dimensions for the current block
+    offs_K = pid_K * BLOCK_SIZE_K + tl.arange(0, BLOCK_SIZE_K)
+    offs_BSIZE = pid_BSIZE * BLOCK_SIZE_BSIZE + tl.arange(0, BLOCK_SIZE_BSIZE)
+    offs_d2 = tl.arange(0, BLOCK_SIZE_d2)
+
+    # Ensure offsets are contiguous and aligned to block sizes
+    offs_K = tl.max_contiguous(tl.multiple_of(offs_K, BLOCK_SIZE_K), BLOCK_SIZE_K)
+    offs_BSIZE = tl.max_contiguous(
+        tl.multiple_of(offs_BSIZE, BLOCK_SIZE_BSIZE), BLOCK_SIZE_BSIZE
+    )
+    offs_d2 = tl.max_contiguous(tl.multiple_of(offs_d2, BLOCK_SIZE_d2), BLOCK_SIZE_d2)
+
+    # Calculate pointers to the current block in hin
+    hin_ptrs = hin_ptr + (
+        offs_d2[:, None] * stride_hin_d2 + offs_BSIZE[None, :] * stride_hin_BSIZE
+    )
+
+    # Calculate pointers to the current block in U2s, including batch offset
+    su_tmp = batch_id * stride_su_l + (
+        offs_K[:, None] * stride_su_K + offs_d2[None, :] * stride_su_d2
+    )
+    U2s_ptrs = U2s_ptr + su_tmp
+
+    # Initialize accumulator for the dot product
+    accumulator1 = tl.full(
+        shape=(BLOCK_SIZE_K, BLOCK_SIZE_BSIZE), value=0.0, dtype=tl.float32
+    )
+
+    # Loop over the d2 dimension in blocks
+    for d2_i in range(0, tl.cdiv(d2, BLOCK_SIZE_d2)):
+        # Create masks for loading hin to handle boundary conditions
+        hin_mask = (offs_d2[:, None] < d2 - d2_i * BLOCK_SIZE_d2) & (
+            offs_BSIZE[None, :] < BSIZE
+        )
+        hin = tl.load(hin_ptrs, mask=hin_mask, other=0.0)
+
+        # Create masks for loading U2s to handle boundary conditions
+        su_mask = (offs_K[:, None] < K) & (offs_d2[None, :] < d2 - d2_i * BLOCK_SIZE_d2)
+        U2s = tl.load(U2s_ptrs, mask=su_mask, other=0.0)
+
+        # Perform matrix multiplication (dot product) for the current blocks
+        accumulator1 += tl.dot(U2s, hin, input_precision="ieee")
+
+        # Advance pointers to the next block in d2 dimension
+        hin_ptrs += BLOCK_SIZE_d2 * stride_hin_d2
+        U2s_ptrs += BLOCK_SIZE_d2 * stride_su_d2
+
+    # Calculate pointers to the output tensor U2s_h_in, including batch offset
+    out_tmp = (
+        batch_id * stride_out_l
+        + stride_out_K * offs_K[:, None]
+        + stride_out_BSIZE * offs_BSIZE[None, :]
+    )
+    U2s_h_in_ptrs = U2s_h_in_ptr + out_tmp
+
+    # Create mask for storing the output to handle boundary conditions
+    out_mask = (offs_K[:, None] < K) & (offs_BSIZE[None, :] < BSIZE)
+
+    # Store the accumulated result
+    tl.store(U2s_h_in_ptrs, accumulator1, mask=out_mask)
