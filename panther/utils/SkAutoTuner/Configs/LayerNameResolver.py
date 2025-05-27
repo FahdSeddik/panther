@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch.nn as nn
 
@@ -215,3 +215,142 @@ class LayerNameResolver:
         except re.error:
             # If not a valid regex, try simple substring matching
             return [name for name in self.layer_map.keys() if pattern in name]
+
+    def get_layers_by_depth(self, depth: int) -> List[str]:
+        """
+        Get layer names at a specific depth in the model hierarchy.
+
+        Depth is determined by the number of '.' in the layer name.
+        For example, 'model.encoder.layer0' has depth 2.
+
+        Args:
+            depth: The depth level to retrieve layers from
+
+        Returns:
+            List of layer names at the specified depth
+        """
+        return [name for name in self.layer_map.keys() if name.count(".") == depth]
+
+    def get_layer_types(self) -> Dict[str, List[str]]:
+        """
+        Get a mapping of layer types to layer names.
+
+        Returns:
+            Dictionary where keys are layer types (e.g., 'Linear', 'Conv2d')
+            and values are lists of layer names of that type
+        """
+        type_map = {}
+        for name, layer in self.layer_map.items():
+            layer_type = type(layer).__name__
+            if layer_type not in type_map:
+                type_map[layer_type] = []
+            type_map[layer_type].append(name)
+
+        return type_map
+
+    def get_layers_by_parent(self, parent_name: str) -> List[str]:
+        """
+        Get all direct child layers of a parent layer.
+
+        Args:
+            parent_name: Name of the parent layer
+
+        Returns:
+            List of layer names that are direct children of the parent
+        """
+        if not parent_name.endswith("."):
+            parent_name = parent_name + "."
+
+        return [
+            name
+            for name in self.layer_map.keys()
+            if name.startswith(parent_name) and name[len(parent_name) :].count(".") == 0
+        ]
+
+    def filter_layers_by_attribute(
+        self, attribute_name: str, attribute_value: Any
+    ) -> List[str]:
+        """
+        Filter layers based on a specific attribute value.
+
+        Args:
+            attribute_name: Name of the attribute to check
+            attribute_value: Expected value of the attribute
+
+        Returns:
+            List of layer names with matching attribute value
+        """
+        matched_layers = []
+
+        for name, layer in self.layer_map.items():
+            if hasattr(layer, attribute_name):
+                if getattr(layer, attribute_name) == attribute_value:
+                    matched_layers.append(name)
+
+        return matched_layers
+
+    def filter_layers_by_function(
+        self, filter_fn: Callable[[nn.Module], bool]
+    ) -> List[str]:
+        """
+        Filter layers using a custom function.
+
+        Args:
+            filter_fn: Function that takes a layer and returns True if it should be included
+
+        Returns:
+            List of layer names that pass the filter function
+        """
+        return [name for name, layer in self.layer_map.items() if filter_fn(layer)]
+
+    def get_layer_parameter_count(self) -> Dict[str, int]:
+        """
+        Count parameters for each layer in the model.
+
+        Returns:
+            Dictionary mapping layer names to their parameter counts
+        """
+        param_counts = {}
+
+        for name, layer in self.layer_map.items():
+            param_count = sum(p.numel() for p in layer.parameters())
+            param_counts[name] = param_count
+
+        return param_counts
+
+    def get_top_n_layers_by_parameters(self, n: int = 10) -> List[Tuple[str, int]]:
+        """
+        Get the top N layers with the most parameters.
+
+        Args:
+            n: Number of top layers to return
+
+        Returns:
+            List of tuples (layer_name, parameter_count) sorted by parameter count
+        """
+        param_counts = self.get_layer_parameter_count()
+        sorted_layers = sorted(param_counts.items(), key=lambda x: x[1], reverse=True)
+        return sorted_layers[:n]
+
+    def find_common_prefix(self) -> str:
+        """
+        Find the common prefix shared by all layer names.
+
+        This is useful for identifying the root module name.
+
+        Returns:
+            The common prefix string
+        """
+        if not self.layer_map:
+            return ""
+
+        names = list(self.layer_map.keys())
+        prefix = names[0]
+
+        for name in names[1:]:
+            while not name.startswith(prefix):
+                prefix = prefix[:-1]
+                if not prefix:
+                    return ""
+
+        return prefix
