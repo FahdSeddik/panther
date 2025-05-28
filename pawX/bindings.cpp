@@ -125,32 +125,35 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     .def_readwrite("device", &sinSRPEImpl::device)
     .def_readwrite("dtype", &sinSRPEImpl::dtype)
 
-    // Register the constructor with parameters
-    .def(py::init<int64_t, int64_t, int64_t, int64_t, torch::Device, torch::Dtype>(),
-       py::arg("num_heads"),
-       py::arg("perHead_in"),
-       py::arg("sines"),
-       py::arg("num_realizations"),
-       py::arg("device"),
-       py::arg("dtype"))
-    // an overload that omits device and dtype, filling in defaults in C++:
-    .def(py::init(
-      [](int64_t num_heads,
-         int64_t perHead_in,
-         int64_t sines,
-         int64_t num_realizations) {
-        return std::make_shared<sinSRPEImpl>(
-            num_heads,
-            perHead_in,
-            sines,
-            num_realizations,
-            torch::kCPU,
-            torch::kFloat);
-      }),
-       py::arg("num_heads"),
-       py::arg("perHead_in"),
-       py::arg("sines"),
-       py::arg("num_realizations") = 256)
+    .def(
+        // this init takes 3 required args + 3 optional ones
+        py::init(
+            [](int64_t num_heads,
+                int64_t perHead_in,
+                int64_t sines,
+                int64_t num_realizations,
+                c10::optional<torch::Device> maybe_dev,
+                c10::optional<torch::Dtype>  maybe_dt
+            ){
+                auto dev = maybe_dev.value_or(torch::kCPU);
+                auto dt  = maybe_dt.value_or(torch::kFloat);
+                return std::make_shared<sinSRPEImpl>(
+                    num_heads,
+                    perHead_in,
+                    sines,
+                    num_realizations,
+                    dev,
+                    dt
+                );
+            }
+        ),
+        py::arg("num_heads"),
+        py::arg("perHead_in"),
+        py::arg("sines"),
+        py::arg("num_realizations") = 256,
+        py::arg("device")           = c10::nullopt,
+        py::arg("dtype")            = c10::nullopt
+    )
 
     .def("forward", &sinSRPEImpl::forward);
 
