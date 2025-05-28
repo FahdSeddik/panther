@@ -384,3 +384,7 @@ if __name__ == "__main__":
     # you can change it to randomSearch or bayesianSearch by passing the search_algorithm parameter to SKAutoTuner.
     # and note that some searching algorithms like hyperband will require the eval and optmization function
     # to take 'resource' parameter which can be used as number of epochs for example.
+
+    # note that when using POS the params first 2 values would be used
+    # as the min and max values for the search space for this param.
+    # and it will search across all the range with step of 1.
