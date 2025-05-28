@@ -460,7 +460,7 @@ torch::Tensor sparse_sketch_operator(
  * @param dtype (Optional) The desired data type of the returned tensor.
  * @return torch::Tensor A (m x d) tensor of scaled Gaussian random values.
  */
-torch::Tensor gaussian_skop(int64_t m, int64_t d, c10::optional<torch::Device> device = c10::nullopt, c10::optional<torch::Dtype> dtype = c10::nullopt) {
+torch::Tensor gaussian_skop(int64_t m, int64_t d, c10::optional<torch::Device> device, c10::optional<torch::Dtype> dtype) {
     auto options = torch::TensorOptions().dtype(dtype.value_or(torch::kFloat32)).device(device.value_or(torch::kCPU));
     return torch::randn({m, d}, options) / std::sqrt(m);
 }
@@ -477,7 +477,7 @@ torch::Tensor gaussian_skop(int64_t m, int64_t d, c10::optional<torch::Device> d
  * @param dtype (Optional) The desired data type of the returned tensor.
  * @return torch::Tensor The generated m x d sparse random matrix.
  */
-torch::Tensor count_skop(int64_t m, int64_t d, c10::optional<torch::Device> device = c10::nullopt, c10::optional<torch::Dtype> dtype = c10::nullopt) {
+torch::Tensor count_skop(int64_t m, int64_t d, c10::optional<torch::Device> device, c10::optional<torch::Dtype> dtype) {
     auto options = torch::TensorOptions().dtype(dtype.value_or(torch::kFloat32)).device(device.value_or(torch::kCPU));
     auto S = torch::zeros({m, d}, options);
     auto h = torch::randint(0, m, {d}, options.dtype(torch::kInt64));  // Row indices for each column
@@ -504,7 +504,7 @@ torch::Tensor count_skop(int64_t m, int64_t d, c10::optional<torch::Device> devi
  * @param dtype (Optional) The data type of the tensor (e.g., torch::kFloat32).
  * @return torch::Tensor The generated SJLT matrix of shape (m, d).
  */
-torch::Tensor sjlt_skop(int64_t m, int64_t d, int64_t sparsity = 2, c10::optional<torch::Device> device = c10::nullopt, c10::optional<torch::Dtype> dtype = c10::nullopt) {
+torch::Tensor sjlt_skop(int64_t m, int64_t d, int64_t sparsity, c10::optional<torch::Device> device, c10::optional<torch::Dtype> dtype) {
     auto options = torch::TensorOptions().dtype(dtype.value_or(torch::kFloat32)).device(device.value_or(torch::kCPU));
     auto S = torch::zeros({m, d}, options);
 
