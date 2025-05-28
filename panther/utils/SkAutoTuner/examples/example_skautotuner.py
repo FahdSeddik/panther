@@ -379,3 +379,8 @@ if __name__ == "__main__":
     print(
         "Ensure 'matplotlib' and 'pandas' are installed to see visualizations and dataframes."
     )
+
+    # note that in this example the search_algorithm is not used which will be gridSearch by default.
+    # you can change it to randomSearch or bayesianSearch by passing the search_algorithm parameter to SKAutoTuner.
+    # and note that some searching algorithms like hyperband will require the eval and optmization function
+    # to take 'resource' parameter which can be used as number of epochs for example.

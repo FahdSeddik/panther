@@ -356,7 +356,7 @@ class SKAutoTuner:
 
         return score, speed_score
 
-    def _try_parameters(self, layer_name, params, copy_weights=True):
+    def _try_parameters(self, layer_name, params, copy_weights=True, resource=None):
         """
         Apply parameters to a layer, evaluate the model, and restore the original layer.
 
@@ -376,9 +376,19 @@ class SKAutoTuner:
             layer_name, type(layer), params, copy_weights=copy_weights
         )
 
-        # Evaluate
-        accuracy_score = self.accuracy_eval_func(self.model)
-        score, speed_score = self._evaluate_model(accuracy_score)
+        accuracy_score = None
+        speed_score = None
+        score = None
+
+        # send resouce if its not none else it will be ignored
+        if resource is None:
+            # Evaluate
+            accuracy_score = self.accuracy_eval_func(self.model)
+            score, speed_score = self._evaluate_model(accuracy_score)
+        else:
+            # Evaluate with resource
+            accuracy_score = self.accuracy_eval_func(self.model, resource=resource)
+            score, speed_score = self._evaluate_model(accuracy_score, resource=resource)
 
         return score, accuracy_score, speed_score, layer, new_layer
 
@@ -401,6 +411,11 @@ class SKAutoTuner:
 
             while True:
                 params = self.search_algorithm.get_next_params()
+                # mainly for hyperband search algorithms
+                resource = self.search_algorithm.get_resource() if hasattr(
+                    self.search_algorithm, "get_resource"
+                ) else None
+
                 if params is None:
                     break  # No more parameter combinations to try
 
@@ -416,7 +431,7 @@ class SKAutoTuner:
                     # Apply parameters and evaluate
                     score, accuracy_score, speed_score, original_layer, new_layer = (
                         self._try_parameters(
-                            layer_name, params, copy_weights=config.copy_weights
+                            layer_name, params, copy_weights=config.copy_weights, resource=resource
                         )
                     )
 
@@ -483,6 +498,10 @@ class SKAutoTuner:
 
         while True:
             params = self.search_algorithm.get_next_params()
+            resource = self.search_algorithm.get_resource() if hasattr(
+                    self.search_algorithm, "get_resource"
+                ) else None
+            
             if params is None:
                 break  # No more parameter combinations to try
 
@@ -509,9 +528,19 @@ class SKAutoTuner:
                     )
                     new_layers.append(new_layer)
 
-                # Evaluate
-                accuracy_score = self.accuracy_eval_func(self.model)
-                score, speed_score = self._evaluate_model(accuracy_score)
+                accuracy_score = None
+                speed_score = None
+                score = None
+
+                # send resouce if its not none else it will be ignored
+                if resource is None:
+                    # Evaluate
+                    accuracy_score = self.accuracy_eval_func(self.model)
+                    score, speed_score = self._evaluate_model(accuracy_score)
+                else:
+                    # Evaluate with resource
+                    accuracy_score = self.accuracy_eval_func(self.model, resource=resource)
+                    score, speed_score = self._evaluate_model(accuracy_score, resource=resource)
 
                 # Restore original layers
                 for i, layer_name in enumerate(config.layer_names):
