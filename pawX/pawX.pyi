@@ -147,3 +147,26 @@ def sketched_conv2d_backward(
     in_shape: Tuple[int, int],
     grad_out: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
+def gaussian_skop(
+    m: int,
+    d: int,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def count_skop(
+    m: int,
+    d: int,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def sjlt_skop(
+    m: int,
+    d: int,
+    sparsity: int = 2,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def srht(
+    x: torch.Tensor,
+    m: int,
+) -> torch.Tensor: ...

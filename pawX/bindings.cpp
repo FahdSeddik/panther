@@ -100,4 +100,16 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
     m.def("test_tensor_accessor", &test_tensor_accessor,
           py::arg("tensor"));
+
+    m.def("gaussian_skop", &gaussian_skop,
+          py::arg("m"), py::arg("d"),
+          py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
+    m.def("count_skop", &count_skop,
+          py::arg("m"), py::arg("d"),
+          py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
+    m.def("sjlt_skop", &sjlt_skop,
+          py::arg("m"), py::arg("d"), py::arg("sparsity") = 2,
+          py::arg("device") = c10::nullopt, py::arg("dtype") = c10::nullopt);
+    m.def("srht", &srht,
+          py::arg("x"), py::arg("m"));
 }

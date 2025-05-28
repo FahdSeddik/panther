@@ -71,3 +71,21 @@ torch::Tensor sketch_tensor(const torch::Tensor& input,
                             const torch::Tensor& sketch_matrix,
                             c10::optional<torch::Device> device = c10::nullopt,
                             c10::optional<torch::Dtype> dtype = c10::nullopt);
+
+torch::Tensor gaussian_skop(int64_t m,
+                            int64_t d,
+                            c10::optional<torch::Device> device = c10::nullopt,
+                            c10::optional<torch::Dtype> dtype = c10::nullopt);
+
+torch::Tensor count_skop(int64_t m,
+                         int64_t d,
+                         c10::optional<torch::Device> device = c10::nullopt,
+                         c10::optional<torch::Dtype> dtype = c10::nullopt);
+
+torch::Tensor sjlt_skop(int64_t m,
+                        int64_t d,
+                        int64_t sparsity = 2,
+                        c10::optional<torch::Device> device = c10::nullopt,
+                        c10::optional<torch::Dtype> dtype = c10::nullopt);
+
+torch::Tensor srht(torch::Tensor x, int m);

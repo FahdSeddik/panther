@@ -3,10 +3,11 @@ benchmark_cqrrpt.py
 
 Benchmark CQRRPT vs. GEQRF, GEQR, GEQP3, GEQPT, and sCholQR3 on tall-skinny matrices.
 
-For each m belongs to {8192, 16768} and n belongs to {64, 128, 256, 512, 1024}, we:
-  - Generate M belongs to R^{mxn} with i.i.d. N(0,1) entries (dtype chosen by DTYPE).
+For each m in {8192, 16768} and n in {64, 128, 256, 512, 1024}, we:
+  - Generate M ∈ R^{mxn} with i.i.d. N(0,1) entries (dtype chosen by DTYPE).
   - Perform NUM_RUNS independent runs of each algorithm (after a few warmups).
-  - Record wall-clock time, RSS memory usage, factorization error, and orthogonality error.
+  - Record wall-clock time, RSS memory usage, factorization error, orthogonality error,
+    and now also the absolute reconstruction error.
   - Report the **best** (minimum) runtime among those NUM_RUNS runs—per the paper's specification.
 
 """
@@ -31,7 +32,7 @@ GAMMA = 1.25
 DTYPE = torch.float64  # torch.float32 or torch.float64
 NUM_WARMUP = 2  # Warmup runs before timing
 NUM_RUNS = 5  # As specified: "best of 20 runs"
-OUTPUT_CSV = "cqrrpt_benchmark_results.csv"
+OUTPUT_CSV = "cqrrpt_benchmark_results2.csv"
 SEED = 1234  # For reproducibility
 
 
@@ -44,11 +45,11 @@ def measure_memory():
 
 
 # ------------------------------------------------------------
-# Helper: Orthogonality error ||I - Q.TQ||_F
+# Helper: Orthogonality error ‖I − QᵀQ‖_F
 # ------------------------------------------------------------
 def orthogonality_error(Q: torch.Tensor) -> float:
     """
-    Q: (mxk). Compute ||I_k - Q.TQ||_F in Python float.
+    Q: (mxk). Compute ‖I_k − QᵀQ‖_F in Python float.
     """
     k = Q.shape[1]
     QtQ = Q.transpose(0, 1).mm(Q)  # (kxk)
@@ -58,7 +59,7 @@ def orthogonality_error(Q: torch.Tensor) -> float:
 
 
 # ------------------------------------------------------------
-# Helper: Factorization error for pivoted QR: ||M[:,J] - Q @ R||_F / ||M||_F
+# Helper: Factorization error for pivoted QR: ‖M[:, J] − Q R‖_F / ‖M‖_F
 # ------------------------------------------------------------
 def factorization_error_pivoted(
     M: torch.Tensor, Q: torch.Tensor, R: torch.Tensor, J: torch.Tensor
@@ -66,6 +67,7 @@ def factorization_error_pivoted(
     """
     J: 1D int64 Tensor of length n, 0-based column indices, so that
        M[:, J] = Q @ R ideally.
+    Returns: relative Frobenius-norm error.
     """
     M_perm = M.index_select(dim=1, index=J)
     M_est = Q.mm(R)
@@ -75,11 +77,14 @@ def factorization_error_pivoted(
 
 
 # ------------------------------------------------------------
-# Helper: Factorization error for unpivoted QR: ||M - Q @ R||_F / ||M||_F
+# Helper: Factorization error for unpivoted QR: ‖M − Q R‖_F / ‖M‖_F
 # ------------------------------------------------------------
 def factorization_error_unpivoted(
     M: torch.Tensor, Q: torch.Tensor, R: torch.Tensor
 ) -> float:
+    """
+    Returns: relative Frobenius-norm error.
+    """
     M_est = Q.mm(R)
     num = (M - M_est).norm(p="fro").item()
     den = M.norm(p="fro").item()
@@ -96,16 +101,16 @@ def shifted_cholqr3(M: torch.Tensor):
       M: (mxn) Tensor, dtype either float32 or float64, on CPU.
     Output:
       Q: (mxn) Tensor, R: (nxn) Tensor, J: None (no pivoting here).
-    This loops adding a shift delta until cond(R)^2 * eps < 1 (approx).
+    This loops adding a shift delta until cond(R)^2 · eps < 1 (approx).
     """
     m, n = M.shape
     dtype = M.dtype
     device = M.device
     eps = torch.finfo(dtype).eps
 
-    # Compute ||M||_F^2
+    # Compute ‖M‖_F²
     frob2 = (M.norm(p="fro") ** 2).item()
-    # Initial shift delta = 10 * eps * ||M||_F^2
+    # Initial shift δ = 10 · eps · ‖M‖_F²
     delta = 10.0 * eps * frob2
 
     # Identity_n
@@ -119,29 +124,29 @@ def shifted_cholqr3(M: torch.Tensor):
             R_t,
             B_t,
             upper=False,  # R_t is lower-triangular
-            left=True,  # solve R_t * X_t = B_t
+            left=True,  # solve R_t · X_t = B_t
             unitriangular=False,
         )
         return X_t.transpose(0, 1)
 
     while True:
-        # G = M.T M + delta I_n
-        G = M.transpose(0, 1).mm(M) + delta * I_n  # (nxn), symmetric positive-definite
-        # Compute Cholesky: G = L L.T, L lower-triangular
+        # G = MᵀM + δ I_n
+        G = M.transpose(0, 1).mm(M) + delta * I_n  # (nxn), SPD
+        # Compute Cholesky: G = L Lᵀ, L lower-triangular
         L = torch.linalg.cholesky(G, upper=False)  # (nxn)
         R = L.transpose(0, 1)  # (nxn), upper-triangular
 
         # Q = M @ inv(R)
         Q = solve_right_upper(M, R)  # (mxn)
 
-        # Check cond(R)^2 * eps < 1?
+        # Check cond(R)² · eps < 1?
         diagR = torch.diagonal(R, 0)
         abs_diag = diagR.abs()
         cond_est_sq = ((abs_diag.max() / abs_diag.min()) ** 2).item()
         if cond_est_sq * eps < 1.0:
             return Q, R, None
 
-        # Otherwise, bump delta by a factor of 10 and repeat
+        # Otherwise, bump δ by a factor of 10 and repeat
         delta *= 10.0
 
 
@@ -215,7 +220,7 @@ def geqrf_torch(M: torch.Tensor):
       Q: (mxn) Tensor, R: (nxn) Tensor, J=None (no pivoting).
     Uses torch.linalg.qr(M, mode="reduced") to produce (Q,R).
     """
-    Q, R = torch.linalg.qr(M, mode="reduced")  # no pivot argument needed
+    Q, R = torch.linalg.qr(M, mode="reduced")
     return Q, R, None
 
 
@@ -223,8 +228,8 @@ def geqrf_torch(M: torch.Tensor):
 # GEQR (unpivoted, dispatching logic)
 #
 # In PyTorch, torch.linalg.qr(...) automatically chooses the best internal routine
-# for tall‐skinny vs. general matrices. We label it as "GEQR," but the code is identical
-# to geqrf_torch because torch.linalg.qr internally calls GEQRF+orgqr or a tall‐skinny‐special.
+# for tall-skinny vs. general matrices. We label it as "GEQR," but the code is identical
+# to geqrf_torch because torch.linalg.qr internally calls GEQRF+orgqr or a tall-skinny-special.
 # ------------------------------------------------------------
 def geqr_torch(M: torch.Tensor):
     """
@@ -241,21 +246,23 @@ def run_benchmark():
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
+    # Added "recon_err" column to record absolute reconstruction error.
     columns = [
         "m",
         "n",
         "algorithm",
         "best_time_sec",
         "memory_bytes",  # memory usage from the fastest run
-        "factor_err",
-        "orth_err",
+        "factor_err",  # relative factorization error
+        "orth_err",  # orthogonality error
+        "recon_err",  # <<< added: absolute reconstruction error (Frobenius norm)
     ]
     records = []
 
     for m in M_SIZES:
         for n in N_SIZES:
             print(f"\n=== Benchmarking (m={m}, n={n}, dtype={DTYPE}) ===")
-            # 1) Generate random matrix M belongs to R^{mxn}, dtype DTYPE, on CPU:
+            # 1) Generate random matrix M ∈ ℝ^{mxn}, dtype DTYPE, on CPU:
             M = torch.randn((m, n), dtype=DTYPE, device="cpu")
 
             # 2) Warmup: run each algorithm twice (ignore output & timing)
@@ -283,8 +290,9 @@ def run_benchmark():
                 Runs `func(M)` NUM_RUNS times, records:
                   • best runtime among runs,
                   • memory usage at that best run,
-                  • factorization error (for pivoted vs unpivoted),
-                  • orthogonality error.
+                  • factorization error (relative),
+                  • orthogonality error,
+                  • reconstruction error (absolute).
                 Appends one dictionary to `records`.
                 """
                 best_time = math.inf
@@ -307,18 +315,32 @@ def run_benchmark():
                         if isinstance(result, tuple) and len(result) == 3:
                             best_Q, best_R, best_J = result
                         else:
+                            # In case someone returns a different shape, be safe:
                             best_Q, best_R, best_J = result[0], result[1], None
 
-                # Compute errors from the best‐time run
+                # Compute errors from the best-time run
                 if best_Q is None or best_R is None:
                     fac_err = None
                     ortho_err = None
+                    recon_err = None
                 else:
+                    # Orthogonality error
                     ortho_err = orthogonality_error(best_Q)
+
+                    # Factorization error (relative)
                     if is_pivoted:
                         fac_err = factorization_error_pivoted(M, best_Q, best_R, best_J)
                     else:
                         fac_err = factorization_error_unpivoted(M, best_Q, best_R)
+
+                    # Reconstruction error (absolute Frobenius norm)
+                    if is_pivoted:
+                        # M[:, J] − Q R
+                        M_perm = M.index_select(dim=1, index=best_J)
+                        recon_err = (M_perm - best_Q.mm(best_R)).norm(p="fro").item()
+                    else:
+                        # M − Q R
+                        recon_err = (M - best_Q.mm(best_R)).norm(p="fro").item()
 
                 records.append(
                     {
@@ -329,12 +351,17 @@ def run_benchmark():
                         "memory_bytes": best_mem,
                         "factor_err": fac_err,
                         "orth_err": ortho_err,
+                        "recon_err": recon_err,  # <<< added
                     }
                 )
 
+                # Print a summary line including reconstruction error
                 print(
-                    f"    {name:10s}  →  time: {best_time:.4f}s,  mem: {best_mem/1e6:.2f} MB,  "
-                    f"fact_err: {fac_err:.2e},  orth_err: {ortho_err:.2e}"
+                    f"    {name:10s}  →  time: {best_time:.4f}s,  "
+                    f"mem: {best_mem/1e6:.2f} MB,  "
+                    f"fact_err: {fac_err:.2e},  "
+                    f"orth_err: {ortho_err:.2e},  "
+                    f"recon_err: {recon_err:.2e}"
                 )
 
             # (A) CQRRPT (pivoted, random)
@@ -368,7 +395,7 @@ def run_benchmark():
     df = pd.DataFrame.from_records(records, columns=columns)
 
     pd.set_option("display.expand_frame_repr", False)
-    print("\n=== Raw Benchmark Results ===")
+    print("\n=== Raw Benchmark Results (including reconstruction error) ===")
     print(df)
 
     df.to_csv(OUTPUT_CSV, index=False)

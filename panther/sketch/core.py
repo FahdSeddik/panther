@@ -3,10 +3,14 @@ from typing import Optional, Tuple, Union
 import torch
 
 from pawX import Axis, DistributionFamily
+from pawX import count_skop as _count_skop
 from pawX import dense_sketch_operator as _dense_sketch_operator
+from pawX import gaussian_skop as _gaussian_skop
 from pawX import scaled_sign_sketch as _scaled_sign_sketch
+from pawX import sjlt_skop as _sjlt_skop
 from pawX import sketch_tensor as _sketch_tensor
 from pawX import sparse_sketch_operator as _sparse_sketch_operator
+from pawX import srht as _srht
 
 
 def scaled_sign_sketch(
@@ -254,3 +258,150 @@ def sparse_sketch_operator(
         - https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma
     """
     return _sparse_sketch_operator(m, n, vec_nnz, axis, device=device, dtype=dtype)
+
+
+def srht(x: torch.Tensor, m: int) -> torch.Tensor:
+    """
+    Subsampled Randomized Hadamard Transform (SRHT).
+
+    This function computes a Subsampled Randomized Hadamard Transform of a 1D input tensor `x` of length `n`
+    (where `n` must be a power of 2). It performs the following steps:
+
+    1. Multiply the input by a random diagonal matrix with ±1 entries (random sign flipping).
+    2. Apply the Fast Walsh-Hadamard Transform (FWHT).
+    3. Uniformly subsample `m` rows from the result.
+
+    This is commonly used in randomized numerical linear algebra and compressed sensing to reduce
+    dimensionality while approximately preserving distances.
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        A 1D input tensor of shape `(n,)` where `n` is a power of 2.
+        The tensor must reside on the CPU and be of floating point type.
+
+    m : int
+        The number of rows to subsample from the Hadamard-transformed output.
+        Must satisfy `0 < m <= n`.
+
+    Returns
+    -------
+    torch.Tensor
+        A 1D tensor of shape `(m,)` containing the subsampled rows from the Hadamard-transformed vector.
+
+    Raises
+    ------
+    RuntimeError
+        If `x` is not on CPU, is not 1-dimensional, or `n` is not a power of 2.
+        If `m` is greater than `n`.
+
+    Example
+    -------
+    >>> import torch
+    >>> from panther.sketch import srht
+    >>> x = torch.randn(8)
+    >>> y = srht(x, 4)
+    >>> print(y.shape)
+    torch.Size([4])
+    """
+    return _srht(x, m)
+
+
+def count_skop(
+    m: int,
+    d: int,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor:
+    """
+    Generates a CountSketch sketching matrix of shape (m, d).
+
+    Each column of the sketching matrix has exactly one non-zero entry,
+    which is randomly assigned to a row via a simple hash (uniform random),
+    and assigned a value of ±1 with equal probability. The result is a sparse
+    sketching operator used to project high-dimensional data into a lower-dimensional
+    space while approximately preserving inner products.
+
+    This is commonly used in streaming and randomized linear algebra algorithms.
+
+    Args:
+        m (int): Number of rows in the sketching matrix (target dimension).
+        d (int): Number of columns in the sketching matrix (original dimension).
+
+    Returns:
+        torch.Tensor: A sparse sketching matrix of shape (m, d) with exactly one
+                      non-zero entry per column (either +1 or -1).
+
+    Example:
+        >>> import torch
+        >>> from panther.sketch import count_sketch_operator
+        >>> m, d = 100, 1000
+        >>> S = count_skop(m, d)
+        >>> X = torch.randn(50, d)  # Input data
+        >>> X_sketched = X @ S.t()
+        >>> X_sketched.shape
+        torch.Size([50, 100])
+    """
+    return _count_skop(m, d, device=device, dtype=dtype)
+
+
+def gaussian_skop(
+    m: int,
+    d: int,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor:
+    """
+    Generates a Gaussian random projection matrix of shape (m, d).
+
+    Each entry in the sketching matrix is an independent sample from
+    the normal distribution N(0, 1/m). This type of projection approximately
+    preserves Euclidean distances and inner products with high probability.
+
+    Args:
+        m (int): Number of rows in the sketching matrix (target dimension).
+        d (int): Number of columns in the sketching matrix (original dimension).
+
+    Returns:
+        torch.Tensor: A dense sketching matrix of shape (m, d) with entries ~ N(0, 1/m).
+
+    Example:
+        >>> S = gaussian_skop(100, 1000)
+        >>> X = torch.randn(64, 1000)
+        >>> X_sketched = X @ S.t()
+        >>> X_sketched.shape
+        torch.Size([64, 100])
+    """
+    return _gaussian_skop(m, d, device=device, dtype=dtype)
+
+
+def sjlt_skop(
+    m: int,
+    d: int,
+    sparsity: int = 2,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor:
+    """
+    Generates a sparse Johnson-Lindenstrauss Transform (SJLT) sketching matrix.
+
+    Each column of the matrix has exactly `sparsity` non-zero entries, chosen uniformly
+    at random among the rows, with values ±1. The matrix is scaled by 1/√sparsity.
+    This sketch is ideal for fast projections with low memory usage.
+
+    Args:
+        m (int): Number of rows in the sketching matrix (target dimension).
+        d (int): Number of columns in the sketching matrix (original dimension).
+        sparsity (int, optional): Number of non-zero entries per column. Defaults to 2.
+
+    Returns:
+        torch.Tensor: A sparse sketching matrix of shape (m, d), entries ∈ {±1/√sparsity}.
+
+    Example:
+        >>> S = sjlt_skop(200, 1000, sparsity=3)
+        >>> X = torch.randn(32, 1000)
+        >>> X_sketched = X @ S.t()
+        >>> X_sketched.shape
+        torch.Size([32, 200])
+    """
+    return _sjlt_skop(m, d, sparsity=sparsity, device=device, dtype=dtype)

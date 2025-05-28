@@ -2,6 +2,29 @@ import sys
 
 
 def ensure_load():
+    """
+    Ensures that the OpenBLAS shared library is loaded and available for use by the current Python process.
+    This function attempts to locate and load the OpenBLAS dynamic library (`libopenblas`) from a bundled directory
+    relative to the script location, or from system paths, depending on the operating system. It modifies environment
+    variables as needed to help the dynamic loader find the library and its dependencies.
+    Supported platforms:
+        - Windows: Looks for `libopenblas.dll` in an `OpenBLAS/bin` directory next to this script.
+        - Linux: Looks for `libopenblas.so` or `libopenblas.so.0` in an `OpenBLAS/lib` directory, or falls back to
+          system locations using `ldconfig` or `ctypes.util.find_library`.
+        - macOS (Darwin): Looks for `libopenblas.dylib` or `libopenblas.0.dylib` in an `OpenBLAS/lib` directory,
+          or falls back to system locations using `ctypes.util.find_library`.
+    Raises:
+        FileNotFoundError: If the expected OpenBLAS directory or library file is not found.
+        OSError: If the OpenBLAS library cannot be loaded from any known location.
+        NotImplementedError: If the platform is not supported.
+    Environment Variables Modified:
+        - PATH (Windows): Prepends the OpenBLAS `bin` directory.
+        - LD_LIBRARY_PATH (Linux): Prepends the OpenBLAS `lib` directory.
+        - DYLD_LIBRARY_PATH (macOS): Prepends the OpenBLAS `lib` directory.
+    Note:
+        This function must be called before importing any Python modules that depend on OpenBLAS (e.g., numpy, scipy)
+        to ensure the correct library is loaded.
+    """
     import ctypes
     import ctypes.util
     import os
@@ -153,6 +176,18 @@ def ensure_load():
 
 
 def verify_pawX():
+    """
+    Verifies the installation and functionality of the 'pawX' Python extension module.
+    This function performs the following checks:
+    1. Imports PyTorch first to avoid DLL loading issues.
+    2. Attempts to import the 'pawX' module and prints its file location.
+    3. Lists and prints all available attributes in the 'pawX' module.
+    4. Checks for the presence of expected methods (e.g., 'scaled_sign_sketch') in 'pawX'.
+    5. Attempts to call the 'scaled_sign_sketch' method and verifies it returns a torch.Tensor.
+    6. Prints informative messages for each step and handles common import errors.
+    Returns:
+        bool: True if all checks pass and 'pawX' is properly installed and functional, False otherwise.
+    """
     try:
         # Import torch first to prevent DLL issues
         import torch

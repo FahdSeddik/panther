@@ -446,3 +446,138 @@ torch::Tensor sparse_sketch_operator(
     }
     return sparse;
 }
+
+/**
+ * @brief Generates a Gaussian (normal) random matrix with scaled variance.
+ *
+ * This function creates a tensor of shape (m, d) filled with values drawn from a standard normal distribution,
+ * and scales the result by 1/sqrt(m). The tensor is created on the specified device and with the specified data type,
+ * if provided.
+ *
+ * @param m Number of rows in the output tensor.
+ * @param d Number of columns in the output tensor.
+ * @param device (Optional) The device on which to allocate the tensor (e.g., CPU or CUDA).
+ * @param dtype (Optional) The desired data type of the returned tensor.
+ * @return torch::Tensor A (m x d) tensor of scaled Gaussian random values.
+ */
+torch::Tensor gaussian_skop(int64_t m, int64_t d, c10::optional<torch::Device> device = c10::nullopt, c10::optional<torch::Dtype> dtype = c10::nullopt) {
+    auto options = torch::TensorOptions().dtype(dtype.value_or(torch::kFloat32)).device(device.value_or(torch::kCPU));
+    return torch::randn({m, d}, options) / std::sqrt(m);
+}
+
+/**
+ * @brief Generates a sparse random matrix with ±1 entries in each column.
+ *
+ * Constructs an m x d matrix S, where for each column j, a single row index h[j] is randomly selected,
+ * and S[h[j]][j] is set to either +1 or -1 (chosen randomly). All other entries are zero.
+ *
+ * @param m Number of rows in the output tensor.
+ * @param d Number of columns in the output tensor.
+ * @param device (Optional) The device on which to allocate the tensor (e.g., CPU or CUDA).
+ * @param dtype (Optional) The desired data type of the returned tensor.
+ * @return torch::Tensor The generated m x d sparse random matrix.
+ */
+torch::Tensor count_skop(int64_t m, int64_t d, c10::optional<torch::Device> device = c10::nullopt, c10::optional<torch::Dtype> dtype = c10::nullopt) {
+    auto options = torch::TensorOptions().dtype(dtype.value_or(torch::kFloat32)).device(device.value_or(torch::kCPU));
+    auto S = torch::zeros({m, d}, options);
+    auto h = torch::randint(0, m, {d}, options.dtype(torch::kInt64));  // Row indices for each column
+    auto signs = torch::bernoulli(torch::full({d}, 0.5)) * 2 - 1;      // ±1
+
+    for (int64_t j = 0; j < d; ++j) {
+        S[h[j]][j] = signs[j].item<float>();
+    }
+    return S;
+}
+
+/**
+ * @brief Generates a Sparse Johnson-Lindenstrauss Transform (SJLT) matrix.
+ *
+ * This function creates an m x d sparse matrix suitable for dimensionality reduction
+ * using the Johnson-Lindenstrauss lemma. Each column contains a specified number of non-zero
+ * entries (given by `sparsity`), randomly positioned and assigned random signs (+1 or -1).
+ * The matrix is normalized by dividing by sqrt(sparsity).
+ *
+ * @param m Number of rows in the output matrix.
+ * @param d Number of columns in the output matrix.
+ * @param sparsity Number of non-zero entries per column (default: 2).
+ * @param device (Optional) The device on which to allocate the tensor (e.g., CPU or CUDA).
+ * @param dtype (Optional) The data type of the tensor (e.g., torch::kFloat32).
+ * @return torch::Tensor The generated SJLT matrix of shape (m, d).
+ */
+torch::Tensor sjlt_skop(int64_t m, int64_t d, int64_t sparsity = 2, c10::optional<torch::Device> device = c10::nullopt, c10::optional<torch::Dtype> dtype = c10::nullopt) {
+    auto options = torch::TensorOptions().dtype(dtype.value_or(torch::kFloat32)).device(device.value_or(torch::kCPU));
+    auto S = torch::zeros({m, d}, options);
+
+    for (int64_t j = 0; j < d; ++j) {
+        auto rows = torch::randperm(m).slice(0, 0, sparsity);
+        auto signs = torch::bernoulli(torch::full({sparsity}, 0.5)) * 2 - 1;
+
+        for (int64_t i = 0; i < sparsity; ++i) {
+            S[rows[i]][j] = signs[i].item<float>();
+        }
+    }
+    return S / std::sqrt(sparsity);
+}
+
+/**
+ * @brief Computes the Fast Walsh-Hadamard Transform (FWHT) of a 1D tensor.
+ *
+ * This function performs the in-place Fast Walsh-Hadamard Transform on the input tensor `x`.
+ * The input tensor must be one-dimensional and its size must be a power of two.
+ *
+ * @param x A 1D torch::Tensor of size n (where n is a power of two) to be transformed.
+ * @return torch::Tensor The transformed tensor after applying FWHT.
+ *
+ * @note The input tensor is modified in-place.
+ */
+torch::Tensor fwht(const torch::Tensor &x) {
+    int n = x.size(0);
+    int log_n = static_cast<int>(std::log2(n));
+    for (int i = 0; i < log_n; ++i) {
+        int step = 1 << i;
+        for (int j = 0; j < n; j += 2 * step) {
+            for (int k = 0; k < step; ++k) {
+                auto u = x[j + k].clone();
+                auto v = x[j + k + step].clone();
+                x[j + k] = u + v;
+                x[j + k + step] = u - v;
+            }
+        }
+    }
+    return x;
+}
+
+/**
+ * @brief Applies the Subsampled Randomized Hadamard Transform (SRHT) to the input tensor.
+ *
+ * This function performs the following steps:
+ *   1. Multiplies the input tensor by random ±1 signs.
+ *   2. Applies the Fast Walsh-Hadamard Transform (FWHT) to the signed tensor and normalizes the result.
+ *   3. Uniformly subsamples m rows from the transformed tensor.
+ *
+ * @param x Input 1D tensor of size n (must be a power of 2), on CPU, and convertible to float32.
+ * @param m Number of rows to subsample (must satisfy m <= n).
+ * @return torch::Tensor The resulting tensor of shape (m,) after SRHT.
+ *
+ * @throws c10::Error if input is not on CPU, input size is not a power of 2, or m > n.
+ */
+torch::Tensor srht(torch::Tensor x, int m) {
+    // Ensure input is float32 and on CPU
+    TORCH_CHECK(x.device().is_cpu(), "Input must be on CPU.");
+    x = x.to(torch::kFloat32);
+
+    int n = x.size(0);
+    TORCH_CHECK((n & (n - 1)) == 0, "Input size must be power of 2.");  // Check power of 2
+    TORCH_CHECK(m <= n, "Cannot subsample more rows than input size.");
+
+    // Step 1: Multiply by random ±1 signs
+    auto signs = torch::randint(0, 2, {n}, torch::kFloat32) * 2 - 1;  // ±1
+    x = x * signs;
+
+    // Step 2: Apply Hadamard transform
+    x = fwht(x) / std::sqrt(static_cast<float>(n));  // Normalize
+
+    // Step 3: Uniform subsample m rows
+    auto indices = torch::randperm(n).slice(0, 0, m);
+    return x.index_select(0, indices);
+}

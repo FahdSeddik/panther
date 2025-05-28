@@ -6,6 +6,24 @@
 
 // Forward function for sketched convolution
 // returns output, x_windows
+/**
+ * @brief Performs a sketched 2D convolution operation with low-rank approximation.
+ *
+ * This function applies a 2D convolution to the input tensor `x` using the sketching weights `S1s`,
+ * followed by a projection with the low-rank basis `U1s`. The result is optionally biased and returned.
+ *
+ * @param x         Input tensor of shape [B, C, H, W], where B is batch size, C is input channels, H and W are spatial dimensions.
+ * @param S1s       Sketching weight tensor for the convolution, typically of shape [L, C, Kh, Kw], where L is the sketch dimension.
+ * @param U1s       Low-rank basis tensor of shape [L, K, D1], where K is the number of output channels per sketch and D1 is the output dimension.
+ * @param stride    Stride for the convolution, as a vector of two integers [stride_h, stride_w].
+ * @param padding   Padding for the convolution, as a vector of two integers [pad_h, pad_w].
+ * @param kernel_size Kernel size for the convolution, as a vector of two integers [Kh, Kw].
+ * @param bias_opt  Optional bias tensor of shape [D1].
+ * @return torch::Tensor Output tensor of shape [B, D1, H_out, W_out], where H_out and W_out are the output spatial dimensions.
+ *
+ * The function first applies a convolution with S1s, reshapes the result, and projects it using U1s.
+ * The output is normalized by the sketch dimension L and optionally biased.
+ */
 torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
                                       const torch::Tensor &S1s,
                                       const torch::Tensor &U1s,
@@ -43,6 +61,25 @@ torch::Tensor sketched_conv2d_forward(const torch::Tensor &x,
 }
 
 // Backward function for sketched convolution
+/**
+ * Computes the backward pass for a sketched 2D convolution operation.
+ *
+ * @param input      The input tensor of shape (batch_size, in_channels, height, width).
+ * @param S1s        The first set of sketch matrices (tensor).
+ * @param S2s        The second set of sketch matrices (tensor).
+ * @param U1s        The first set of orthogonal matrices (tensor).
+ * @param U2s        The second set of orthogonal matrices (tensor).
+ * @param stride     The stride of the convolution (vector of int64_t).
+ * @param padding    The padding added to both sides of the input (vector of int64_t).
+ * @param kernel_size The size of the convolution kernel (vector of int64_t).
+ * @param in_shape   The shape of the input tensor before unfolding (vector of int64_t).
+ * @param grad_out   The gradient of the loss with respect to the output of the convolution (tensor).
+ * @return           A list of tensors containing gradients with respect to:
+ *                   - input (gout)
+ *                   - S1s (g_S1s)
+ *                   - S2s (g_S2s)
+ *                   - bias (g_bias)
+ */
 torch::autograd::tensor_list sketched_conv2d_backward(const torch::Tensor &input,
                                                       const torch::Tensor &S1s,
                                                       const torch::Tensor &S2s,
