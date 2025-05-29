@@ -119,6 +119,7 @@ setup(
                 "attention.cpp",
                 "conv2d.cpp",
                 "timing.cu",
+                "spre.cpp",
                 "conv_cuda.cu",
                 "cuda_tensor_accessor.cu",
                 *cuda_file,

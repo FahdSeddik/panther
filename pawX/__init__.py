@@ -17,6 +17,7 @@ from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT
     randomized_svd,
     rmha_forward,
     scaled_sign_sketch,
+    sinSRPE,
     sjlt_skop,
     sketch_tensor,
     sketched_conv2d_backward,
@@ -52,4 +53,5 @@ __all__ = [
     "count_skop",
     "sjlt_skop",
     "srht",
+    "sinSRPE",
 ]
