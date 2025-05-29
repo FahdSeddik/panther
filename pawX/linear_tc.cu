@@ -5,6 +5,7 @@
 
 #include "cuda_tensor_accessor.cuh"
 #include "debug.cuh"
+#include "kernel_launch.cuh"
 #include "linear.h"
 
 /**

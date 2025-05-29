@@ -10,6 +10,7 @@ python = "^3.12"
 torch = {version = "2.6.0+cu124", source = "pytorch"}
 torchvision = {version = "0.21.0+cu124", source = "pytorch"}
 torchaudio = {version = "2.6.0+cu124", source = "pytorch"}
+botorch = "^0.14.0"
 
 
 [tool.poetry.group.dev.dependencies]

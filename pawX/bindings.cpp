@@ -93,8 +93,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("padding"), py::arg("kernel_size"), py::arg("bias") = c10::nullopt);
 
     m.def("sketched_conv2d_backward", &sketched_conv2d_backward,
-          py::arg("input"), py::arg("S1s"), py::arg("S2s"),
-          py::arg("U1s"), py::arg("U2s"), py::arg("stride"),
+          py::arg("input"), py::arg("S1s"),
+          py::arg("U1s"), py::arg("stride"),
           py::arg("padding"), py::arg("kernel_size"), py::arg("in_shape"),
           py::arg("grad_out"));
 
