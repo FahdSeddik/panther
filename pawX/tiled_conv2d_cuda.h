@@ -4,7 +4,6 @@
 
 #include <vector>
 
-// Forward function for tiled 2D convolution (CUDA)
 torch::Tensor tiled_conv2d_cuda_forward(
     const torch::Tensor& input,
     const torch::Tensor& weight,

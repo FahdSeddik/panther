@@ -45,10 +45,6 @@ def scaled_sign_sketch(
         >>> print(torch.unique(S))
         tensor([-0.1768,  0.1768])  # For m=32, 1/sqrt(32) ≈ 0.1768
 
-    References:
-        - Woodruff, D. P. (2014). "Sketching as a Tool for Numerical Linear Algebra." Foundations and Trends® in Theoretical Computer Science, 10(1-2), 1-157.
-        - Liberty, E., et al. (2008). "Randomized algorithms for the low-rank approximation of matrices." Proceedings of the National Academy of Sciences, 104(51), 20167-20172.
-        - https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma
     """
     return _scaled_sign_sketch(m, n, device=device, dtype=dtype)
 
@@ -89,10 +85,6 @@ def dense_sketch_operator(
         >>> print(sketch.shape)
         torch.Size([100, 500])
 
-    References
-    ----------
-    - Woodruff, D. P. (2014). Sketching as a Tool for Numerical Linear Algebra. Foundations and Trends® in Theoretical Computer Science, 10(1-2), 1-157.
-    - Vempala, S. (2005). The Random Projection Method. American Mathematical Society.
 
     Notes
     -----
@@ -251,11 +243,6 @@ def sparse_sketch_operator(
         torch.Size([100, 500])
         >>> print(sketch._nnz())  # Number of non-zero entries in the sparse tensor
 
-    References:
-        - Woodruff, D. P. (2014). "Sketching as a Tool for Numerical Linear Algebra." Foundations and Trends® in Theoretical Computer Science, 10(1-2),
-            1-157.
-        - Liberty, E., et al. (2008). "Randomized algorithms for the low-rank approximation of matrices." Proceedings of the National Academy of Sciences, 104(51), 20167-20172.
-        - https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma
     """
     return _sparse_sketch_operator(m, n, vec_nnz, axis, device=device, dtype=dtype)
 

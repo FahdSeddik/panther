@@ -98,7 +98,23 @@ torch::autograd::tensor_list sketched_conv2d_backward(const torch::Tensor &input
     return {gout, g_S1s, g_bias};
 }
 
-// Utility function to compute output dimensions
+/**
+ * @brief Computes the output shape of a 2D convolution operation.
+ *
+ * Given the input tensor shape, kernel size, stride, and padding, this function calculates
+ * the resulting output tensor shape after applying a 2D convolution.
+ *
+ * @param input_shape  A vector of 4 integers representing the input tensor shape in the format
+ *                     {batch_size, channels, height, width}.
+ * @param kernel_size  A vector of 2 integers representing the kernel size in the format
+ *                     {kernel_height, kernel_width}.
+ * @param stride       A vector of 2 integers representing the stride in the format
+ *                     {stride_height, stride_width}.
+ * @param padding      A vector of 2 integers representing the padding in the format
+ *                     {pad_height, pad_width}.
+ * @return std::vector<int64_t>  The output tensor shape in the format
+ *                               {batch_size, channels, output_height, output_width}.
+ */
 std::vector<int64_t> compute_conv_output_shape(const std::vector<int64_t> &input_shape,
                                                const std::vector<int64_t> &kernel_size,
                                                const std::vector<int64_t> &stride,
@@ -110,7 +126,29 @@ std::vector<int64_t> compute_conv_output_shape(const std::vector<int64_t> &input
     return {input_shape[0], input_shape[1], H_out, W_out};
 }
 
-// Memory-efficient version of sketched convolution for large inputs
+/**
+ * @brief Performs a memory-efficient sketched 2D convolution operation on the input tensor.
+ *
+ * This function applies a sketched convolution using provided sketching matrices (S1s, U1s) and processes
+ * the input in chunks to reduce memory usage. The operation is typically used for efficient approximations
+ * of convolutional layers in neural networks.
+ *
+ * @param x           Input tensor of shape (B, C, H, W), where B is batch size, C is input channels,
+ *                    H and W are spatial dimensions.
+ * @param S1s         Sketching convolution weights tensor.
+ * @param U1s         Sketching projection tensor of shape (L, K, D1), where L and K are sketch dimensions,
+ *                    and D1 is the output dimension after projection.
+ * @param stride      Stride for the convolution operation (vector of 2 integers).
+ * @param padding     Padding for the convolution operation (vector of 2 integers).
+ * @param kernel_size Size of the convolution kernel (vector of 2 integers).
+ * @param bias_opt    Optional bias tensor of shape (D1).
+ * @param chunk_size  Number of samples to process per chunk for memory efficiency (default: 32).
+ * @return torch::Tensor Output tensor of shape (B, D1, H_out, W_out), where H_out and W_out are the
+ *                       output spatial dimensions after convolution.
+ *
+ * @note The function assumes that S1s and U1s are precomputed and compatible with the input and kernel sizes.
+ *       The output is contiguous in memory.
+ */
 torch::Tensor sketched_conv2d_memory_efficient(const torch::Tensor &x,
                                                const torch::Tensor &S1s,
                                                const torch::Tensor &U1s,
@@ -153,17 +191,22 @@ torch::Tensor sketched_conv2d_memory_efficient(const torch::Tensor &x,
     return out.contiguous();
 }
 
-// Specialized implementation for 3x3 kernels
-torch::Tensor sketched_conv2d_3x3(const torch::Tensor &x,
-                                  const torch::Tensor &S1s,
-                                  const torch::Tensor &U1s,
-                                  const std::vector<int64_t> &stride,
-                                  const std::vector<int64_t> &padding,
-                                  const c10::optional<torch::Tensor> &bias_opt) {
-    return sketched_conv2d_forward(x, S1s, U1s, stride, padding, {3, 3}, bias_opt);
-}
-
-// Gradient computation for sketching weights
+/**
+ * @brief Computes the gradients of the sketch parameters for a convolutional layer.
+ *
+ * This function calculates the gradients with respect to the sketch parameters (S1s)
+ * used in a sketched convolution operation. It takes as input the original input tensor,
+ * the gradient of the output, the sketch matrix U1s, and convolution parameters such as
+ * stride, padding, and kernel size.
+ *
+ * @param input The input tensor of shape (B, C, ...), where B is the batch size and C is the number of channels.
+ * @param grad_output The gradient of the output tensor with respect to the loss, typically of shape (B, D1, ...).
+ * @param U1s The sketch matrix tensor of shape (L, K, D1), where L and K are sketch dimensions and D1 is the output dimension.
+ * @param stride The stride of the convolution as a vector of int64_t.
+ * @param padding The padding of the convolution as a vector of int64_t.
+ * @param kernel_size The size of the convolution kernel as a vector of int64_t.
+ * @return torch::Tensor The computed gradients for the sketch parameters, of shape (L, C, kernel_size[0], kernel_size[1]).
+ */
 torch::Tensor compute_sketch_gradients(const torch::Tensor &input,
                                        const torch::Tensor &grad_output,
                                        const torch::Tensor &U1s,
@@ -176,7 +219,6 @@ torch::Tensor compute_sketch_gradients(const torch::Tensor &input,
     auto grad_reshaped = grad_output.view({B, D1, -1});
     auto U1s_T = U1s.view({L * K, D1}).transpose(0, 1);
 
-    // Compute gradients for sketching weights
     auto grad_S1s = torch::zeros({L, C, kernel_size[0], kernel_size[1]}, input.options());
 
     for (int64_t l = 0; l < L; ++l) {
@@ -192,14 +234,37 @@ torch::Tensor compute_sketch_gradients(const torch::Tensor &input,
     return grad_S1s;
 }
 
-// Utility function to check numerical stability
+/**
+ * @brief Checks the numerical stability of a tensor by evaluating its absolute maximum and minimum values.
+ *
+ * This function computes the absolute maximum and minimum values of the input tensor.
+ * It returns true if the absolute maximum is greater than the specified threshold and
+ * the absolute minimum is less than the reciprocal of the threshold, indicating that
+ * the tensor's values are within a numerically stable range.
+ *
+ * @param tensor The input torch::Tensor to check for numerical stability.
+ * @param threshold The threshold value for stability checks (default: 1e-6).
+ * @return true if the tensor is numerically stable, false otherwise.
+ */
 bool check_numerical_stability(const torch::Tensor &tensor, double threshold = 1e-6) {
     auto abs_max = tensor.abs().max().item<double>();
     auto abs_min = tensor.abs().min().item<double>();
     return abs_max > threshold && abs_min < 1.0 / threshold;
 }
 
-// Memory layout optimization for batched matrix multiplication
+/**
+ * @brief Optimizes the layout of input tensors for batched matrix multiplication (bmm).
+ *
+ * This function optionally transposes the last two dimensions of the input tensors `x` and `y`
+ * based on the provided flags, ensures they are contiguous in memory, and then performs
+ * batched matrix multiplication using `torch::bmm`.
+ *
+ * @param x            The first input tensor of shape (batch_size, n, m) or (batch_size, m, n).
+ * @param y            The second input tensor of shape (batch_size, m, p) or (batch_size, p, m).
+ * @param transpose_x  If true, transposes the last two dimensions of `x` before multiplication.
+ * @param transpose_y  If true, transposes the last two dimensions of `y` before multiplication.
+ * @return             The result of batched matrix multiplication as a tensor.
+ */
 torch::Tensor optimize_bmm_layout(const torch::Tensor &x,
                                   const torch::Tensor &y,
                                   bool transpose_x = false,
@@ -207,7 +272,6 @@ torch::Tensor optimize_bmm_layout(const torch::Tensor &x,
     auto x_modified = transpose_x ? x.transpose(-2, -1) : x;
     auto y_modified = transpose_y ? y.transpose(-2, -1) : y;
 
-    // Ensure contiguous memory layout
     auto x_cont = x_modified.contiguous();
     auto y_cont = y_modified.contiguous();
 
@@ -234,13 +298,10 @@ int64_t compute_optimal_chunk_size(const std::vector<int64_t> &input_shape,
     int64_t B = input_shape[0], C = input_shape[1];
     int64_t Kh = kernel_size[0], Kw = kernel_size[1];
 
-    // Calculate memory per sample
     int64_t memory_per_sample = C * Kh * Kw * sizeof(float);
 
-    // Calculate maximum possible chunk size
     int64_t max_chunk_size = static_cast<int64_t>((available_memory * safety_factor) / memory_per_sample);
 
-    // Ensure chunk size is at least 1 and at most batch size
     return std::max((int64_t)1, std::min(max_chunk_size, B));
 }
 
@@ -350,21 +411,16 @@ std::map<std::string, bool> analyze_numerical_stability(const torch::Tensor &x,
                                                         const std::vector<int64_t> &kernel_size) {
     std::map<std::string, bool> stability_results;
 
-    // Check input stability
     stability_results["input_stable"] = check_numerical_stability(x);
 
-    // Check sketching weights stability
     stability_results["sketch_weights_stable"] = check_numerical_stability(S1s);
 
-    // Check basis stability
     stability_results["basis_stable"] = check_numerical_stability(U1s);
 
-    // Perform forward pass and check intermediate results
     auto temp = torch::nn::functional::conv2d(x, S1s,
                                               torch::nn::functional::Conv2dFuncOptions().stride(stride).padding(padding));
     stability_results["conv_output_stable"] = check_numerical_stability(temp);
 
-    // Check final output stability
     auto output = sketched_conv2d_forward(x, S1s, U1s, stride, padding, kernel_size, c10::nullopt);
     stability_results["output_stable"] = check_numerical_stability(output);
 
@@ -408,7 +464,20 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> optimize_memory_layout(
     return std::make_tuple(x_opt, S1s_opt, U1s_opt);
 }
 
-// Utility function to compute memory usage
+/**
+ * @brief Computes the estimated memory usage (in bytes) for a convolutional operation.
+ *
+ * This function calculates the total memory required for the input tensor, sketch tensor,
+ * basis tensor, and output tensor, based on their shapes and the convolution parameters.
+ *
+ * @param x           Input tensor of shape [B, C, H, W], where B is batch size, C is channels, H and W are height and width.
+ * @param S1s         Sketch tensor, typically of shape [L, C, kernel_h, kernel_w].
+ * @param U1s         Basis tensor, typically of shape [L, K, D1].
+ * @param stride      Stride of the convolution, as a vector of two integers [stride_h, stride_w].
+ * @param padding     Padding of the convolution, as a vector of two integers [pad_h, pad_w].
+ * @param kernel_size Size of the convolution kernel, as a vector of two integers [kernel_h, kernel_w].
+ * @return int64_t    Total estimated memory usage in bytes.
+ */
 int64_t compute_memory_usage(const torch::Tensor &x,
                              const torch::Tensor &S1s,
                              const torch::Tensor &U1s,
@@ -454,20 +523,16 @@ std::map<std::string, double> analyze_performance(const torch::Tensor &x,
                                                   const std::vector<int64_t> &kernel_size) {
     std::map<std::string, double> performance_metrics;
 
-    // Measure memory usage
     performance_metrics["memory_usage"] = compute_memory_usage(x, S1s, U1s, stride, padding, kernel_size);
 
-    // Measure computation time
     auto start_time = std::chrono::high_resolution_clock::now();
     auto output = sketched_conv2d_forward(x, S1s, U1s, stride, padding, kernel_size, c10::nullopt);
     auto end_time = std::chrono::high_resolution_clock::now();
     performance_metrics["computation_time"] = std::chrono::duration<double>(end_time - start_time).count();
 
-    // Measure memory efficiency
     int64_t theoretical_memory = x.numel() + S1s.numel() + U1s.numel() + output.numel();
     performance_metrics["memory_efficiency"] = static_cast<double>(performance_metrics["memory_usage"]) / theoretical_memory;
 
-    // Measure numerical stability
     auto stability_results = analyze_numerical_stability(x, S1s, U1s, stride, padding, kernel_size);
     performance_metrics["numerical_stability_score"] = std::count_if(stability_results.begin(), stability_results.end(),
                                                                      [](const auto &pair) { return pair.second; }) /
@@ -497,42 +562,27 @@ std::vector<std::string> validate_convolution_parameters(const torch::Tensor &x,
                                                          const std::vector<int64_t> &padding,
                                                          const std::vector<int64_t> &kernel_size) {
     std::vector<std::string> errors;
-
-    // Validate input tensor
     if (x.dim() != 4) {
         errors.push_back("Input tensor must be 4D (B, C, H, W)");
     }
-
-    // Validate sketching weights
     if (S1s.dim() != 4) {
         errors.push_back("Sketching weights must be 4D (L, C, Kh, Kw)");
     }
-
-    // Validate basis tensor
     if (U1s.dim() != 3) {
         errors.push_back("Basis tensor must be 3D (L, K, D1)");
     }
-
-    // Validate stride
     if (stride.size() != 2) {
         errors.push_back("Stride must be a vector of size 2");
     }
-
-    // Validate padding
     if (padding.size() != 2) {
         errors.push_back("Padding must be a vector of size 2");
     }
-
-    // Validate kernel size
     if (kernel_size.size() != 2) {
         errors.push_back("Kernel size must be a vector of size 2");
     }
-
-    // Validate dimensions match
     if (x.size(1) != S1s.size(1)) {
         errors.push_back("Input channels must match sketching weight channels");
     }
-
     if (S1s.size(0) != U1s.size(0)) {
         errors.push_back("Number of sketches must match in S1s and U1s");
     }
@@ -566,7 +616,6 @@ std::map<std::string, std::vector<double>> analyze_memory_access_patterns(
     const std::vector<int64_t> &kernel_size) {
     std::map<std::string, std::vector<double>> access_patterns;
 
-    // Analyze input tensor access patterns
     std::vector<double> input_access;
     for (int64_t i = 0; i < x.size(0); ++i) {
         for (int64_t j = 0; j < x.size(1); ++j) {
@@ -579,7 +628,6 @@ std::map<std::string, std::vector<double>> analyze_memory_access_patterns(
     }
     access_patterns["input_access"] = input_access;
 
-    // Analyze sketching weights access patterns
     std::vector<double> sketch_access;
     for (int64_t i = 0; i < S1s.size(0); ++i) {
         for (int64_t j = 0; j < S1s.size(1); ++j) {
@@ -592,7 +640,6 @@ std::map<std::string, std::vector<double>> analyze_memory_access_patterns(
     }
     access_patterns["sketch_access"] = sketch_access;
 
-    // Analyze basis tensor access patterns
     std::vector<double> basis_access;
     for (int64_t i = 0; i < U1s.size(0); ++i) {
         for (int64_t j = 0; j < U1s.size(1); ++j) {

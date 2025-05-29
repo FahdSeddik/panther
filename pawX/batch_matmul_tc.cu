@@ -9,20 +9,18 @@
 #include "debug.cuh"
 #include "kernel_launch.cuh"
 
-// Constants for WMMA
-constexpr int TILE_SIZE = 16;       // Tile size for WMMA fragments
-constexpr int BLOCK_ROW_WARPS = 4;  // Number of warps per block in row
-constexpr int BLOCK_COL_WARPS = 4;  // Number of warps per block in column
+constexpr int TILE_SIZE = 16;
+constexpr int BLOCK_ROW_WARPS = 4;
+constexpr int BLOCK_COL_WARPS = 4;
 constexpr int WARPS_PER_BLOCK = BLOCK_ROW_WARPS * BLOCK_COL_WARPS;
 constexpr int THREADS_PER_BLOCK = WARPS_PER_BLOCK * 32;
 
-// Each block covers a 64×64 chunk of output
 constexpr int TILE_WIDTH_M = TILE_SIZE * BLOCK_ROW_WARPS;
 constexpr int TILE_WIDTH_N = TILE_SIZE * BLOCK_COL_WARPS;
 constexpr int TILE_WIDTH_K = TILE_WIDTH_M;
 
-using half_t = __half;  // WMMA inputs must be half precision
-using float_t = float;  // Accumulate in FP32
+using half_t = __half;
+using float_t = float;
 namespace wmma = nvcuda::wmma;
 
 /**
@@ -47,11 +45,9 @@ __global__ void tiled_batch_matmul_tc_kernel(
     const FlexibleTensorAccessor<scalar_t, 3> B,  // [B, K, N]
     FlexibleTensorAccessor<scalar_t, 3> C,        // [B, M, N]
     int batch_size, int M, int N, int K) {
-    // Shared memory for tiles
     __shared__ half_t As[TILE_WIDTH_K][TILE_WIDTH_M];
     __shared__ half_t Bs[TILE_WIDTH_N][TILE_WIDTH_K];
 
-    // Thread indices
     const int tx = threadIdx.x;
     const int ty = threadIdx.y;
     const int tid = ty * blockDim.x + tx;
@@ -59,20 +55,16 @@ __global__ void tiled_batch_matmul_tc_kernel(
     const int by = blockIdx.y;
     const int b = blockIdx.z;
 
-    // Calculate global indices
     const int row = by * TILE_WIDTH_M;
     const int col = bx * TILE_WIDTH_N;
 
-    // WMMA fragments
     wmma::fragment<wmma::matrix_a, TILE_SIZE, TILE_SIZE, TILE_SIZE, half_t, wmma::col_major> fA;
     wmma::fragment<wmma::matrix_b, TILE_SIZE, TILE_SIZE, TILE_SIZE, half_t, wmma::col_major> fB;
     wmma::fragment<wmma::accumulator, TILE_SIZE, TILE_SIZE, TILE_SIZE, cuda_type_t<scalar_t>> acc;
     auto zero = cuda_type<scalar_t>::get_zero();
     wmma::fill_fragment(acc, zero);
 
-    // Loop over tiles
     for (int t = 0; t < (K + TILE_WIDTH_K - 1) / TILE_WIDTH_K; t++) {
-// Load tiles into shared memory
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_M * TILE_WIDTH_K; i += THREADS_PER_BLOCK) {
             int idx = tid + i;
@@ -95,7 +87,6 @@ __global__ void tiled_batch_matmul_tc_kernel(
         }
         __syncthreads();
 
-// Compute partial sum using tensor cores
 #pragma unroll 1
         for (int i = 0; i < TILE_WIDTH_K; i += TILE_SIZE) {
             int subtileARow = TILE_SIZE * (tx / warpSize);
@@ -110,7 +101,6 @@ __global__ void tiled_batch_matmul_tc_kernel(
         __syncthreads();
     }
 
-    // Write result
     int warpM = (blockIdx.x * blockDim.x + tx) / warpSize;
     int warpN = blockIdx.y * blockDim.y + ty;
     int cRow = warpM * TILE_SIZE;
@@ -142,23 +132,19 @@ torch::Tensor tiled_batch_matmul_tc_forward(
     TORCH_CHECK(A.is_contiguous(), "Input tensor A must be contiguous.");
     TORCH_CHECK(B.is_contiguous(), "Input tensor B must be contiguous.");
 
-    // Get dimensions
     const int batch_size = A.size(0);
     const int M = A.size(1);
     const int K = A.size(2);
     const int N = B.size(2);
 
-    // Create output tensor
     auto C = torch::zeros({batch_size, M, N}, A.options());
 
-    // Calculate grid and block dimensions
     dim3 block(BLOCK_ROW_WARPS * 32, BLOCK_COL_WARPS);
     dim3 grid(
         (N + TILE_WIDTH_N - 1) / TILE_WIDTH_N,
         (M + TILE_WIDTH_M - 1) / TILE_WIDTH_M,
         batch_size);
 
-    // Dispatch based on input type
     AT_DISPATCH_FLOAT_AND_HALF(
         A.scalar_type(),
         "tiled_batch_matmul_tc_kernel",

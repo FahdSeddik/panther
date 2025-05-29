@@ -4,18 +4,15 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 
-// Forward declaration for type traits
 template <typename T, typename Enable = void>
 struct is_valid_tensor_type : std::false_type {};
 
-// Base specializations for supported types
 template <>
 struct is_valid_tensor_type<float> : std::true_type {};
 
 template <>
 struct is_valid_tensor_type<double> : std::true_type {};
 
-// Add CUDA half-precision support
 template <>
 struct is_valid_tensor_type<__half> : std::true_type {};
 
@@ -127,7 +124,6 @@ struct FlexibleTensorAccessor {
         }
     }
 
-    // Override methods with CUDA qualifiers
     __host__ __device__ inline int64_t numel() const {
         int64_t total = 1;
         for (int i = 0; i < N; ++i) {
@@ -282,11 +278,9 @@ inline FlexibleTensorAccessor<T, N> buildAccessor(const torch::Tensor& tensor) {
                     "Expected Float16 tensor, got ", tensor.scalar_type());
     }
 
-    // Get tensor properties
     auto sizes = tensor.sizes();
     auto strides = tensor.strides();
 
-    // Convert sizes and strides to int64_t arrays
     int64_t sizes_array[N];
     int64_t strides_array[N];
 
