@@ -6,7 +6,8 @@
 #include <cmath>
 #include <iostream>
 
-struct sinSRPEImpl : torch::nn::Module{
+class sinSRPEImpl : public torch::nn::Module{
+public:
     // Parameters
     torch::Tensor freqs;
     torch::Tensor phases;
