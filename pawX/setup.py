@@ -119,6 +119,8 @@ setup(
                 "attention.cpp",
                 "conv2d.cpp",
                 "timing.cu",
+                "conv_cuda.cu",
+                "cuda_tensor_accessor.cu",
                 *cuda_file,
             ],
             include_dirs=config["include_dirs"],
