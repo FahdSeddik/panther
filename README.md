@@ -10,7 +10,7 @@ This guide explains how to build and run the Panther codebase, including the nat
 - **Python 3.12+**: Panther is compatible with Python 3.12 and later.
 - **Poetry** for dependency management
 - **C++ Compiler**: GCC on Linux, MSVC on Windows
-- **CUDA Toolkit** (optional): For GPU acceleration, ensure you have the CUDA toolkit installed if you plan to use GPU features.
+- **CUDA Toolkit**: For GPU acceleration, ensure you have the CUDA toolkit installed to compile .cu files requiring NVIDIA C Compiler (nvcc).
 
 ## Quick Start (Install & Use)
 

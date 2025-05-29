@@ -1,55 +1,91 @@
-# Makefile for Panther on Linux/macOS/WSL
+# Panther Setup Makefile for Linux/macOS/WSL
 # --------------------------------------------------
 # Usage:
-#   make setup   # Creates venv, activates it, installs Poetry, deps, and builds pawX
+#   make setup   # Full setup workflow
+#   make clean   # Remove venv and build artifacts
 # --------------------------------------------------
 
 SHELL := /bin/bash
-POETRY_INSTALL_URL := https://install.python-poetry.org
 VENV_DIR := .venv
+VENV_PYTHON := $(VENV_DIR)/bin/python3
+VENV_POETRY := $(VENV_DIR)/bin/poetry
+POETRY_VERSION := 1.8.4  # Explicit version control
 
-.ONESHELL:
-.PHONY: setup venv poetry deps syslibs pawx
+# ANSI Colors
+RED    := $(shell echo -e '\033[31m')
+GREEN  := $(shell echo -e '\033[32m')
+YELLOW := $(shell echo -e '\033[33m')
+CYAN   := $(shell echo -e '\033[36m')
+NC     := $(shell echo -e '\033[0m')
 
-setup: venv poetry deps syslibs pawx
-	echo
-	echo "[OK] Setup finished! You can now run 'poetry run python your_script.py'"
+.PHONY: setup clean preflight venv poetry deps syslibs pawx
 
-venv:
-	echo
-	echo "[1] Creating Python virtual environment in '$(VENV_DIR)'..."
-	test -d $(VENV_DIR) || python3 -m venv $(VENV_DIR)
+setup: preflight venv poetry deps syslibs pawx
+    @echo ""
+    @echo "${CYAN}[OK] Setup complete!${NC}"
+    @echo "   → Use 'source ${VENV_DIR}/bin/activate' to activate the virtual environment"
+    @echo "   → Then run 'poetry run python your_script.py' to start"
+
+preflight:
+    @echo "${YELLOW}[0] Preflight Checks...${NC}"
+    # Python 3.12+ Check
+    @python3 -c "import sys; exit(0) if sys.version_info >= (3,12) else exit(1)" \
+        || { echo "   [FAILED] Python 3.12+ required. Found: $$(python3 --version 2>&1)"; exit 1; }
+    @echo "   → Python version: $$(python3 --version 2>&1 | head -n1)"
+    
+    # CUDA Check (optional: remove if not needed)
+    @command -v nvcc >/dev/null 2>&1 \
+        || { echo "   [WARNING] CUDA toolkit not found. Install if GPU support is needed"; }
+
+venv: preflight
+    @echo "${YELLOW}[1] Creating Virtual Environment...${NC}"
+    @if [ ! -d "$(VENV_DIR)" ]; then \
+        python3 -m venv $(VENV_DIR) \
+            || { echo "   [FAILED] Failed to create venv. Install python3-venv or virtualenv."; exit 1; } \
+        && echo "   → Virtual environment created at $(VENV_DIR)"; \
+    else \
+        echo "   → $(VENV_DIR) already exists. Skipping creation."; \
+    fi
+    
+    # Ensure pip is up-to-date
+    @$(VENV_PYTHON) -m pip install --no-cache-dir -U pip \
+        || { echo "   [FAILED] Failed to update pip"; exit 1; }
 
 poetry: venv
-	echo
-	echo "[2] Activating venv and configuring environment..."
-	source $(VENV_DIR)/bin/activate ; \
-	export POETRY_HOME=$(VENV_DIR) ; \
-	export PATH="$(VENV_DIR)/bin:$$PATH" ; \
-	echo "   -> venv activated; POETRY_HOME=$${POETRY_HOME}" ; \
-	echo "   -> PATH updated to include $(VENV_DIR)/bin" ; \
-	echo ; \
-	echo "[3] Installing Poetry into the venv..." ; \
-	curl -sSL $(POETRY_INSTALL_URL) | python3 - --verbose ; \
-	echo "   -> Poetry installed. ($${POETRY_HOME}/bin/poetry)"
+    @echo "${YELLOW}[2] Installing Poetry...${NC}"
+    # Install Poetry directly into venv using pip
+    @$(VENV_PYTHON) -m pip install --no-cache-dir poetry==$(POETRY_VERSION) \
+        || { echo "   [FAILED] Failed to install Poetry"; exit 1; }
+    
+    # Verify installation
+    @$(VENV_POETRY) --version | grep -q "Poetry" \
+        || { echo "   [FAILED] Poetry installation verification failed"; exit 1; }
 
 deps: poetry
-	echo
-	echo "[4] Installing Python dependencies with Poetry..."
-	source $(VENV_DIR)/bin/activate ; \
-	export POETRY_HOME=$(VENV_DIR) ; \
-	export PATH="$(VENV_DIR)/bin:$$PATH" ; \
-	poetry install ; \
-	echo "   -> All Python packages installed."
+    @echo "${YELLOW}[3] Installing Python Dependencies...${NC}"
+    # Configure Poetry to use the virtualenv
+    @$(VENV_POETRY) config virtualenvs.create false
+    
+    # Install dependencies
+    @$(VENV_POETRY) install --no-root \
+        || { echo "   [FAILED] Failed to install dependencies"; exit 1; }
 
 syslibs:
-	echo
-	echo "[5] Ensuring system libs (e.g. LAPACKE) are present..."
-	echo "   -> You may be prompted for your sudo password."
-	sudo apt-get update && sudo apt-get install -y liblapacke-dev
+    @echo "${YELLOW}[4] Installing System Libraries...${NC}"
+    # Example: Install LAPACKE for linear algebra
+    @sudo apt-get update && sudo apt-get install -y liblapacke-dev \
+        || { echo "   [FAILED] Failed to install system libraries"; exit 1; }
 
-pawx:
-	echo
-	echo "[6] Building native backend (pawX)..."
-	cd pawX && make all
-	echo "   -> pawX build complete. Check pawX/ for the .so files."
+pawx: deps syslibs
+    @echo "${YELLOW}[5] Building Native Backend (pawX)...${NC}"
+    @cd pawX && \
+        PATH=$(realpath $(VENV_DIR)/bin):$$PATH \
+        make clean all \
+        || { echo "   [FAILED] Failed to build pawX"; exit 1; }
+    
+    @echo "   → pawX build complete. Check pawX/ for .so files."
+
+clean:
+    @echo "Cleaning up..."
+    @rm -rf $(VENV_DIR)
+    @cd pawX && make clean
