@@ -302,12 +302,11 @@ inline torch::Tensor softmax_kernel_transform(
     // Ensure projection_matrix uses the desired options.
     auto proj = projection_matrix.value().to(opts);
 
-    // Compute data_normalizer = 1 / sqrt(sqrt(last-dim of data)) and scale data.
+    // Compute data_normalizer = 1 / sqrt(d) where d is the embedding perHead dimension.
     double normalizer = 1.0 / std::sqrt(std::sqrt(static_cast<double>(data.size(-1))));
-    // Avoid extra temporaries by directly using the scaled data.
     auto scaled_data = data * normalizer;
 
-    // Compute ratio = 1 / sqrt(number of rows of projection_matrix)
+    // Compute ratio = 1 / sqrt(m) m is number of positive random features (needed for kernel approx)
     double ratio = 1.0 / std::sqrt(static_cast<double>(proj.size(0)));
 
     // Compute data_dash = scaled_data @ proj.T (equivalent to einsum "blhd,md->blhm")
@@ -402,8 +401,7 @@ torch::Tensor rmha_forward(
     c10::optional<torch::Tensor> bv,
     c10::optional<torch::Tensor> b0,
     c10::optional<torch::Tensor> projection_matrix,
-    std::shared_ptr<sinSRPEImpl> spre_model
-)
+    std::shared_ptr<sinSRPEImpl> spre_model)
 {
     if (attention_mask.has_value())
     {
@@ -424,7 +422,8 @@ torch::Tensor rmha_forward(
     auto k = k_proj.view({key.size(0), key.size(1), num_heads, head_dim});
     auto v = v_proj.view({value.size(0), value.size(1), num_heads, head_dim});
 
-    if (spre_model) {
+    if (spre_model)
+    {
         TORCH_CHECK(q.size(1) == k.size(1),
                     "Query and Key must be same length (i.e. self-attention) to use SPRE");
         auto [qbar, kbar] = spre_model->forward(q.size(1));
