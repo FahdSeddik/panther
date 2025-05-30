@@ -766,49 +766,6 @@ class ModelVisualizer:
         return output_path
 
     @staticmethod
-    def _visualize_onnx(onnx_path: str) -> str:
-        """
-        Creates a visualization of an ONNX model.
-
-        Args:
-            onnx_path: Path to the ONNX model file
-
-        Returns:
-            Path to the visualization file
-        """
-        try:
-            import onnx
-            from onnx.tools.net_drawer import GetOpNodeProducer, GetPydotGraph
-        except ImportError:
-            raise ImportError(
-                "ONNX and pydot packages are required. Install with 'pip install onnx pydot'"
-            )
-
-        # Load the ONNX model
-        model = onnx.load(onnx_path)
-
-        # Create a graph visualization
-        pydot_graph = GetPydotGraph(
-            model.graph,
-            name=model.graph.name,
-            rankdir="TB",
-            node_producer=GetOpNodeProducer(
-                "docstring",
-                color="yellow",
-                fillcolor="#FFEEEE",
-                style="filled",
-                shape="box",
-            ),
-        )
-
-        # Save the visualization
-        base_path = os.path.splitext(onnx_path)[0]
-        output_path = f"{base_path}_visualization.svg"
-        pydot_graph.write_svg(output_path)
-
-        return output_path
-
-    @staticmethod
     def generate_model_summary(
         model: nn.Module,
         input_shape: Optional[tuple] = None,
@@ -1056,163 +1013,6 @@ class ModelVisualizer:
         return op_counts
 
     @staticmethod
-    def check_hardware_compatibility(
-        model: nn.Module, input_shape: tuple, target_devices: Optional[list] = None
-    ) -> Dict[str, Any]:
-        """
-        Checks model compatibility with different hardware targets and evaluates efficiency.
-
-        Args:
-            model: The PyTorch model to analyze
-            input_shape: Input shape (excluding batch dimension)
-            target_devices: List of target devices to check (default: ['cpu', 'cuda'])
-
-        Returns:
-            Dictionary with compatibility information
-        """
-        if target_devices is None:
-            target_devices = ["cpu"]
-            if torch.cuda.is_available():
-                target_devices.append("cuda")
-
-        # Create a dummy input tensor
-        batch_size = 1
-        full_shape = (batch_size,) + input_shape
-        dummy_input = torch.randn(full_shape, requires_grad=False)
-
-        # Set model to evaluation mode
-        model.eval()
-
-        # Result dictionary
-        compatibility = {
-            "model_info": {
-                "type": type(model).__name__,
-                "parameters": sum(p.numel() for p in model.parameters()),
-                "size_mb": sum(p.numel() for p in model.parameters())
-                * 4
-                / (1024 * 1024),
-            },
-            "devices": {},
-        }
-
-        # Check op compatibility
-        def check_ops_compatibility(model_ops, target_device):
-            # This is a simplified check - in a real implementation, you would
-            # have a database of ops supported by each device/backend
-            all_ops = set()
-            unsupported_ops = set()
-
-            # Collect all unique operations in the model
-            for name, module in model.named_modules():
-                op_type = type(module).__name__
-                all_ops.add(op_type)
-
-                # Example: Check for ops that might not be well-supported on certain devices
-                if target_device == "cpu" and op_type in [
-                    "ConvTranspose3d",
-                    "PixelShuffle",
-                ]:
-                    unsupported_ops.add(op_type)
-                elif (
-                    target_device == "cuda"
-                    and op_type in ["RNN", "LSTM"]
-                    and not torch.cuda.is_available()
-                ):
-                    unsupported_ops.add(op_type)
-
-            return {
-                "total_op_types": len(all_ops),
-                "all_op_types": sorted(list(all_ops)),
-                "unsupported_op_types": sorted(list(unsupported_ops)),
-                "compatibility_score": 1.0
-                - (len(unsupported_ops) / max(1, len(all_ops))),
-            }
-
-        # Perform inference benchmark on each device
-        for device_name in target_devices:
-            try:
-                # Check if device is available
-                device_available = (device_name == "cpu") or (
-                    device_name == "cuda" and torch.cuda.is_available()
-                )
-
-                if not device_available:
-                    compatibility["devices"][device_name] = {
-                        "available": False,
-                        "error": f"{device_name} is not available in this environment",
-                    }
-                    continue
-
-                # Move model and input to device
-                device = torch.device(device_name)
-                model_on_device = model.to(device)
-                input_on_device = dummy_input.to(device)
-
-                # Warm-up run
-                with torch.no_grad():
-                    model_on_device(input_on_device)
-
-                # Benchmark run
-                if device_name == "cuda":
-                    torch.cuda.synchronize()
-
-                start_time = torch.cuda.Event(enable_timing=True)
-                end_time = torch.cuda.Event(enable_timing=True)
-
-                # Multiple runs for more accurate timing
-                num_runs = 10
-
-                if device_name == "cuda":
-                    start_time.record()
-                    for _ in range(num_runs):
-                        with torch.no_grad():
-                            model_on_device(input_on_device)
-                    end_time.record()
-                    torch.cuda.synchronize()
-                    elapsed_time = start_time.elapsed_time(end_time) / num_runs  # ms
-                else:
-                    # CPU timing
-                    import time
-
-                    start = time.time()
-                    for _ in range(num_runs):
-                        with torch.no_grad():
-                            model_on_device(input_on_device)
-                    elapsed_time = (time.time() - start) * 1000 / num_runs  # ms
-
-                # Check ops compatibility
-                ops_compatibility = check_ops_compatibility(model, device_name)
-
-                # Memory usage (only available for CUDA)
-                memory_usage = None
-                if device_name == "cuda":
-                    torch.cuda.empty_cache()
-                    torch.cuda.reset_peak_memory_stats()
-                    with torch.no_grad():
-                        model_on_device(input_on_device)
-                    memory_usage = torch.cuda.max_memory_allocated() / (
-                        1024 * 1024
-                    )  # MB
-
-                compatibility["devices"][device_name] = {
-                    "available": True,
-                    "inference_time_ms": elapsed_time,
-                    "memory_usage_mb": memory_usage,
-                    "ops_compatibility": ops_compatibility,
-                }
-
-            except Exception as e:
-                compatibility["devices"][device_name] = {
-                    "available": False,
-                    "error": str(e),
-                }
-                logger.warning(
-                    f"Error checking compatibility with {device_name}: {str(e)}"
-                )
-
-        return compatibility
-
-    @staticmethod
     def generate_complexity_report(
         model: nn.Module, input_shapes: Dict[str, tuple]
     ) -> Dict[str, Any]:
@@ -1283,3 +1083,416 @@ class ModelVisualizer:
                 )
 
         return report
+
+    @staticmethod
+    def get_model_summary_data(
+        model: nn.Module, is_sketched_func: Optional[callable] = None
+    ) -> Dict[str, Any]:
+        """
+        Get a summary of the model architecture, including sketched layers if a check function is provided.
+
+        Args:
+            model: The PyTorch model to summarize.
+            is_sketched_func: Optional function to check if a module is sketched.
+                              It should take a module as input and return a boolean.
+
+        Returns:
+            Dictionary with model summary information
+        """
+        total_params = 0
+        sketched_layers = 0
+        layer_info = []
+
+        for name, module in model.named_modules():
+            if name == "":  # Skip the root module
+                continue
+
+            params = sum(p.numel() for p in module.parameters() if p.requires_grad)
+
+            is_sketched = False
+            if is_sketched_func and is_sketched_func(module):
+                is_sketched = True
+                sketched_layers += 1
+
+            layer_info.append(
+                {
+                    "name": name,
+                    "type": type(module).__name__,
+                    "params": params,
+                    "is_sketched": is_sketched,
+                }
+            )
+
+            total_params += params
+
+        return {
+            "total_params": total_params,
+            "sketched_layers": sketched_layers,
+            "layers": layer_info,
+        }
+
+    @staticmethod
+    def print_model_summary_text(
+        model: nn.Module, is_sketched_func: Optional[callable] = None
+    ) -> None:
+        """
+        Print a summary of the model architecture, highlighting sketched layers.
+
+        Args:
+            model: The PyTorch model to summarize.
+            is_sketched_func: Optional function to check if a module is sketched.
+
+        Returns:
+            None
+        """
+        summary = ModelVisualizer.get_model_summary_data(model, is_sketched_func)
+
+        print("=" * 80)
+        print(
+            f"Model Summary (Total trainable parameters: {summary['total_params']:,})"
+        )
+        if is_sketched_func:
+            print(f"Sketched layers: {summary['sketched_layers']}")
+        print("-" * 80)
+        header = f"{'Layer Name':<40} {'Layer Type':<25} {'Parameters':<15}"
+        if is_sketched_func:
+            header += " {'Sketched'}"
+        print(header)
+        print("-" * 80)
+
+        for layer in summary["layers"]:
+            row = f"{layer['name']:<40} {layer['type']:<25} {layer['params']:<15,}"
+            if is_sketched_func:
+                row += f" {'✓' if layer['is_sketched'] else ''}"
+            print(row)
+        print("=" * 80)
+
+    @staticmethod
+    def compare_models_data(
+        model1: nn.Module,
+        model2: nn.Module,
+        model1_name: str = "Model 1",
+        model2_name: str = "Model 2",
+        is_sketched_func_model1: Optional[callable] = None,
+        is_sketched_func_model2: Optional[callable] = None,
+    ) -> Dict[str, Any]:
+        """
+        Compare two models and return detailed comparison data.
+
+        Args:
+            model1: The first PyTorch model.
+            model2: The second PyTorch model.
+            model1_name: Name for the first model.
+            model2_name: Name for the second model.
+            is_sketched_func_model1: Optional sketch check for model1.
+            is_sketched_func_model2: Optional sketch check for model2.
+
+        Returns:
+            Dictionary with comparison metrics.
+        """
+        summary1 = ModelVisualizer.get_model_summary_data(
+            model1, is_sketched_func_model1
+        )
+        summary2 = ModelVisualizer.get_model_summary_data(
+            model2, is_sketched_func_model2
+        )
+
+        params1 = summary1["total_params"]
+        params2 = summary2["total_params"]
+        param_reduction = params1 - params2
+        param_reduction_percent = (
+            (param_reduction / params1) * 100 if params1 > 0 else 0
+        )
+
+        layer_comparisons = []
+        layers1 = {layer["name"]: layer for layer in summary1["layers"]}
+        layers2 = {layer["name"]: layer for layer in summary2["layers"]}
+        all_layer_names = set(layers1.keys()) | set(layers2.keys())
+
+        for name in sorted(list(all_layer_names)):
+            info1 = layers1.get(name)
+            info2 = layers2.get(name)
+            comp_entry: Dict[str, Any] = {"name": name}
+            changed = False
+
+            if info1 and info2:
+                comp_entry.update(
+                    {
+                        "model1_type": info1["type"],
+                        "model2_type": info2["type"],
+                        "model1_params": info1["params"],
+                        "model2_params": info2["params"],
+                        "param_diff": info1["params"] - info2["params"],
+                    }
+                )
+                if info1["type"] != info2["type"] or info1["params"] != info2["params"]:
+                    changed = True
+                if is_sketched_func_model1 and is_sketched_func_model2:
+                    comp_entry["model1_sketched"] = info1["is_sketched"]
+                    comp_entry["model2_sketched"] = info2["is_sketched"]
+                    if info1["is_sketched"] != info2["is_sketched"]:
+                        changed = True
+            elif info1:  # Only in model1
+                comp_entry.update(
+                    {
+                        "model1_type": info1["type"],
+                        "model2_type": "N/A",
+                        "model1_params": info1["params"],
+                        "model2_params": "N/A",
+                        "param_diff": info1["params"],
+                    }
+                )
+                changed = True
+                if is_sketched_func_model1:
+                    comp_entry["model1_sketched"] = info1["is_sketched"]
+                if is_sketched_func_model2:
+                    comp_entry["model2_sketched"] = "N/A"
+
+            elif info2:  # Only in model2
+                comp_entry.update(
+                    {
+                        "model1_type": "N/A",
+                        "model2_type": info2["type"],
+                        "model1_params": "N/A",
+                        "model2_params": info2["params"],
+                        "param_diff": -info2["params"],
+                    }
+                )
+                changed = True
+                if is_sketched_func_model1:
+                    comp_entry["model1_sketched"] = "N/A"
+                if is_sketched_func_model2:
+                    comp_entry["model2_sketched"] = info2["is_sketched"]
+
+            if changed:
+                layer_comparisons.append(comp_entry)
+
+        return {
+            "model1_name": model1_name,
+            "model2_name": model2_name,
+            "model1_total_params": params1,
+            "model2_total_params": params2,
+            "param_reduction": param_reduction,
+            "param_reduction_percent": param_reduction_percent,
+            "layer_comparisons": layer_comparisons,
+            "model1_sketched_layers": summary1.get("sketched_layers", 0),
+            "model2_sketched_layers": summary2.get("sketched_layers", 0),
+        }
+
+    @staticmethod
+    def print_comparison_summary_text(
+        model1: nn.Module,
+        model2: nn.Module,
+        model1_name: str = "Original Model",
+        model2_name: str = "Tuned Model",
+        is_sketched_func_model1: Optional[callable] = None,
+        is_sketched_func_model2: Optional[callable] = None,
+    ) -> None:
+        """
+        Print a summary comparing two models.
+
+        Args:
+            model1: The first PyTorch model.
+            model2: The second PyTorch model.
+            model1_name: Name for the first model.
+            model2_name: Name for the second model.
+            is_sketched_func_model1: Optional sketch check for model1.
+            is_sketched_func_model2: Optional sketch check for model2.
+        """
+        comp = ModelVisualizer.compare_models_data(
+            model1,
+            model2,
+            model1_name,
+            model2_name,
+            is_sketched_func_model1,
+            is_sketched_func_model2,
+        )
+
+        print("=" * 80)
+        print(
+            f"Model Comparison Summary: {comp['model1_name']} vs {comp['model2_name']}"
+        )
+        print("-" * 80)
+        print(f"{comp['model1_name']} parameters: {comp['model1_total_params']:,}")
+        if is_sketched_func_model1:
+            print(
+                f"{comp['model1_name']} sketched layers: {comp['model1_sketched_layers']}"
+            )
+        print(f"{comp['model2_name']} parameters:    {comp['model2_total_params']:,}")
+        if is_sketched_func_model2:
+            print(
+                f"{comp['model2_name']} sketched layers: {comp['model2_sketched_layers']}"
+            )
+
+        print(
+            f"Parameter reduction:       {comp['param_reduction']:,} ({comp['param_reduction_percent']:.2f}%)"
+        )
+        print("-" * 80)
+
+        if not comp["layer_comparisons"]:
+            print("No differences found in layer structure or parameters.")
+        else:
+            print("Layer Differences:")
+            # Determine headers dynamically based on whether sketch info is present
+            headers = [
+                f"{'Layer Name':<35}",
+                f"{model1_name + ' Type':<20}",
+                f"{model2_name + ' Type':<20}",
+                f"{model1_name + ' Params':<15}",
+                f"{model2_name + ' Params':<15}",
+                f"{'Param Diff':<15}",
+            ]
+            if is_sketched_func_model1 and is_sketched_func_model2:
+                headers.extend(
+                    [f"{model1_name + ' Sk.':<8}", f"{model2_name + ' Sk.':<8}"]
+                )
+            print(" ".join(headers))
+            print("-" * (sum(len(h) for h in headers) + len(headers) - 1))
+
+            for layer in comp["layer_comparisons"]:
+                m1_params_str = (
+                    f"{layer['model1_params']:,}"
+                    if isinstance(layer["model1_params"], int)
+                    else layer["model1_params"]
+                )
+                m2_params_str = (
+                    f"{layer['model2_params']:,}"
+                    if isinstance(layer["model2_params"], int)
+                    else layer["model2_params"]
+                )
+                param_diff_str = (
+                    f"{layer['param_diff']:,}"
+                    if isinstance(layer["param_diff"], int)
+                    else layer["param_diff"]
+                )
+
+                row_items = [
+                    f"{layer['name']:<35}",
+                    f"{layer['model1_type']:<20}",
+                    f"{layer['model2_type']:<20}",
+                    f"{m1_params_str:<15}",
+                    f"{m2_params_str:<15}",
+                    f"{param_diff_str:<15}",
+                ]
+                if is_sketched_func_model1 and is_sketched_func_model2:
+                    m1_sk = (
+                        "✓"
+                        if layer.get("model1_sketched") is True
+                        else ("-" if layer.get("model1_sketched") is False else "N/A")
+                    )
+                    m2_sk = (
+                        "✓"
+                        if layer.get("model2_sketched") is True
+                        else ("-" if layer.get("model2_sketched") is False else "N/A")
+                    )
+                    row_items.extend([f"{m1_sk:<8}", f"{m2_sk:<8}"])
+                print(" ".join(row_items))
+        print("=" * 80)
+
+    @staticmethod
+    def visualize_parameter_distribution(
+        model: nn.Module,
+        is_sketched_func: Optional[callable] = None,
+        save_path: Optional[str] = None,
+        show_plot: bool = True,
+    ) -> None:
+        """
+        Visualize the distribution of parameters across different layer types in the model.
+
+        Args:
+            model: The PyTorch model.
+            is_sketched_func: Optional function to check if a module is sketched.
+            save_path: Path to save the visualization. If None, the plot won't be saved.
+            show_plot: Whether to display the plot.
+
+        Returns:
+            None
+        """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            logger.error(
+                "Matplotlib package not found. Install with 'pip install matplotlib' for this feature."
+            )
+            return
+
+        summary = ModelVisualizer.get_model_summary_data(model, is_sketched_func)
+
+        layer_types = {}
+        for layer in summary["layers"]:
+            layer_type = layer["type"]
+            if layer_type not in layer_types:
+                layer_types[layer_type] = 0
+            layer_types[layer_type] += layer["params"]
+
+        plt.figure(
+            figsize=(12, 7) if is_sketched_func else (7, 7)
+        )  # Wider if showing sketch comparison
+
+        # Pie chart of parameter distribution
+        ax1 = plt.subplot(1, 2, 1) if is_sketched_func else plt.subplot(1, 1, 1)
+        labels = list(layer_types.keys())
+        sizes = list(layer_types.values())
+
+        threshold = sum(sizes) * 0.01 if sum(sizes) > 0 else 0
+        other_size = sum(
+            size for i, size in enumerate(sizes) if size < threshold and size > 0
+        )
+        filtered_labels = [
+            label
+            for i, label in enumerate(labels)
+            if sizes[i] >= threshold or sizes[i] == 0
+        ]
+        filtered_sizes = [size for size in sizes if size >= threshold or size == 0]
+
+        # Filter out zero-param layers from pie unless it's the only thing
+        if len(filtered_labels) > 1:
+            non_zero_indices = [i for i, s in enumerate(filtered_sizes) if s > 0]
+            filtered_labels = [filtered_labels[i] for i in non_zero_indices]
+            filtered_sizes = [filtered_sizes[i] for i in non_zero_indices]
+
+        if other_size > 0:
+            filtered_labels.append("Other (<1%)")
+            filtered_sizes.append(other_size)
+
+        if not filtered_sizes:  # Handle empty model or model with no params
+            ax1.text(0.5, 0.5, "No parameters to display", ha="center", va="center")
+        else:
+            ax1.pie(
+                filtered_sizes, labels=filtered_labels, autopct="%1.1f%%", startangle=90
+            )
+        ax1.axis("equal")
+        ax1.set_title("Parameter Distribution by Layer Type")
+
+        if is_sketched_func:
+            plt.subplot(1, 2, 2)
+            sketched_params = sum(
+                layer["params"] for layer in summary["layers"] if layer["is_sketched"]
+            )
+            non_sketched_params = sum(
+                layer["params"]
+                for layer in summary["layers"]
+                if not layer["is_sketched"]
+            )
+
+            if sketched_params == 0 and non_sketched_params == 0:
+                plt.text(0.5, 0.5, "No parameters to display", ha="center", va="center")
+            else:
+                plt.bar(
+                    ["Non-Sketched", "Sketched"],
+                    [non_sketched_params, sketched_params],
+                    color=["skyblue", "lightcoral"],
+                )
+            plt.ylabel("Number of Parameters")
+            plt.title("Parameters in Sketched vs Non-Sketched Layers")
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path)
+            logger.info(f"Parameter distribution visualization saved to {save_path}")
+
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
