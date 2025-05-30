@@ -7,6 +7,16 @@
 
 namespace detail {
 
+/**
+ * @brief Constructs a ScopedTimer object for timing code execution on CPU or CUDA devices.
+ *
+ * This constructor initializes timing based on the device type of the provided tensor.
+ * If the tensor is on CUDA, it sets up CUDA events and records the start event on the current stream.
+ * If the tensor is on CPU, it records the start time using a high-resolution clock.
+ *
+ * @param ref  A reference tensor used to determine the device (CPU or CUDA) for timing.
+ * @param tag_ A string tag for identifying the timer instance (useful for logging or profiling).
+ */
 ScopedTimer::ScopedTimer(const torch::Tensor& ref, const char* tag_)
     : is_cuda(ref.is_cuda()), tag(tag_), stream(nullptr), gpu_start(nullptr), gpu_end(nullptr) {
     if (is_cuda) {
@@ -22,6 +32,20 @@ ScopedTimer::ScopedTimer(const torch::Tensor& ref, const char* tag_)
     }
 }
 
+/**
+ * @brief Destructor for the ScopedTimer class.
+ *
+ * This destructor measures and reports the elapsed time for a scoped code region,
+ * either on the GPU (using CUDA events) or on the CPU (using std::chrono).
+ *
+ * - If `is_cuda` is true, it records the end CUDA event, synchronizes, calculates
+ *   the elapsed time in milliseconds, prints the result, and destroys the CUDA events.
+ * - If `is_cuda` is false, it measures the elapsed time using high-resolution CPU timers,
+ *   prints the result in milliseconds.
+ *
+ * The timing result is printed to std::cout with the associated tag and whether the
+ * measurement was on the GPU or CPU.
+ */
 ScopedTimer::~ScopedTimer() {
     if (is_cuda) {
         // Record end and synchronize

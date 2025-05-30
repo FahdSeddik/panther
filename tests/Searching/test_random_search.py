@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from panther.utils.SkAutoTuner.Searching.RandomSearch import RandomSearch
+from panther.tuner.SkAutoTuner.Searching.RandomSearch import RandomSearch
 
 
 class TestRandomSearch:

@@ -264,8 +264,8 @@ class ParticleSwarmOptimization(SearchAlgorithm):
         # when it was called.
         # For now, let's search by `params` object identity or value, assuming params is `particle['position']`.
 
-        found_particle = None
-        particle_index_for_update = -1
+        found_particle = None  # noqa: F841
+        particle_index_for_update = -1  # noqa: F841
 
         # Attempt to find the particle that corresponds to 'params'
         # This is not robust if 'params' is a copy.
@@ -277,7 +277,7 @@ class ParticleSwarmOptimization(SearchAlgorithm):
 
         # Simpler: The `_scores_to_process` list will be processed in order.
         # Immediate update of pbest/gbest:
-        target_particle = None
+        target_particle = None  # noqa: F841
         # We need to identify which particle these 'params' belong to to update its pbest.
         # If `get_next_params` returns `particle['position']`, and that dict is passed to `update`,
         # we can compare. However, `params` might be a copy.
@@ -343,7 +343,7 @@ class ParticleSwarmOptimization(SearchAlgorithm):
                 ),
             ):
                 return int(obj)
-            elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+            elif isinstance(obj, (np.float64, np.float16, np.float32, np.float64)):
                 return float(obj)
             elif isinstance(obj, np.ndarray):
                 return obj.tolist()

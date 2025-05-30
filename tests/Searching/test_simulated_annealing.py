@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from panther.utils.SkAutoTuner.Searching.SimulatedAnnealing import SimulatedAnnealing
+from panther.tuner.SkAutoTuner.Searching.SimulatedAnnealing import SimulatedAnnealing
 
 
 class TestSimulatedAnnealing:
@@ -74,9 +74,7 @@ class TestSimulatedAnnealing:
                 if current_solution[param] != neighbor[param]:
                     changed = True
                     break
-            assert changed, (
-                "Neighbor should be different from current solution if parameter space allows."
-            )
+            assert changed, "Neighbor should be different from current solution if parameter space allows."
         else:  # if all params have only one value, neighbor is the same
             assert current_solution == neighbor
 
@@ -165,9 +163,9 @@ class TestSimulatedAnnealing:
                 worse_params = self.sa._get_neighbor(initial_params)
                 if worse_params != initial_params:
                     break
-            assert worse_params != initial_params, (
-                "Could not generate a different neighbor for testing rejection."
-            )
+            assert (
+                worse_params != initial_params
+            ), "Could not generate a different neighbor for testing rejection."
 
         worse_score = initial_score - 5
         self.sa.update(worse_params, worse_score)
@@ -269,7 +267,7 @@ class TestSimulatedAnnealing:
         self.sa.temperature = 1.0
         self.sa.iterations = 5
 
-        original_current_solution = (
+        original_current_solution = (  # noqa: F841
             self.sa.current_solution.copy()
         )  # For comparison after reset
 

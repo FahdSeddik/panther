@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import constant_, xavier_uniform_
 
-from panther.nn.pawXimpl import create_projection_matrix, rmha_forward
+from panther.nn.pawXimpl import create_projection_matrix, rmha_forward, sinSRPE
 
 
 def verify_rmha_inputs(
@@ -13,6 +13,20 @@ def verify_rmha_inputs(
     kernel_fn,
     iscausal,
 ):  # verfies all the performers inputs
+    """
+    Validates the input parameters for a multi-head attention mechanism.
+
+    Parameters:
+        embed_dim (int): The embedding dimension. Must be positive and divisible by num_heads.
+        num_heads (int): The number of attention heads. Must be positive.
+        dropout (float): Dropout probability. Must be in the range [0, 1).
+        bias (bool): Whether to use bias in the attention mechanism. Must be a boolean.
+        kernel_fn (str): The kernel function to use. Must be either 'softmax' or 'relu'.
+        iscausal (bool): Whether the attention is causal. Must be a boolean.
+
+    Raises:
+        ValueError: If any of the input parameters do not meet the specified requirements.
+    """
     if num_heads <= 0:
         raise ValueError("num_heads must be positive")
     if embed_dim <= 0:
@@ -30,7 +44,53 @@ def verify_rmha_inputs(
 
 
 class RandMultiHeadAttention(nn.Module):
-    """holds the parameters of the random multihead attention layer"""
+    """
+    RandMultiHeadAttention implements a random feature-based multi-head attention layer.
+
+    This module projects queries, keys, and values using learned linear transformations,
+    optionally adds biases, and applies a random feature projection to approximate
+    attention mechanisms such as softmax attention. The layer supports multiple heads,
+    dropout, and optional causal masking.
+
+    Args:
+        embed_dim (int): Total dimension of the model (input and output features).
+        num_heads (int): Number of attention heads.
+        num_random_features (int): Number of random features for the projection matrix.
+        dropout (float, optional): Dropout probability on attention weights. Default: 0.0.
+        bias (bool, optional): If True, adds bias to the linear projections. Default: True.
+        kernel_fn (str, optional): Kernel function to use for random feature mapping (e.g., "softmax"). Default: "softmax".
+        iscausal (bool, optional): If True, applies causal masking for autoregressive tasks. Default: False.
+        device (torch.device, optional): Device for parameters and buffers.
+        dtype (torch.dtype, optional): Data type for parameters and buffers.
+
+    Attributes:
+        Wq (torch.Tensor): Query projection weight matrix.
+        Wk (torch.Tensor): Key projection weight matrix.
+        Wv (torch.Tensor): Value projection weight matrix.
+        W0 (torch.Tensor): Output projection weight matrix.
+        bq (torch.Tensor or None): Query projection bias.
+        bk (torch.Tensor or None): Key projection bias.
+        bv (torch.Tensor or None): Value projection bias.
+        b0 (torch.Tensor or None): Output projection bias.
+        projection_matrix (torch.Tensor): Random feature projection matrix.
+        embed_dim (int): Embedding dimension.
+        num_heads (int): Number of attention heads.
+        dropout (float): Dropout probability.
+        bias (bool): Whether biases are used.
+        kernel_fn (str): Kernel function for random features.
+        causal (bool): Whether causal masking is applied.
+
+    Methods:
+        forward(query, key, value, attention_mask=None):
+            Computes the multi-head attention output using random feature approximation.
+            Args:
+                query (torch.Tensor): Input query tensor of shape (batch, seq_len, embed_dim).
+                key (torch.Tensor): Input key tensor of shape (batch, seq_len, embed_dim).
+                value (torch.Tensor): Input value tensor of shape (batch, seq_len, embed_dim).
+                attention_mask (torch.Tensor, optional): Optional mask tensor.
+            Returns:
+                Tuple[torch.Tensor, None]: Output tensor and None (for compatibility).
+    """
 
     projection_matrix: torch.Tensor
     Wq: torch.Tensor
@@ -57,6 +117,7 @@ class RandMultiHeadAttention(nn.Module):
         bias: bool = True,
         kernel_fn: str = "softmax",
         iscausal: bool = False,
+        SRPE: sinSRPE | None = None,
         device=None,
         dtype=None,
     ) -> None:
@@ -82,17 +143,27 @@ class RandMultiHeadAttention(nn.Module):
             self.b0 = nn.Parameter(torch.empty(embed_dim, **factory_kwargs))
         else:
             self.bq = self.bk = self.bv = self.b0 = None
-
+        self.srpe = SRPE
         self.register_buffer(
             "projection_matrix",
             create_projection_matrix(
-                num_random_features, embed_dim // num_heads, **factory_kwargs
+                num_random_features,
+                embed_dim // num_heads
+                if self.srpe is None
+                else self.srpe.num_realizations,
+                **factory_kwargs,
             ),
         )
 
         self._reset_parameters()
 
     def _reset_parameters(self) -> None:
+        """
+        Initializes or resets the parameters of the attention layer.
+
+        This method applies Xavier uniform initialization to the weight matrices (Wq, Wk, Wv, W0).
+        If biases are used, it sets all bias tensors (bq, bk, bv, b0) to zero, provided they are not None.
+        """
         xavier_uniform_(self.Wq)
         xavier_uniform_(self.Wk)
         xavier_uniform_(self.Wv)
@@ -135,6 +206,7 @@ class RandMultiHeadAttention(nn.Module):
             bv=self.bv,
             b0=self.b0,
             projection_matrix=self.projection_matrix,
+            spre_model=self.srpe,
         ), None
 
 
@@ -145,7 +217,17 @@ def make_performer(
     iscausal: bool,
 ) -> RandMultiHeadAttention:
     """
-    Converts a MultiheadAttention layer into a Performers layer.
+    Converts a standard PyTorch MultiheadAttention layer into a Performer-style
+    random feature attention layer (RandMultiHeadAttention).
+
+    Args:
+        mha (torch.nn.MultiheadAttention): The input multi-head attention layer to convert.
+        num_random_features (int): Number of random features to use in the Performer approximation.
+        kernel_fn (str): Name of the kernel function to use for random feature mapping (e.g., 'relu', 'softmax').
+        iscausal (bool): Whether the attention should be causal (prevents attending to future positions).
+
+    Returns:
+        RandMultiHeadAttention: A Performer-style attention layer with weights and biases copied from the input MHA.
     """
     embed_dim = mha.embed_dim
     num_heads = mha.num_heads

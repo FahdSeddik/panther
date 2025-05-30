@@ -5,7 +5,7 @@ import pytest
 
 # import numpy as np
 # import torch
-from panther.utils.SkAutoTuner.Searching.EvolutionaryAlgorithm import (
+from panther.tuner.SkAutoTuner.Searching.EvolutionaryAlgorithm import (
     EvolutionaryAlgorithm,
 )
 
@@ -298,7 +298,7 @@ class TestEvolutionaryAlgorithm:
             changed = False
             for param_name in original_params.keys():
                 if original_params[param_name] != mutated_params[param_name]:
-                    changed = True
+                    changed = True  # noqa: F841
                 assert (
                     mutated_params[param_name] in self.param_space_example[param_name]
                 )
@@ -322,9 +322,9 @@ class TestEvolutionaryAlgorithm:
             if any(
                 len(v) > 1 for v in self.param_space_example.values()
             ):  # if any param *could* change
-                assert at_least_one_param_with_multiple_options_changed, (
-                    "Mutation with rate 1.0 did not change any eligible parameter."
-                )
+                assert (
+                    at_least_one_param_with_multiple_options_changed
+                ), "Mutation with rate 1.0 did not change any eligible parameter."
 
         # Test with mutation_rate = 0.0
         self.ea.mutation_rate = 0.0
@@ -406,7 +406,7 @@ class TestEvolutionaryAlgorithm:
         # or that some individuals are indeed new.
         # A simple check: not all new individuals are identical to old ones (unless elitism_count = pop_size)
         if self.ea.elitism_count < self.ea.population_size:
-            num_identical_to_old = 0
+            num_identical_to_old = 0  # noqa: F841
             new_pop_param_tuples = set(
                 tuple(sorted(ind["params"].items())) for ind in self.ea.population
             )

@@ -38,7 +38,7 @@ class SearchAlgorithm:
 Exhaustive search over all possible parameter combinations.
 
 ```python
-from panther.utils.SkAutoTuner import GridSearch
+from panther.tuner.SkAutoTuner import GridSearch
 
 search_algo = GridSearch()
 ```
@@ -56,7 +56,7 @@ search_algo = GridSearch()
 Random sampling from the parameter space.
 
 ```python
-from panther.utils.SkAutoTuner import RandomSearch
+from panther.tuner.SkAutoTuner import RandomSearch
 
 search_algo = RandomSearch(num_samples=30)
 ```
@@ -74,7 +74,7 @@ search_algo = RandomSearch(num_samples=30)
 Model-based optimization using Gaussian processes.
 
 ```python
-from panther.utils.SkAutoTuner import BayesianOptimization
+from panther.tuner.SkAutoTuner import BayesianOptimization
 
 search_algo = BayesianOptimization(
     initial_points=5,
@@ -97,7 +97,7 @@ search_algo = BayesianOptimization(
 Genetic algorithm-based optimization.
 
 ```python
-from panther.utils.SkAutoTuner import EvolutionaryAlgorithm
+from panther.tuner.SkAutoTuner import EvolutionaryAlgorithm
 
 search_algo = EvolutionaryAlgorithm(
     population_size=20,
@@ -121,7 +121,7 @@ search_algo = EvolutionaryAlgorithm(
 Swarm intelligence-based optimization.
 
 ```python
-from panther.utils.SkAutoTuner import ParticleSwarmOptimization
+from panther.tuner.SkAutoTuner import ParticleSwarmOptimization
 
 search_algo = ParticleSwarmOptimization(
     n_particles=20,
@@ -146,7 +146,7 @@ search_algo = ParticleSwarmOptimization(
 Probabilistic optimization with temperature cooling.
 
 ```python
-from panther.utils.SkAutoTuner import SimulatedAnnealing
+from panther.tuner.SkAutoTuner import SimulatedAnnealing
 
 search_algo = SimulatedAnnealing(
     initial_temp=100,
@@ -169,7 +169,7 @@ search_algo = SimulatedAnnealing(
 Sequential model-based optimization using density estimation.
 
 ```python
-from panther.utils.SkAutoTuner import TreeParzenEstimator
+from panther.tuner.SkAutoTuner import TreeParzenEstimator
 
 search_algo = TreeParzenEstimator(
     n_startup_trials=10,
@@ -192,7 +192,7 @@ search_algo = TreeParzenEstimator(
 Bandit-based approach for resource allocation.
 
 ```python
-from panther.utils.SkAutoTuner import Hyperband
+from panther.tuner.SkAutoTuner import Hyperband
 
 search_algo = Hyperband(
     max_iter=81,
@@ -228,7 +228,7 @@ search_algo = Hyperband(
 The search algorithms are used when initializing the `SKAutoTuner`:
 
 ```python
-from panther.utils.SkAutoTuner import SKAutoTuner, BayesianOptimization
+from panther.tuner.SkAutoTuner import SKAutoTuner, BayesianOptimization
 
 # Initialize the auto-tuner with a specific search algorithm
 tuner = SKAutoTuner(
@@ -245,7 +245,7 @@ tuner = SKAutoTuner(
 To create a custom search algorithm, inherit from the `SearchAlgorithm` base class:
 
 ```python
-from panther.utils.SkAutoTuner import SearchAlgorithm
+from panther.tuner.SkAutoTuner import SearchAlgorithm
 
 class MyCustomAlgorithm(SearchAlgorithm):
     def __init__(self, custom_param1, custom_param2):

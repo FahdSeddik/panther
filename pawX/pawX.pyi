@@ -117,6 +117,7 @@ def rmha_forward(
     bv: Optional[torch.Tensor] = None,
     b0: Optional[torch.Tensor] = None,
     projection_matrix: Optional[torch.Tensor] = None,
+    spre_model: Optional["sinSRPE"] = None,
 ) -> torch.Tensor: ...
 def create_projection_matrix(
     m: int,
@@ -138,12 +139,45 @@ def sketched_conv2d_forward(
 def sketched_conv2d_backward(
     input: torch.Tensor,
     S1s: torch.Tensor,
-    S2s: torch.Tensor,
     U1s: torch.Tensor,
-    U2s: torch.Tensor,
     stride: Tuple[int, int],
     padding: Tuple[int, int],
     kernel_size: Tuple[int, int],
     in_shape: Tuple[int, int],
     grad_out: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
+def gaussian_skop(
+    m: int,
+    d: int,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def count_skop(
+    m: int,
+    d: int,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def sjlt_skop(
+    m: int,
+    d: int,
+    sparsity: int = 2,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor: ...
+def srht(
+    x: torch.Tensor,
+    m: int,
+) -> torch.Tensor: ...
+
+class sinSRPE(torch.nn.Module):
+    def __init__(
+        self,
+        num_heads: int,
+        perHead_in: int,
+        sines: int,
+        num_realizations: int = 256,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None: ...
+    def forward(self, x: int) -> torch.Tensor: ...

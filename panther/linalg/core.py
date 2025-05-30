@@ -56,11 +56,6 @@ def cqrrpt(
         >>> rel_error = torch.norm(reconstruction - M_permuted) / torch.norm(M_permuted)
         >>> print("Relative error:", rel_error.item())
 
-    References:
-        - Martinsson, P. G., Tropp, J. A. (2020). "Randomized Numerical Linear Algebra: Foundations & Algorithms."
-        - Demmel, J., Dumitriu, I., & Holtz, O. (2007). "Fast linear algebra is stable." Numerische Mathematik, 108(1), 59-91.
-        - https://github.com/pytorch/pytorch/issues/16763 (for discussions on randomized QR in PyTorch)
-
     Notes:
         - This method is especially effective for matrices where m >> n.
         - The randomization step improves the conditioning of the matrix before Cholesky factorization.
@@ -105,13 +100,6 @@ def randomized_svd(
     >>> A_approx = U @ torch.diag(S) @ V.T
     >>> print(A_approx.shape)
     torch.Size([100, 50])
-
-    References
-    ----------
-    - Halko, N., Martinsson, P. G., & Tropp, J. A. (2011). "Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions." SIAM review, 53(2), 217-288.
-    https://epubs.siam.org/doi/abs/10.1137/090771806
-    - Scikit-learn documentation: https://scikit-learn.org/stable/modules/generated/sklearn.utils.extmath.randomized_svd.html
-    - PyTorch SVD documentation: https://pytorch.org/docs/stable/generated/torch.linalg.svd.html
 
     Notes
     -----

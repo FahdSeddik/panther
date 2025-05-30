@@ -24,12 +24,47 @@ class SketchedLinearFunction(Function):
         bias: torch.Tensor,
         use_gpu: bool = False,
     ):
+        """
+        Performs the forward pass of a sketched linear layer.
+
+        Args:
+            input (torch.Tensor): Input tensor to the linear layer.
+            S1s (torch.Tensor): First sketching matrix or tensor.
+            S2s (torch.Tensor): Second sketching matrix or tensor.
+            U1s (torch.Tensor): First transformation matrix or tensor.
+            U2s (torch.Tensor): Second transformation matrix or tensor.
+            bias (torch.Tensor): Bias tensor to be added to the output.
+            use_gpu (bool, optional): If True, computation is performed on GPU. Defaults to False.
+
+        Returns:
+            torch.Tensor: Output tensor after applying the sketched linear transformation.
+        """
         return sketched_linear_forward(input, S1s, S2s, U1s, U2s, bias, use_gpu)
 
     @staticmethod
     # inputs is a Tuple of all of the inputs passed to forward.
     # output is the output of the forward().
     def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any):
+        """
+        Sets up the context for the backward pass by saving necessary tensors and flags.
+
+        Args:
+            ctx (Any): The context object to save information for backward computation.
+            inputs (Tuple[Any, ...]): A tuple containing:
+                - input: The input tensor.
+                - S1s: First set of singular values or related tensor.
+                - S2s: Second set of singular values or related tensor.
+                - U1s: First set of unitary matrices or related tensor.
+                - U2s: Second set of unitary matrices or related tensor.
+                - bias: The bias tensor or None.
+                - use_gpu: Boolean flag indicating if GPU is used.
+            output (Any): The output tensor (not used in this function).
+
+        Saves:
+            - input, S1s, S2s, U1s, U2s: Tensors required for backward computation.
+            - use_gpu (torch.bool): Indicates if GPU is used.
+            - bias_is_not_none (torch.bool): Indicates if bias is present.
+        """
         input, S1s, S2s, U1s, U2s, bias, use_gpu = inputs
         ctx.save_for_backward(
             input,
@@ -43,6 +78,25 @@ class SketchedLinearFunction(Function):
 
     @staticmethod
     def backward(ctx: Any, *grad_output: Any) -> Any:
+        """
+        Performs the backward pass for a custom sketched linear layer.
+
+        This method computes the gradients of the loss with respect to the input, sketch matrices (S1s, S2s), and bias (if present)
+        using the saved tensors from the forward pass. The gradients are calculated based on the following formulas:
+
+            - dl/dS2_i = U1_i * grad_output * input^T / (2 * l)
+            - dl/dS1_i = grad_output * input^T * U2_i^T / (2 * l)
+            - dl/dinput = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i grad_output) + sum_{i=1}^{l} (U2_i^T S2_i grad_output))
+            - dl/dbias = grad_output
+
+        Args:
+            ctx (Any): Context object containing saved tensors from the forward pass.
+            *grad_output (Any): Gradient of the loss with respect to the output of the layer.
+
+        Returns:
+            Tuple[Any, Any, Any, None, None, Optional[Any], None]: Gradients with respect to input, S1s, S2s, None for U1s and U2s,
+            optional gradient for bias (if present), and None for use_tensor_core flag.
+        """
         # dl/dS2_i = U1_i g h_in^T / 2 * l
         # dl/dS1_i = g h_in^T U2_i^T / 2 * l
         # dl/dh_in = 1/(2*l) * (sum_{i=1}^{l} (S1_i^T U1_i g) + sum_{i=1}^{l} (U2_i^T S2_i g))
@@ -71,6 +125,41 @@ class SketchedLinearFunction(Function):
 
 
 class SKLinear(nn.Module):
+    """
+    SKLinear is a custom linear (fully connected) layer with sketching and optional low-rank approximation, designed for efficient computation and potential GPU Tensor Core acceleration.
+        in_features (int): Number of input features.
+        out_features (int): Number of output features.
+        num_terms (int): Number of sketching terms (controls the number of low-rank approximations).
+        low_rank (int): Rank of the low-rank approximation for each term.
+        W_init (torch.Tensor, optional): Optional initial weight matrix. If None, weights are initialized using Kaiming uniform initialization.
+        bias (bool, optional): If True, adds a learnable bias to the output. Default: True.
+        dtype (torch.dtype, optional): Data type of the parameters.
+        device (torch.device, optional): Device to store the parameters.
+    Attributes:
+        in_features (int): Number of input features.
+        out_features (int): Number of output features.
+        num_terms (int): Number of sketching terms.
+        low_rank (int): Rank of the low-rank approximation.
+        S1s (torch.nn.Parameter): Sketching matrix S1s, learnable parameters.
+        S2s (torch.nn.Parameter): Sketching matrix S2s, learnable parameters.
+        U1s (torch.Tensor): Fixed orthogonal matrices for output features, registered as buffers.
+        U2s (torch.Tensor): Fixed orthogonal matrices for input features, registered as buffers.
+        bias (torch.nn.Parameter or None): Optional learnable bias.
+        has_tensor_core (bool): Indicates if Tensor Core support is available.
+        use_gpu (bool): Indicates if GPU acceleration is enabled.
+    Warnings:
+        - If the total number of parameters in the sketching layer exceeds that of a standard fully connected layer, a warning is issued.
+        - If in_features, out_features, or low_rank are not multiples of 16, Tensor Core optimizations are disabled and a warning is issued.
+        - If the batch size during the forward pass is not a multiple of 16, Tensor Core optimizations are disabled and a warning is issued.
+    Forward Input:
+        - The input tensor can be of any shape, but the last dimension must match in_features.
+        - If the input is 1D, it is reshaped to 2D for processing.
+    Forward Output:
+        - The layer uses custom sketching matrices (S1s, S2s, U1s, U2s) for efficient approximation of the linear transformation.
+        - If running on CUDA with Tensor Core support and the input dimensions and batch size are compatible, computation is accelerated.
+        - The forward pass uses a custom autograd function (SketchedLinearFunction) for computation.
+    """
+
     __constants__ = ["in_features", "out_features", "num_terms", "low_rank"]
     in_features: int
     out_features: int
@@ -180,6 +269,18 @@ class SKLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, h_in: torch.Tensor) -> torch.Tensor:
+        """
+        Performs the forward pass of the linear layer with optional sketching and GPU acceleration.
+        Args:
+            h_in (torch.Tensor): Input tensor of shape (..., in_features). Can be 1D or higher-dimensional.
+        Returns:
+            torch.Tensor: Output tensor of shape (..., out_features). If the input was 1D, returns a 1D tensor.
+        Notes:
+            - If the input is 1D, it is temporarily reshaped to 2D for processing and reshaped back before returning.
+            - If running on CUDA with tensor cores enabled and the batch size is not a multiple of 16, computation falls back to CPU and a warning is issued.
+            - The forward pass uses the custom SketchedLinearFunction for computation, which may involve sketching matrices (S1s, S2s, U1s, U2s) and an optional bias.
+        """
+
         def _reshape_input(h_in):
             was_1d = h_in.dim() == 1
             if was_1d:

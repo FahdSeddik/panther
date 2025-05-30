@@ -147,7 +147,7 @@ params = {
 The configuration components are used to initialize the `SKAutoTuner`:
 
 ```python
-from panther.utils.SkAutoTuner import SKAutoTuner, TuningConfigs, LayerConfig
+from panther.tuner.SkAutoTuner import SKAutoTuner, TuningConfigs, LayerConfig
 
 # Define configurations
 configs = TuningConfigs([

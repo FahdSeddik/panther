@@ -1,4 +1,5 @@
 #include "attention.h"
+#include "spre.h"
 
 #include <c10/util/Optional.h>
 
@@ -68,6 +69,22 @@ struct CausalDenominatorFunction : public torch::autograd::Function<CausalDenomi
     }
 };
 
+/**
+ * @brief Computes the causal numerator for attention mechanisms using cumulative sums.
+ *
+ * This function performs a forward pass for a causal attention numerator, where for each step along the first dimension,
+ * it accumulates the outer product of keys and values, and then contracts with the queries. The computation is performed
+ * using Einstein summation notation for efficient tensor operations.
+ *
+ * @param qs Query tensor of shape [I, D, J, K].
+ * @param ks Key tensor of shape [I, D, J, K].
+ * @param vs Value tensor of shape [I, D, J, L].
+ * @return A tuple containing:
+ *   - torch::Tensor: The result tensor of shape [D, I, J, L], representing the causal numerator for each step.
+ *   - torch::Tensor: The final accumulated sum tensor of shape [D, J, K, L].
+ *
+ * @note The function assumes that the input tensors are compatible in their dimensions and reside on the same device.
+ */
 std::tuple<torch::Tensor, torch::Tensor> causal_numerator_forward(
     const torch::Tensor &qs, // [I, D, J, K]
     const torch::Tensor &ks, // [I, D, J, K]
@@ -93,6 +110,22 @@ std::tuple<torch::Tensor, torch::Tensor> causal_numerator_forward(
     return {result_tensor.transpose(0, 1), sums}; // sums is not used in this loop, so return last sums
 }
 
+/**
+ * @brief Computes the backward pass for the causal numerator in an attention mechanism.
+ *
+ * This function calculates the gradients with respect to the query (qs), key (ks), and value (vs)
+ * tensors given the gradient of the result (res_grad), the running sums (sums), and the original
+ * query, key, and value tensors. The computation is performed in a causal (autoregressive) manner,
+ * iterating backwards over the sequence length.
+ *
+ * @param res_grad Gradient of the output tensor, shape [I, D, J, L].
+ * @param sums Running sums tensor used in the forward pass, shape [I, J, K, E].
+ * @param qs Query tensor, shape [I, D, J, K].
+ * @param ks Key tensor, shape [I, D, J, K].
+ * @param vs Value tensor, shape [I, D, J, L].
+ * @return std::vector<torch::Tensor> A vector containing the gradients with respect to qs, ks, and vs,
+ *         each with the same shape as their respective input tensors.
+ */
 std::vector<torch::Tensor> causal_numerator_backward(
     const torch::Tensor &res_grad, // [I, D, J, L]
     const torch::Tensor &sums,     // [I, J, K, E]
@@ -126,6 +159,20 @@ std::vector<torch::Tensor> causal_numerator_backward(
     return {q_grads.transpose(0, 1), k_grads.transpose(0, 1), v_grads.transpose(0, 1)};
 }
 
+/**
+ * @brief Computes the causal denominator for attention mechanisms.
+ *
+ * Given query and key tensors, this function computes the cumulative sum of the keys
+ * along dimension 1 and then performs an element-wise multiplication with the queries,
+ * followed by a sum over the last dimension. This is typically used in causal attention
+ * mechanisms where each position can only attend to previous positions.
+ *
+ * @param qs Query tensor of shape [I, D, J, K].
+ * @param ks Key tensor of shape [I, D, J, K].
+ * @return A tuple containing:
+ *         - The result tensor of shape [I, D, J] after the einsum operation.
+ *         - The cumulative sum tensor of the keys along dimension 1, shape [I, D, J, K].
+ */
 std::tuple<torch::Tensor, torch::Tensor> causal_denominator_forward(
     const torch::Tensor &qs, // [I, D, J, K]
     const torch::Tensor &ks)
@@ -137,6 +184,23 @@ std::tuple<torch::Tensor, torch::Tensor> causal_denominator_forward(
     return {result, sums};
 }
 
+/**
+ * Computes the backward pass for the causal denominator in an attention mechanism.
+ *
+ * Given the gradient of the result (`res_grad`), the precomputed sums (`sums`), and the queries (`qs`),
+ * this function calculates the gradients with respect to the queries and keys.
+ *
+ * The computation involves:
+ * - Element-wise multiplication of `sums` and `res_grad` to obtain the query gradients (`q_grads`).
+ * - Element-wise multiplication of `qs` and `res_grad` to obtain partial key gradients (`partial_k`).
+ * - Cumulative summation of the reversed `partial_k` along dimension 1, followed by reversing the result,
+ *   to obtain the key gradients (`k_grads`).
+ *
+ * @param res_grad The gradient of the result tensor, shape: [*, D, I, J] (batch and attention dimensions).
+ * @param sums     The precomputed sums tensor, shape: [*, D, I, J].
+ * @param qs       The queries tensor, shape: [*, D, I, J].
+ * @return         A vector containing two tensors: {q_grads, k_grads}.
+ */
 std::vector<torch::Tensor> causal_denominator_backward(
     const torch::Tensor &res_grad,
     const torch::Tensor &sums,
@@ -152,6 +216,23 @@ std::vector<torch::Tensor> causal_denominator_backward(
 }
 
 // Noncausal numerator: performs two permutations, matrix multiplications, then permutes back.
+/**
+ * Computes the non-causal numerator for attention mechanisms using kernelized attention.
+ *
+ * Given the projected query, key, and value tensors, this function performs the following steps:
+ * 1. Computes the matrix multiplication between the permuted key and value tensors to obtain an intermediate tensor.
+ * 2. Multiplies the permuted query tensor with the intermediate tensor and permutes the result back to the original shape.
+ *
+ * @param query_prime The projected query tensor of shape [B, L, H, M], where
+ *                    B = batch size,
+ *                    L = sequence length,
+ *                    H = number of heads,
+ *                    M = projection dimension.
+ * @param key_prime   The projected key tensor of shape [B, L, H, M].
+ * @param value       The value tensor of shape [B, L, H, D], where
+ *                    D = value dimension.
+ * @return            The result tensor of shape [B, L, H, D], representing the non-causal numerator for attention.
+ */
 inline torch::Tensor noncausal_numerator(const torch::Tensor &query_prime, // [B, L, H, M]
                                          const torch::Tensor &key_prime,   // [B, L, H, M]
                                          const torch::Tensor &value)
@@ -163,6 +244,19 @@ inline torch::Tensor noncausal_numerator(const torch::Tensor &query_prime, // [B
 }
 
 // Noncausal denominator: sums key_prime along dim=0 and then sums the product over the last dimension.
+/**
+ * Computes the denominator for non-causal attention mechanisms.
+ *
+ * This function takes the "prime" representations of queries and keys, and computes
+ * a normalization denominator used in non-causal attention. The computation involves
+ * summing the key_prime tensor along the sequence length dimension, multiplying it
+ * element-wise with the transposed query_prime tensor, summing over the last dimension,
+ * and then transposing the result back to the original layout.
+ *
+ * @param query_prime A tensor of shape [B, L, H, M] representing the transformed queries.
+ * @param key_prime   A tensor of shape [B, L, H, M] representing the transformed keys.
+ * @return            A tensor of shape [B, L, H] containing the computed denominators.
+ */
 inline torch::Tensor noncausal_denominator(const torch::Tensor &query_prime, // [B, L, H, M]
                                            const torch::Tensor &key_prime)
 { // [B, L, H, M]
@@ -177,6 +271,24 @@ inline torch::Tensor noncausal_denominator(const torch::Tensor &query_prime, // 
 //   scaling: if true, rows are scaled to sqrt(d), otherwise each row is scaled by its chi-distributed norm.
 //   dtype: desired data type (if not provided, defaults to torch::kFloat).
 //   device: desired device (if not provided, defaults to CPU).
+/**
+ * @brief Creates a random projection matrix with orthonormal rows, optionally scaled.
+ *
+ * This function generates an m x d projection matrix suitable for use in attention mechanisms
+ * or other applications requiring random projections. The matrix is constructed by stacking
+ * orthonormal blocks (using QR decomposition) and optionally scaling the rows.
+ *
+ * @param m Number of rows in the projection matrix.
+ * @param d Number of columns in the projection matrix.
+ * @param seed Random seed for reproducibility.
+ * @param scaling If true, scales each row by sqrt(d); otherwise, scales by the L2 norm of a random vector.
+ * @param dtype (Optional) Desired data type of the output tensor.
+ * @param device (Optional) Desired device of the output tensor.
+ * @return torch::Tensor The resulting m x d projection matrix.
+ *
+ * @note The function ensures that the rows are orthonormal within each block of size d,
+ *       and handles cases where m is not a multiple of d by creating a final incomplete block.
+ */
 torch::Tensor create_projection_matrix(
     int m, int d, int seed, bool scaling,
     c10::optional<torch::ScalarType> dtype,
@@ -230,6 +342,24 @@ torch::Tensor create_projection_matrix(
 // is_query: a flag not used in computation here, but left for API parity
 // projection_matrix: optional tensor of shape (M, D)
 // numerical_stabilizer: a small constant added after activation
+/**
+ * @brief Applies a ReLU kernel transformation to the input tensor, optionally projecting it using a given matrix.
+ *
+ * This function applies a ReLU activation to the input tensor `data`, with optional projection using
+ * a provided `projection_matrix`. If a projection matrix is given, the function computes the matrix
+ * product of `data` and the transpose of `projection_matrix`, scales the result by 1/sqrt(M) where M
+ * is the number of rows in the projection matrix, and then applies the ReLU activation. A small
+ * `numerical_stabilizer` is added to the result to improve numerical stability.
+ *
+ * @param data Input tensor to be transformed.
+ * @param is_query Indicates if the input is a query tensor (default: true). (Currently unused.)
+ * @param projection_matrix Optional projection matrix. If not provided, no projection is applied.
+ * @param numerical_stabilizer Small value added to the output for numerical stability (default: 1e-5).
+ * @param device Optional device to perform computation on. If not provided, uses the device of `data`.
+ * @param dtype Optional data type for computation. If not provided, uses the dtype of `data`.
+ * @return torch::Tensor The transformed tensor after applying the ReLU kernel (and optional projection).
+ * @throws std::runtime_error If the projection matrix is provided but is not on the same device as `data`.
+ */
 inline torch::Tensor relu_kernel_transform(
     const torch::Tensor &data, bool is_query = true,
     c10::optional<torch::Tensor> projection_matrix = c10::nullopt,
@@ -281,6 +411,24 @@ inline torch::Tensor relu_kernel_transform(
 // - numerical_stabilizer: a small constant for stabilization.
 // - device: optional device (if not provided, taken from data).
 // - dtype: optional dtype (if not provided, taken from data).
+/**
+ * @brief Applies a softmax kernel transformation to the input tensor for efficient attention mechanisms.
+ *
+ * This function projects the input data using a provided projection matrix, applies normalization and
+ * numerical stabilization, and computes a softmax-like transformation suitable for kernelized attention.
+ *
+ * @param data Input tensor of shape (..., D), where D is the feature dimension.
+ * @param is_query If true, treats the input as a query; if false, as a key/value (affects max reduction).
+ * @param projection_matrix Optional projection matrix tensor of shape (M, D), required for the transformation.
+ * @param numerical_stabilizer Small constant added for numerical stability (default: 1e-5).
+ * @param device Optional device to perform computation on (overrides data's device if provided).
+ * @param dtype Optional data type for computation (overrides data's dtype if provided).
+ * @return torch::Tensor Transformed tensor after applying the softmax kernel.
+ *
+ * @throws c10::Error if projection_matrix is not provided.
+ *
+ * @note The transformation is designed for use in kernelized attention mechanisms (e.g., Performer).
+ */
 inline torch::Tensor softmax_kernel_transform(
     const torch::Tensor &data,
     bool is_query = true,
@@ -301,12 +449,11 @@ inline torch::Tensor softmax_kernel_transform(
     // Ensure projection_matrix uses the desired options.
     auto proj = projection_matrix.value().to(opts);
 
-    // Compute data_normalizer = 1 / sqrt(sqrt(last-dim of data)) and scale data.
+    // Compute data_normalizer = 1 / sqrt(d) where d is the embedding perHead dimension.
     double normalizer = 1.0 / std::sqrt(std::sqrt(static_cast<double>(data.size(-1))));
-    // Avoid extra temporaries by directly using the scaled data.
     auto scaled_data = data * normalizer;
 
-    // Compute ratio = 1 / sqrt(number of rows of projection_matrix)
+    // Compute ratio = 1 / sqrt(m) m is number of positive random features (needed for kernel approx)
     double ratio = 1.0 / std::sqrt(static_cast<double>(proj.size(0)));
 
     // Compute data_dash = scaled_data @ proj.T (equivalent to einsum "blhd,md->blhm")
@@ -331,6 +478,23 @@ inline torch::Tensor softmax_kernel_transform(
 //   kernel_fn: "relu" or "softmax"
 //   causal: whether to use causal attention or not.
 //   projection_matrix: optional projection matrix used in kernel transforms.
+/**
+ * @brief Computes FAVOR (Fast Attention Via positive Orthogonal Random features) attention mechanism.
+ *
+ * This function applies a kernel transformation (either "relu" or "softmax") to the query and key tensors,
+ * then computes the attention output using either causal or non-causal attention, optionally applying an attention mask.
+ *
+ * @param query Input query tensor of shape [B, L, H, D], where B is batch size, L is sequence length, H is number of heads, D is head dimension.
+ * @param key Input key tensor of shape [B, S, H, D], where S is source sequence length.
+ * @param value Input value tensor of shape [B, S, H, D].
+ * @param kernel_fn The kernel function to use for feature transformation ("relu" or "softmax").
+ * @param attention_mask Optional attention mask tensor of shape [B, L, S]. True values indicate masked positions.
+ * @param causal If true, applies causal attention (prevents attending to future positions).
+ * @param projection_matrix Optional projection matrix for kernel transformation.
+ * @return torch::Tensor The attention output tensor of shape [B, L, H, D].
+ *
+ * @throws c10::Error if an unsupported kernel function is provided or if the attention mask is invalid.
+ */
 inline torch::Tensor favor_attention(const torch::Tensor &query,
                                      const torch::Tensor &key,
                                      const torch::Tensor &value,
@@ -383,6 +547,37 @@ inline torch::Tensor favor_attention(const torch::Tensor &query,
     return av_attention / attention_normalizer.unsqueeze(-1);
 }
 
+/**
+ * @brief Computes the forward pass of a Reparameterized Multi-Head Attention (RMHA) layer with optional FAVOR attention.
+ *
+ * This function performs the following steps:
+ * 1. Applies linear projections to the input query, key, and value tensors.
+ * 2. Reshapes the projections for multi-head attention.
+ * 3. Computes attention using the specified kernel function (e.g., FAVOR).
+ * 4. Merges the attention heads.
+ * 5. Applies a final linear output projection.
+ *
+ * @param query Input query tensor of shape [B, L, D], where B is batch size, L is sequence length, D is embedding dimension.
+ * @param key Input key tensor of shape [B, S, D], where S is source sequence length.
+ * @param value Input value tensor of shape [B, S, D].
+ * @param Wq Weight tensor for query projection of shape [D, D].
+ * @param Wk Weight tensor for key projection of shape [D, D].
+ * @param Wv Weight tensor for value projection of shape [D, D].
+ * @param W0 Weight tensor for output projection of shape [D, D].
+ * @param num_heads Number of attention heads.
+ * @param embed_dim Embedding dimension (must be divisible by num_heads).
+ * @param kernel_fn Name of the kernel function to use for attention (e.g., "relu", "softmax", etc.).
+ * @param causal If true, applies causal masking for autoregressive attention.
+ * @param attention_mask Optional boolean mask tensor of shape [B, L, S] indicating positions to mask.
+ * @param bq Optional bias tensor for query projection.
+ * @param bk Optional bias tensor for key projection.
+ * @param bv Optional bias tensor for value projection.
+ * @param b0 Optional bias tensor for output projection.
+ * @param projection_matrix Optional projection matrix for kernel-based attention.
+ * @return torch::Tensor Output tensor of shape [B, L, D] after attention and output projection.
+ *
+ * @throws c10::Error if attention_mask is provided and is not of type bool.
+ */
 torch::Tensor rmha_forward(
     const torch::Tensor &query,
     const torch::Tensor &key,
@@ -400,7 +595,8 @@ torch::Tensor rmha_forward(
     c10::optional<torch::Tensor> bk,
     c10::optional<torch::Tensor> bv,
     c10::optional<torch::Tensor> b0,
-    c10::optional<torch::Tensor> projection_matrix)
+    c10::optional<torch::Tensor> projection_matrix,
+    std::shared_ptr<sinSRPEImpl> spre_model)
 {
     if (attention_mask.has_value())
     {
@@ -420,6 +616,15 @@ torch::Tensor rmha_forward(
     auto q = q_proj.view({query.size(0), query.size(1), num_heads, head_dim});
     auto k = k_proj.view({key.size(0), key.size(1), num_heads, head_dim});
     auto v = v_proj.view({value.size(0), value.size(1), num_heads, head_dim});
+
+    if (spre_model)
+    {
+        TORCH_CHECK(q.size(1) == k.size(1),
+                    "Query and Key must be same length (i.e. self-attention) to use SPRE");
+        auto [qbar, kbar] = spre_model->forward(q.size(1));
+        q = (qbar * q.unsqueeze(-1)).sum(-2);
+        k = (kbar * k.unsqueeze(-1)).sum(-2);
+    }
 
     // Apply FAVOR attention
     auto attn_out = favor_attention(q, k, v, kernel_fn, attention_mask, causal, projection_matrix);

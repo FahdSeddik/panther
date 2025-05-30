@@ -3,7 +3,7 @@ import random
 
 import pytest
 
-from panther.utils.SkAutoTuner.Searching.Hyperband import Hyperband
+from panther.tuner.SkAutoTuner.Searching.Hyperband import Hyperband
 
 
 class TestHyperband:

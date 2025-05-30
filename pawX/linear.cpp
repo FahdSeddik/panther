@@ -1,5 +1,22 @@
 #include "linear.h"
 
+/**
+ * @brief Performs a sketched linear transformation on the input tensor.
+ *
+ * This function applies a linear transformation to the input tensor using
+ * sketching matrices (S1s, S2s) and orthogonal matrices (U1s, U2s). The computation
+ * is dispatched to either a CUDA or CPU implementation based on the input tensor's
+ * device and the use_gpu flag.
+ *
+ * @param input The input tensor to be transformed.
+ * @param S1s The first sketching matrix tensor.
+ * @param S2s The second sketching matrix tensor.
+ * @param U1s The first orthogonal matrix tensor.
+ * @param U2s The second orthogonal matrix tensor.
+ * @param bias Optional bias tensor to be added after the transformation.
+ * @param use_gpu Boolean flag indicating whether to use GPU computation if available.
+ * @return torch::Tensor The result of the sketched linear transformation.
+ */
 torch::Tensor sketched_linear_forward(
     const torch::Tensor& input,
     const torch::Tensor& S1s,
@@ -15,6 +32,22 @@ torch::Tensor sketched_linear_forward(
     }
 }
 
+/**
+ * @brief Performs a sketched linear forward operation on the CPU.
+ *
+ * This function computes a linear transformation of the input tensor using two sets of
+ * sketching matrices (S1s, S2s) and two sets of transformation matrices (U1s, U2s).
+ * The computation involves expanding the input tensor, performing batched matrix multiplications,
+ * averaging the results, and optionally adding a bias term.
+ *
+ * @param input The input tensor of shape (batch_size, input_dim).
+ * @param S1s Sketching matrices for the first term, of shape (num_terms, input_dim, sketched_dim1).
+ * @param S2s Sketching matrices for the second term, of shape (num_terms, sketched_dim2, output_dim).
+ * @param U1s Transformation matrices for the first term, of shape (num_terms, sketched_dim1, output_dim).
+ * @param U2s Transformation matrices for the second term, of shape (num_terms, input_dim, sketched_dim2).
+ * @param bias Optional bias tensor of shape (output_dim).
+ * @return torch::Tensor The result tensor of shape (batch_size, output_dim).
+ */
 torch::Tensor sketched_linear_forward_cpu(
     const torch::Tensor& input,
     const torch::Tensor& S1s,
@@ -35,6 +68,24 @@ torch::Tensor sketched_linear_forward_cpu(
     return result;
 }
 
+/**
+ * @brief Computes the backward pass for a sketched linear layer.
+ *
+ * This function calculates the gradients with respect to the inputs, weights, and bias (if present)
+ * for a linear layer that uses sketching matrices for dimensionality reduction or approximation.
+ * It dispatches the computation to either a CUDA or CPU implementation based on the input tensor's device
+ * and the use_gpu flag.
+ *
+ * @param grad_output The gradient of the loss with respect to the output of the linear layer.
+ * @param input The input tensor to the linear layer.
+ * @param S1s The first set of sketching matrices.
+ * @param S2s The second set of sketching matrices.
+ * @param U1s The first set of orthogonal matrices (possibly from SVD or similar decomposition).
+ * @param U2s The second set of orthogonal matrices.
+ * @param has_bias Boolean flag indicating whether the linear layer has a bias term.
+ * @param use_gpu Boolean flag indicating whether to use the GPU implementation if available.
+ * @return std::vector<torch::Tensor> A vector containing the gradients with respect to the input, weights, and bias (if present).
+ */
 std::vector<torch::Tensor> sketched_linear_backward(
     const torch::Tensor& grad_output,
     const torch::Tensor& input,
@@ -51,6 +102,26 @@ std::vector<torch::Tensor> sketched_linear_backward(
     }
 }
 
+/**
+ * @brief Computes the backward pass for a sketched linear layer on CPU.
+ *
+ * This function calculates the gradients with respect to the input, S1s, S2s, and optionally the bias,
+ * for a linear layer that uses sketching matrices. The computation is performed for each term in the
+ * sketch, and the results are summed appropriately.
+ *
+ * @param grad_output Gradient of the loss with respect to the output of the layer. Shape: [B, O]
+ * @param input Input tensor to the layer. Shape: [B, I]
+ * @param S1s Sketching matrix S1s. Shape: [T, I, R]
+ * @param S2s Sketching matrix S2s. Shape: [T, R, O]
+ * @param U1s Sketching matrix U1s. Shape: [T, R, O]
+ * @param U2s Sketching matrix U2s. Shape: [T, I, R]
+ * @param has_bias Boolean flag indicating whether the layer has a bias term.
+ * @return std::vector<torch::Tensor> A vector containing:
+ *         - grad_input: Gradient with respect to the input. Shape: [B, I]
+ *         - grad_S1s: Gradient with respect to S1s. Shape: [T, I, R]
+ *         - grad_S2s: Gradient with respect to S2s. Shape: [T, R, O]
+ *         - grad_bias (optional): Gradient with respect to the bias. Shape: [O]
+ */
 std::vector<torch::Tensor> sketched_linear_backward_cpu(
     const torch::Tensor& grad_output,  // [B, O]
     const torch::Tensor& input,        // [B, I]

@@ -5,10 +5,34 @@
 #include <tuple>
 
 // Helper: QR-based orthonormalization
+/**
+ * @brief Orthonormalizes the input tensor using QR decomposition.
+ *
+ * This function computes the reduced QR decomposition of the input tensor X,
+ * returning a tuple containing the orthonormal matrix Q and the upper triangular matrix R.
+ *
+ * @param X The input tensor to be orthonormalized.
+ * @return A std::tuple containing:
+ *         - torch::Tensor Q: The orthonormal matrix.
+ *         - torch::Tensor R: The upper triangular matrix.
+ */
 static std::tuple<torch::Tensor, torch::Tensor> orthonormalize(const torch::Tensor& X) {
     return torch::linalg_qr(X, /*mode=*/"reduced");
 }
 
+/**
+ * @brief Computes a randomized sketch of the input matrix using the power iteration method.
+ *
+ * This function generates a sketch matrix by repeatedly multiplying the input matrix (and its transpose)
+ * with a random Gaussian matrix, optionally orthonormalizing the result at specified intervals for numerical stability.
+ * The process is controlled by the number of passes and stabilization frequency.
+ *
+ * @param A         The input matrix (torch::Tensor) of shape (m, n).
+ * @param k         The target sketch dimension (number of columns in the sketch).
+ * @param passes    The number of power iteration passes to perform.
+ * @param stab_freq The frequency (in iterations) at which to orthonormalize the sketch for stability (default: 1).
+ * @return torch::Tensor The resulting sketch matrix (Omega) after the specified number of passes.
+ */
 torch::Tensor powerSketch(const torch::Tensor& A, int64_t k, int64_t passes, int64_t stab_freq = 1) {
     auto m = A.size(0);
     auto n = A.size(1);
@@ -33,6 +57,18 @@ torch::Tensor powerSketch(const torch::Tensor& A, int64_t k, int64_t passes, int
 }
 
 // Returns Q with orthonormal columns spanning A's approximate range
+/**
+ * @brief Computes an approximate orthonormal basis for the range of matrix A using randomized projections.
+ *
+ * This function uses a randomized range finder algorithm to efficiently approximate the column space of the input matrix A.
+ * It first generates a sketch matrix using power iterations, then forms a sample matrix by multiplying A with the sketch,
+ * and finally orthonormalizes the result to produce the basis.
+ *
+ * @param A            The input matrix (torch::Tensor) whose range is to be approximated.
+ * @param k            Target rank or number of basis vectors to compute.
+ * @param power_iters  Number of power iterations to improve approximation accuracy (default: 2).
+ * @return             An orthonormal basis (torch::Tensor) for the approximate range of A.
+ */
 torch::Tensor rangeFinder(const torch::Tensor& A, int64_t k, int64_t power_iters = 2) {
     // Sketch
     auto Omega = powerSketch(A, k, power_iters);
@@ -41,6 +77,26 @@ torch::Tensor rangeFinder(const torch::Tensor& A, int64_t k, int64_t power_iters
     return std::get<0>(orthonormalize(Y));
 }
 
+/**
+ * @brief Computes a blocked randomized QB factorization of a matrix.
+ *
+ * This function implements a blocked version of the randomized QB decomposition,
+ * which approximates the input matrix A as A ≈ Q * B, where Q has orthonormal columns
+ * and B is a smaller matrix. The algorithm proceeds in blocks, adaptively building
+ * up the approximation until the specified rank k or error tolerance is reached.
+ *
+ * @param A           The input matrix (torch::Tensor) to be factorized, of shape (m, n).
+ * @param k           Target rank for the approximation.
+ * @param block_size  Size of each block to use in the iterative process (default: 64).
+ * @param tol         Error tolerance for the approximation (default: 1e-6).
+ * @return            A tuple (Q, B) where:
+ *                      - Q: Orthonormal basis matrix (torch::Tensor) of shape (m, <=k).
+ *                      - B: Coefficient matrix (torch::Tensor) of shape (<=k, n).
+ *
+ * @note The function uses a range finder (rangeFinder) and orthonormalization (orthonormalize)
+ *       routines, which must be defined elsewhere. The process terminates early if the
+ *       approximation error stops decreasing or falls below the specified tolerance.
+ */
 std::tuple<torch::Tensor, torch::Tensor> blockedQB(
     const torch::Tensor& A,
     int64_t k,
@@ -95,6 +151,21 @@ std::tuple<torch::Tensor, torch::Tensor> blockedQB(
     return {Q, B};
 }
 
+/**
+ * @brief Computes a randomized Singular Value Decomposition (SVD) of the input matrix.
+ *
+ * This function performs a randomized SVD on the given matrix `A`, approximating the top `k` singular values and vectors.
+ * It first computes a blocked QB decomposition to obtain an orthonormal basis `Q` and a smaller matrix `B`.
+ * Then, it performs a full SVD on `B` and reconstructs the approximate left singular vectors.
+ *
+ * @param A The input tensor (matrix) to decompose.
+ * @param k The target rank (number of singular values/vectors to compute).
+ * @param tol Tolerance for convergence in the blocked QB step (default: 1e-6).
+ * @return A tuple containing:
+ *         - U: The approximate left singular vectors (torch::Tensor).
+ *         - S: The singular values (torch::Tensor).
+ *         - V: The approximate right singular vectors (torch::Tensor, transposed).
+ */
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> randomized_svd(
     const torch::Tensor& A,
     int64_t k,

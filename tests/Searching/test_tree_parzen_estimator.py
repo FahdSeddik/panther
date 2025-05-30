@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from panther.utils.SkAutoTuner.Searching.TreeParzenEstimator import TreeParzenEstimator
+from panther.tuner.SkAutoTuner.Searching.TreeParzenEstimator import TreeParzenEstimator
 
 
 class TestTreeParzenEstimator:

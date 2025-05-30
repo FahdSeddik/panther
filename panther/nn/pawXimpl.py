@@ -4,6 +4,7 @@
 from pawX import (
     create_projection_matrix,
     rmha_forward,
+    sinSRPE,
     sketched_linear_backward,
     sketched_linear_forward,
 )
@@ -13,4 +14,5 @@ __all__ = [
     "rmha_forward",
     "sketched_linear_backward",
     "sketched_linear_forward",
+    "sinSRPE",
 ]

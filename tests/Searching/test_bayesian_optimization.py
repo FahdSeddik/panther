@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from panther.utils.SkAutoTuner.Searching.BayesianOptimization import (
+from panther.tuner.SkAutoTuner.Searching.BayesianOptimization import (
     BayesianOptimization,
 )
 

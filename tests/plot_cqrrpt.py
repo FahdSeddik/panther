@@ -63,6 +63,7 @@ def main(csv_path):
     df["memory_bytes"] = df["memory_bytes"].astype(float)
     df["factor_err"] = df["factor_err"].astype(float)
     df["orth_err"] = df["orth_err"].astype(float)
+    df["recon_err"] = df["recon_err"].astype(float)
 
     # Plot runtime (best_time_sec). Use log scale on y for readability.
     plot_metric(
@@ -89,6 +90,14 @@ def main(csv_path):
         ylabel="Log Orthogonality Error (‖I - QᵀQ‖_F)",
         log_scale=True,
         output_filename="orthogonality_error",
+    )
+
+    plot_metric(
+        df,
+        metric_col="recon_err",
+        ylabel="Log Reconstruction Error",
+        log_scale=True,
+        output_filename="recon_error",
     )
 
     print(
