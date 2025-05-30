@@ -880,3 +880,12 @@ class SKAutoTuner:
 
         if self.verbose:
             print(f"Tuning results loaded from {file_path}")
+
+    def getResolver(self):
+        """
+        Get the resolver for the model.
+
+        Returns:
+            The resolver for the model
+        """
+        return self.resolver
