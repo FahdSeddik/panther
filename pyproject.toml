@@ -1,9 +1,18 @@
 [tool.poetry]
-name = "panther"
+name = "panther-ml"
 version = "0.1.0"
 description = ""
 authors = ["The Panther Team"]
 readme = "README.md"
+include = ["pawX/**", "pawX/*.pyd"]
+
+[[tool.poetry.packages]]
+include = "pawX"
+from = "."
+
+[[tool.poetry.packages]]
+include = "panther"
+from = "."
 
 [tool.poetry.dependencies]
 python = "^3.12"
