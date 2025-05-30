@@ -20,7 +20,7 @@ Note: This sets up a venv environment, installs poetry, install dependencies, an
 OR, if you have CUDA 12.4 installed, and you're on a Windows machine, simply install using pip:
 
 ```bash
-pip install --force-reinstall panther-ml==0.1.1 --extra-index-url https://download.pytorch.org/whl/cu124
+pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
 ### On Windows
