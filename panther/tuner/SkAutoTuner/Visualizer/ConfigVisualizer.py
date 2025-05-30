@@ -557,23 +557,23 @@ class ConfigVisualizer(ModelVisualizer):
         let selectedLayers = [];
         // Map layer name to type for quick lookup
         let layerNameToType = {{}};
-        
+
         // Initialize layer name to type mapping
         for (const [type, names] of Object.entries(layerTypes)) {{
             for (const name of names) {{
                 layerNameToType[name] = type;
             }}
         }}
-        
+
         // Helper: update selected layers UI
         function updateSelectedLayersUI() {{
             const container = document.getElementById('selectedLayers');
-            
+
             if (selectedLayers.length === 0) {{
                 container.innerHTML = '<p class="no-selection">No layers selected. Click on layers in the visualization to select them.</p>';
                 return;
             }}
-            
+
             // Group layers by type for better organization
             const layersByType = {{}};
             selectedLayers.forEach(layer => {{
@@ -582,67 +582,67 @@ class ConfigVisualizer(ModelVisualizer):
                 }}
                 layersByType[layer.type].push(layer);
             }});
-            
+
             let html = '';
-            
+
             // Create a section for each type
             for (const [type, layers] of Object.entries(layersByType)) {{
                 html += `<div class="layer-type-group">
                     <div class="layer-type-header">${{type}} (${{layers.length}})</div>
                     <div class="layer-type-items">`;
-                    
+
                 for (const layer of layers) {{
                     html += `<div class="layer-item">
                         <span class="layer-name">${{layer.name}}</span>
                         <button class="remove-layer" title="Remove layer" data-layer="${{layer.name}}">&times;</button>
                     </div>`;
                 }}
-                
+
                 html += `</div></div>`;
             }}
-            
+
             container.innerHTML = html;
         }}
-        
+
         // Helper: update parameter options UI for multiple types
         function updateParamOptionsUI() {{
             const container = document.getElementById('paramOptions');
-            
+
             if (selectedLayers.length === 0) {{
                 container.innerHTML = '<p class="no-selection">Select layer(s) to configure parameters.</p>';
                 return;
             }}
-            
+
             // Get all unique layer types from selected layers
             const uniqueTypes = [...new Set(selectedLayers.map(l => l.type))];
-            
+
             let html = '';
-            
+
             // Create UI for each type's parameters
             uniqueTypes.forEach(type => {{
                 const layersOfType = selectedLayers.filter(l => l.type === type);
                 const typeOptions = configOptions[type];
-                
+
                 if (!typeOptions || Object.keys(typeOptions).length === 0) {{
                     return;
                 }}
-                
+
                 html += `<div class="type-section">
                     <div class="type-header">${{type}} (${{layersOfType.length}} layer${{layersOfType.length > 1 ? 's' : ''}})</div>`;
-                
+
                 // Show which layers are included when multiple are selected
                 if (layersOfType.length > 1) {{
                     html += `<div class="layers-included">
                         Layers included: ${{layersOfType.map(l => l.name).join(', ')}}
                     </div>`;
                 }}
-                
+
                 // Add parameter groups for this type
                 for (const [paramName, paramValues] of Object.entries(typeOptions)) {{
                     html += `<div class="param-group" data-layer-type="${{type}}">
                         <span class="param-name">${{paramName}}</span>
                         <div class="param-values">`;
-                    
+
                     // Create checkbox for each value
                     for (const value of paramValues) {{
                         html += `<label class="param-checkbox">
@@ -650,59 +650,59 @@ class ConfigVisualizer(ModelVisualizer):
                             ${{value}}
                         </label>`;
                     }}
-                    
+
                     html += `</div></div>`;
                 }}
-                
+
                 html += `</div>`;
             }});
-            
+
             container.innerHTML = html || '<p class="no-selection">No configurable parameters for selected layer types.</p>';
         }}
-        
+
         // Helper: get selected parameter values grouped by layer type
         function getSelectedParamsByType() {{
             const paramsByType = {{}};
-            
+
             // Get all parameter groups
             document.querySelectorAll('.param-group').forEach(group => {{
                 const layerType = group.getAttribute('data-layer-type');
                 if (!layerType) return;
-                
+
                 const paramName = group.querySelector('.param-name').textContent;
                 const checkedInputs = group.querySelectorAll('input:checked');
-                
+
                 if (checkedInputs.length > 0) {{
                     if (!paramsByType[layerType]) {{
                         paramsByType[layerType] = {{}};
                     }}
-                    
+
                     paramsByType[layerType][paramName] = Array.from(checkedInputs).map(input => input.value);
                 }}
             }});
-            
+
             return paramsByType;
         }}
-        
+
         // Helper: update generated code UI
         function updateGeneratedCodeUI() {{
             const codeBox = document.getElementById('generatedCode');
-            
+
             if (selectedLayers.length === 0) {{
                 codeBox.textContent = '# No configuration generated yet.\\n# Select layers and parameters to generate code.';
                 return;
             }}
-            
+
             const paramsByType = getSelectedParamsByType();
-            
+
             if (Object.keys(paramsByType).length === 0) {{
                 codeBox.textContent = '# Please select parameters for at least one layer type.';
                 return;
             }}
-            
+
             const separate = document.getElementById('separateConfig').checked;
             const copyWeights = document.getElementById('copyWeights').checked;
-            
+
             // Group layers by type
             const layersByType = {{}};
             selectedLayers.forEach(layer => {{
@@ -711,26 +711,26 @@ class ConfigVisualizer(ModelVisualizer):
                 }}
                 layersByType[layer.type].push(layer.name);
             }});
-            
+
             // Generate configurations for each type
             const configs = [];
-            
+
             for (const [type, layerNames] of Object.entries(layersByType)) {{
                 // Only generate config if parameters are selected for this type
                 if (paramsByType[type] && Object.keys(paramsByType[type]).length > 0) {{
                     configs.push(generateLayerConfigCode(layerNames, paramsByType[type], separate, copyWeights));
                 }}
             }}
-            
+
             // If no valid configs, show message
             if (configs.length === 0) {{
                 codeBox.textContent = '# Please select parameters for at least one layer type.';
                 return;
             }}
-            
+
             // Generate full config code
             let fullCode = '';
-            
+
             if (configs.length === 1) {{
                 // If only one config, no need for TuningConfigs wrapper
                 fullCode = configs[0];
@@ -738,37 +738,37 @@ class ConfigVisualizer(ModelVisualizer):
                 // Wrap multiple configs in TuningConfigs
                 fullCode = 'TuningConfigs(\\n    configs=[\\n' + configs.join(',\\n') + '\\n    ]\\n)';
             }}
-            
+
             codeBox.textContent = fullCode;
         }}
-        
+
         // Generate LayerConfig code
         function generateLayerConfigCode(layerNames, params, separate, copyWeights) {{
             let layerNamesStr;
-            
+
             if (layerNames.length === 1) {{
                 layerNamesStr = `\\"${{layerNames[0]}}\\"`;
             }} else {{
                 layerNamesStr = `[${{layerNames.map(name => `\\"${{name}}\\"`).join(', ')}}]`;
             }}
-            
+
             const paramsItems = [];
-            
+
             for (const [paramName, paramValues] of Object.entries(params)) {{
                 if (paramValues.length > 0) {{
                     const valuesStr = paramValues.map(value => {{
                         return isNaN(parseFloat(value)) ? `\\"${{value}}\\"` : value;
                     }}).join(', ');
-                    
+
                     paramsItems.push(`\\"${{paramName}}\\": [${{valuesStr}}]`);
                 }}
             }}
-            
+
             const paramsStr = `{{${{paramsItems.join(', ')}}}}`;
-            
+
             return `    LayerConfig(\\n        layer_names=${{layerNamesStr}},\\n        params=${{paramsStr}},\\n        separate=${{separate}},\\n        copy_weights=${{copyWeights}}\\n    )`;
         }}
-        
+
         // Show tooltip for multiselect
         function showMultiSelectTooltip() {{
             const tooltip = document.getElementById('multiSelectTooltip');
@@ -776,7 +776,7 @@ class ConfigVisualizer(ModelVisualizer):
             setTimeout(() => {{
                 tooltip.style.opacity = '1';
             }}, 10);
-            
+
             // Hide after 3 seconds
             setTimeout(() => {{
                 tooltip.style.opacity = '0';
@@ -785,86 +785,86 @@ class ConfigVisualizer(ModelVisualizer):
                 }}, 300);
             }}, 3000);
         }}
-        
+
         // Attach event listeners after DOM loaded
         document.addEventListener('DOMContentLoaded', function() {{
             // Show multiselect tooltip once when page loads
             setTimeout(showMultiSelectTooltip, 2000);
-            
+
             // Show/hide config panel
             document.getElementById('showConfig').onclick = function() {{
                 document.getElementById('configPanel').style.display = 'flex';
             }};
-            
+
             document.getElementById('closeConfig').onclick = function() {{
                 document.getElementById('configPanel').style.display = 'none';
             }};
-            
+
             // Remove layer from selection
             document.getElementById('selectedLayers').onclick = function(e) {{
                 if (e.target.classList.contains('remove-layer')) {{
                     const name = e.target.getAttribute('data-layer');
                     selectedLayers = selectedLayers.filter(l => l.name !== name);
-                    
+
                     // Unhighlight in visualization
                     unhighlightLayerNode(name);
-                    
+
                     // Update UI
                     updateSelectedLayersUI();
                     updateParamOptionsUI();
                     updateGeneratedCodeUI();
                 }}
             }};
-            
+
             // Clear selection
             document.getElementById('clearSelection').onclick = function() {{
                 // Unhighlight all selected layers
                 for (const layer of selectedLayers) {{
                     unhighlightLayerNode(layer.name);
                 }}
-                
+
                 selectedLayers = [];
-                
+
                 // Update UI
                 updateSelectedLayersUI();
                 updateParamOptionsUI();
                 updateGeneratedCodeUI();
             }};
-            
+
             // Generate config
             document.getElementById('generateConfig').onclick = function() {{
                 updateGeneratedCodeUI();
             }};
-            
+
             // Copy code
             document.getElementById('copyCode').onclick = function() {{
                 const code = document.getElementById('generatedCode').textContent;
                 navigator.clipboard.writeText(code);
-                
+
                 // Show feedback
                 const button = document.getElementById('copyCode');
                 const originalText = button.textContent;
                 button.textContent = 'Copied!';
-                
+
                 setTimeout(() => {{
                     button.textContent = originalText;
                 }}, 2000);
             }};
-            
+
             // Update config when options change
             document.getElementById('separateConfig').onchange = updateGeneratedCodeUI;
             document.getElementById('copyWeights').onchange = updateGeneratedCodeUI;
-            
+
             // Update params when changed
             document.getElementById('paramOptions').addEventListener('change', function(e) {{
                 if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {{
                     updateGeneratedCodeUI();
                 }}
             }});
-            
+
             // Layer selection in visualization
             const svg = document.querySelector('svg');
-            
+
             // Handle keydown/keyup for Ctrl/Cmd key to show multiselection is available
             document.addEventListener('keydown', function(e) {{
                 if (e.ctrlKey || e.metaKey) {{
@@ -872,32 +872,32 @@ class ConfigVisualizer(ModelVisualizer):
                     showMultiSelectTooltip();
                 }}
             }});
-            
+
             document.addEventListener('keyup', function(e) {{
                 if (!e.ctrlKey && !e.metaKey) {{
                     document.getElementById('selectedLayers').classList.remove('multi-selection-active');
                 }}
             }});
-            
+
             if (svg) {{
                 svg.addEventListener('click', function(e) {{
                     let node = e.target;
-                    
+
                     // Traverse up to find node with data-layer-name
                     while (node && !node.getAttribute('data-name') && node !== svg) {{
                         node = node.parentNode;
                     }}
-                    
+
                     if (node && node.getAttribute && node.getAttribute('data-name')) {{
                         const name = node.getAttribute('data-name');
                         // Root element is not a layer
                         if (name === 'root') return;
                         const type = layerNameToType[name];
-                        
+
                         if (!type) return; // Skip if not a recognized layer type
-                        
+
                         const idx = selectedLayers.findIndex(l => l.name === name);
-                        
+
                         // If not holding Ctrl key, clear other selections unless clicking on already selected layer
                         if (!e.ctrlKey && !e.metaKey && idx === -1) {{
                             // Clear previous selections
@@ -906,7 +906,7 @@ class ConfigVisualizer(ModelVisualizer):
                             }}
                             selectedLayers = [];
                         }}
-                        
+
                         // Toggle selection of clicked layer
                         if (idx === -1) {{
                             // Add to selection
@@ -917,7 +917,7 @@ class ConfigVisualizer(ModelVisualizer):
                             selectedLayers.splice(idx, 1);
                             unhighlightLayerNode(name);
                         }}
-                        
+
                         // Update UI
                         updateSelectedLayersUI();
                         updateParamOptionsUI();
@@ -925,19 +925,19 @@ class ConfigVisualizer(ModelVisualizer):
                     }}
                 }});
             }}
-            
+
             // Highlight/unhighlight helpers
             window.highlightLayerNode = function(name) {{
                 // Find all nodes with data-name=name
                 const nodes = document.querySelectorAll(`[data-name='${{name}}']`);
                 nodes.forEach(n => n.classList.add('node-selected'));
             }};
-            
+
             window.unhighlightLayerNode = function(name) {{
                 const nodes = document.querySelectorAll(`[data-name='${{name}}']`);
                 nodes.forEach(n => n.classList.remove('node-selected'));
             }};
-            
+
             // Initial UI
             updateSelectedLayersUI();
             updateParamOptionsUI();

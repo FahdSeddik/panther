@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "panther-ml"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 authors = ["The Panther Team"]
 readme = "README.md"
@@ -20,6 +20,7 @@ torch = {version = "2.6.0+cu124", source = "pytorch"}
 torchvision = {version = "0.21.0+cu124", source = "pytorch"}
 torchaudio = {version = "2.6.0+cu124", source = "pytorch"}
 botorch = "^0.14.0"
+matplotlib = "^3.10.3"
 
 
 [tool.poetry.group.dev.dependencies]

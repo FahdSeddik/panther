@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from panther.utils.SkAutoTuner.Searching.ParticleSwarmOptimization import (
+from panther.tuner.SkAutoTuner.Searching.ParticleSwarmOptimization import (
     ParticleSwarmOptimization,
 )
 

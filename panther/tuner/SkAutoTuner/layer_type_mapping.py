@@ -13,16 +13,17 @@ LAYER_TYPE_MAPPING = {
     nn.MultiheadAttention: {
         "class_path": "panther.nn.attention.RandMultiHeadAttention",
         "params": ["num_random_features", "kernel_fn"],
-    }
+    },
 }
+
 
 def get_sketched_class(layer_type):
     """Dynamically import and return the sketched class for a layer type."""
     if layer_type not in LAYER_TYPE_MAPPING:
         raise ValueError(f"Layer type {layer_type.__name__} is not supported")
-    
+
     class_path = LAYER_TYPE_MAPPING[layer_type]["class_path"]
-    module_path, class_name = class_path.rsplit('.', 1)
-    
+    module_path, class_name = class_path.rsplit(".", 1)
+
     module = __import__(module_path, fromlist=[class_name])
     return getattr(module, class_name)

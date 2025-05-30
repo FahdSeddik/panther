@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 try:
-    from graphviz import Digraph, ExecutableNotFound
+    from graphviz import Digraph, ExecutableNotFound  # type: ignore
 except ImportError:
     Digraph = None
     ExecutableNotFound = Exception
@@ -686,11 +686,11 @@ class ModelVisualizer:
                 document.getElementById('infoPanel').innerHTML = '<p>Error: No comparison data available</p>';
                 return;
             }
-            
+
             // Set model names
             document.getElementById('model1-name').textContent = comparisonData.model1.type + ' (' + comparisonData.model1.params.toLocaleString() + ' params)';
             document.getElementById('model2-name').textContent = comparisonData.model2.type + ' (' + comparisonData.model2.params.toLocaleString() + ' params)';
-            
+
             // Display summary
             const diffSummary = document.getElementById('diff-summary');
             diffSummary.innerHTML = `
@@ -700,15 +700,15 @@ class ModelVisualizer:
                 <p>Modules with different types: ${Object.keys(comparisonData.diff.type_differences).length}</p>
                 <p>Modules with different parameters: ${Object.keys(comparisonData.diff.param_differences).length}</p>
             `;
-            
+
             // Render simple tree views
             function renderTree(container, tree, prefix = '') {
                 const ul = document.createElement('ul');
-                
+
                 for (const [name, subtree] of Object.entries(tree)) {
                     const li = document.createElement('li');
                     const fullPath = prefix ? prefix + '.' + name : name;
-                    
+
                     // Apply highlighting
                     if (comparisonData.diff.only_in_model1.includes(fullPath)) {
                         li.classList.add('model1-only');
@@ -717,28 +717,28 @@ class ModelVisualizer:
                     } else if (comparisonData.diff.type_differences[fullPath] || comparisonData.diff.param_differences[fullPath]) {
                         li.classList.add('diff-highlight');
                     }
-                    
+
                     li.textContent = name;
                     if (Object.keys(subtree).length > 0) {
                         li.style.fontWeight = 'bold';
                         const childUl = renderTree(container, subtree, fullPath);
                         li.appendChild(childUl);
                     }
-                    
+
                     ul.appendChild(li);
                 }
-                
+
                 return ul;
             }
-            
+
             document.getElementById('model1-structure').appendChild(
                 renderTree(document.getElementById('model1-structure'), comparisonData.model1.tree)
             );
-            
+
             document.getElementById('model2-structure').appendChild(
                 renderTree(document.getElementById('model2-structure'), comparisonData.model2.tree)
             );
-            
+
             // When clicking on model elements, show details in the info panel
             document.querySelectorAll('.model-col li').forEach(li => {
                 li.addEventListener('click', function(e) {
@@ -789,7 +789,7 @@ class ModelVisualizer:
             Path to the saved ONNX file
         """
         try:
-            import numpy as np
+            import numpy as np  # noqa: F401
             import torch.onnx
         except ImportError:
             raise ImportError(
@@ -857,8 +857,11 @@ class ModelVisualizer:
             Path to the visualization file
         """
         try:
-            import onnx
-            from onnx.tools.net_drawer import GetOpNodeProducer, GetPydotGraph
+            import onnx  # type: ignore
+            from onnx.tools.net_drawer import (  # type: ignore
+                GetOpNodeProducer,
+                GetPydotGraph,
+            )
         except ImportError:
             raise ImportError(
                 "ONNX and pydot packages are required. Install with 'pip install onnx pydot'"
@@ -908,7 +911,7 @@ class ModelVisualizer:
             A string containing the model summary
         """
         try:
-            from tabulate import tabulate
+            from tabulate import tabulate  # type: ignore
         except ImportError:
             logger.warning(
                 "Tabulate package not found. Install with 'pip install tabulate' for better formatting."
@@ -1042,7 +1045,7 @@ class ModelVisualizer:
             A dictionary containing operation counts by layer
         """
         try:
-            import torch.autograd.profiler as profiler
+            import torch.autograd.profiler as profiler  # noqa: F401
         except ImportError:
             logger.error("PyTorch profiler not available")
             raise ImportError("PyTorch profiler is required for this function")

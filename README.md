@@ -17,6 +17,12 @@ This guide explains how to build and run the Panther codebase, including the nat
 You can quickly install Panther using the powershell and Makefile scripts provided. This will set up the Python package and build the native backend.
 Note: This sets up a venv environment, installs poetry, install dependencies, and builds the native backend.
 
+OR, if you have CUDA 12.4 installed, and you're on a Windows machine, simply install using pip:
+
+```bash
+pip install --force-reinstall panther-ml==0.1.1 --extra-index-url https://download.pytorch.org/whl/cu124
+```
+
 ### On Windows
 1. **Open PowerShell** and run the following command:
 

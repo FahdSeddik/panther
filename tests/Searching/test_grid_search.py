@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from panther.utils.SkAutoTuner.Searching.GridSearch import GridSearch
+from panther.tuner.SkAutoTuner.Searching.GridSearch import GridSearch
 
 
 class TestGridSearch:
@@ -74,7 +74,7 @@ class TestGridSearch:
     def test_get_next_params(self):
         self.grid_search.initialize(self.param_space)
 
-        sorted_param_names = sorted(self.param_space.keys())
+        sorted_param_names = sorted(self.param_space.keys())  # noqa: F841
         all_fetched_params = []
         while True:
             params = self.grid_search.get_next_params()

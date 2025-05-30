@@ -171,7 +171,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
             # This relies on the 'params' dict not having its 'score' field yet from THIS generation's eval.
             if individual["params"] == params and individual["score"] is None:
                 individual["score"] = score
-                found_individual = True
+                found_individual = True  # noqa: F841
                 break
 
         # If not found, it might be an issue, or it was already scored (e.g. if update is called twice for same params)

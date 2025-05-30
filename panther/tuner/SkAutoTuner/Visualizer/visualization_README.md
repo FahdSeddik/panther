@@ -13,7 +13,7 @@ The SKAutoTuner provides powerful visualization tools to help understand model a
 The `ModelVisualizer` class provides tools for visualizing neural network architectures:
 
 ```python
-from panther.utils.SkAutoTuner import ModelVisualizer
+from panther.tuner.SkAutoTuner import ModelVisualizer
 
 visualizer = ModelVisualizer(model)
 ```
@@ -28,7 +28,7 @@ visualizer = ModelVisualizer(model)
 #### Example Usage
 
 ```python
-from panther.utils.SkAutoTuner import ModelVisualizer
+from panther.tuner.SkAutoTuner import ModelVisualizer
 import torch.nn as nn
 
 # Create a model
@@ -60,7 +60,7 @@ visualizer.visualize_layer("0", save_path="conv_layer.png")
 The `ConfigVisualizer` class provides tools for visualizing tuning configurations:
 
 ```python
-from panther.utils.SkAutoTuner import ConfigVisualizer
+from panther.tuner.SkAutoTuner import ConfigVisualizer
 
 config_vis = ConfigVisualizer(tuner.configs)
 ```
@@ -75,7 +75,7 @@ config_vis = ConfigVisualizer(tuner.configs)
 #### Example Usage
 
 ```python
-from panther.utils.SkAutoTuner import ConfigVisualizer, TuningConfigs, LayerConfig
+from panther.tuner.SkAutoTuner import ConfigVisualizer, TuningConfigs, LayerConfig
 
 # Create a configuration
 configs = TuningConfigs([
@@ -148,7 +148,7 @@ The visualization components are designed to work well within Jupyter notebooks:
 
 ```python
 # In a Jupyter notebook
-from panther.utils.SkAutoTuner import ModelVisualizer
+from panther.tuner.SkAutoTuner import ModelVisualizer
 import matplotlib.pyplot as plt
 
 # Create a visualizer

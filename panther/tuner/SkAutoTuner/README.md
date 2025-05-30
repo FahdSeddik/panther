@@ -50,7 +50,7 @@ SKAutoTuner is included as part of the Panther framework. No separate installati
 ### Basic Usage
 
 ```python
-from panther.utils.SkAutoTuner import SKAutoTuner, TuningConfigs, LayerConfig
+from panther.tuner.SkAutoTuner import SKAutoTuner, TuningConfigs, LayerConfig
 import torch.nn as nn
 
 # Define a model to tune
@@ -96,7 +96,7 @@ tuner.visualize_tuning_results(save_path="tuning_results.png")
 #### Using Different Search Algorithms
 
 ```python
-from panther.utils.SkAutoTuner import SKAutoTuner, BayesianOptimization
+from panther.tuner.SkAutoTuner import SKAutoTuner, BayesianOptimization
 
 # Initialize with Bayesian Optimization
 tuner = SKAutoTuner(
@@ -129,7 +129,7 @@ tuner = SKAutoTuner(
 #### Visualizing Model Configurations
 
 ```python
-from panther.utils.SkAutoTuner import ModelVisualizer, ConfigVisualizer
+from panther.tuner.SkAutoTuner import ModelVisualizer, ConfigVisualizer
 
 # Visualize the model architecture
 visualizer = ModelVisualizer(model)

@@ -205,11 +205,11 @@ static void sample_indices_iid_uniform(
         int64_t l = uni_major(rng);
         idxs_lax_l[j] = l;
         // assign a Rademacher ±1 if this is the first time l appears,
-        // but since we don’t know duplicates yet, just store a placeholder
-        // (we’ll actually merge+reassign in laso_merge_long_axis_vector_coo_data).
+        // but since we don't know duplicates yet, just store a placeholder
+        // (we'll actually merge+reassign in laso_merge_long_axis_vector_coo_data).
         //
         // For simplicity, store a random ±1 at each position; merging step
-        // will re‐compute √(count) * sign_of_first_appearance.
+        // will re‐compute sqrt(count) * sign_of_first_appearance.
         vals_l[j] = (coin_flip(rng) == 0 ? +1.0f : -1.0f);
     }
 }
@@ -312,7 +312,7 @@ static void fill_sparse(
     std::vector<int64_t> &cols,
     std::vector<float> &vals) {
     //
-    //  1) Determine (dim_major, dim_minor) exactly as RandBLAS’s SparseDist:
+    //  1) Determine (dim_major, dim_minor) exactly as RandBLAS's SparseDist:
     //
     int64_t dim_major, dim_minor;
     bool rows_are_major;
