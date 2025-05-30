@@ -1,325 +1,606 @@
-import copy
-import json
-import random
-from typing import Any, Dict, List, Optional, Tuple
+import pickle
+from typing import Any, Dict, List
+
+import torch
 
 from .SearchAlgorithm import SearchAlgorithm
 
 
 class EvolutionaryAlgorithm(SearchAlgorithm):
     """
-    Implements an Evolutionary Algorithm (specifically a Genetic Algorithm) for hyperparameter tuning.
+    Abstract base class for evolutionary search algorithms.
 
-    This algorithm maintains a population of candidate solutions (sets of parameters)
-    and iteratively applies genetic operators like selection, crossover, and mutation
-    to evolve better solutions over generations.
+    This class provides a framework for implementing evolutionary algorithms
+    for hyperparameter tuning. It includes common operations such as
+    initialization, selection, crossover, and mutation.
     """
 
     def __init__(
         self,
-        population_size: int,
-        n_generations: int,
-        mutation_rate: float,
-        crossover_rate: float,
-        tournament_size: int,
-        elitism_count: int = 1,
-        random_seed: Optional[int] = None,
+        population_size=5,
+        n_generations=10,
+        mutation_rate=0.5,
+        crossover_rate=0.5,
+        tournament_size=5,
+        elitism_count=1,
+        selection_type="roulette_wheel_selection",
+        crossover_type="uniform_crossover",
     ):
         """
-        Initialize the Evolutionary Algorithm.
+        Initializes the EvolutionaryAlgorithm.
 
         Args:
-            population_size: The number of individuals (parameter sets) in each generation.
-            n_generations: The number of generations to run the algorithm for.
-            mutation_rate: The probability (0.0 to 1.0) of mutating a gene (parameter) in an individual.
-            crossover_rate: The probability (0.0 to 1.0) that crossover will occur between two parents.
-            tournament_size: The number of individuals to select for a tournament in tournament selection.
-            elitism_count: The number of best individuals from the current generation to carry over to the next.
-            random_seed: Optional seed for the random number generator for reproducibility.
+            population_size: The number of individuals in each generation.
+            n_generations: The total number of generations to evolve.
+            mutation_rate: The probability of mutating an individual.
+            crossover_rate: The probability of performing crossover between two parents.
+            tournament_size: The number of individuals participating in a tournament selection.
+            elitism_count: The number of best individuals to carry over to the next generation.
+            selection_type: The method used for selecting parents (e.g., "roulette_wheel_selection").
+            crossover_type: The method used for crossover (e.g., "uniform_crossover").
         """
-        if not isinstance(population_size, int) or population_size <= 0:
-            raise ValueError("population_size must be a positive integer.")
-        if not isinstance(n_generations, int) or n_generations <= 0:
-            raise ValueError("n_generations must be a positive integer.")
-        if not (0.0 <= mutation_rate <= 1.0):
-            raise ValueError("mutation_rate must be between 0.0 and 1.0.")
-        if not (0.0 <= crossover_rate <= 1.0):
-            raise ValueError("crossover_rate must be between 0.0 and 1.0.")
-        if not isinstance(tournament_size, int) or tournament_size <= 0:
-            raise ValueError("tournament_size must be a positive integer.")
-        if not isinstance(elitism_count, int) or elitism_count < 0:
-            raise ValueError("elitism_count must be a non-negative integer.")
-        if elitism_count >= population_size:
-            raise ValueError("elitism_count must be less than population_size.")
-        if tournament_size > population_size:
-            # Warning, not strictly an error if population is small, but less effective.
-            # For now, allow it, but good to note.
-            pass
-
         self.population_size = population_size
         self.n_generations = n_generations
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
         self.tournament_size = tournament_size
         self.elitism_count = elitism_count
-
-        if random_seed is not None:
-            random.seed(random_seed)
-
-        self.param_space: Optional[Dict[str, List[Any]]] = None
-        self.population: List[
-            Dict[str, Any]
-        ] = []  # List of individuals {'params': Dict, 'score': Optional[float]}
-        self.best_params: Dict[str, Any] = {}
-        self.best_score: float = -float("inf")
-        self.current_generation: int = 0
-        self.evaluations_count: int = 0
-        self._current_individual_index: int = (
-            0  # Index for dispatching individuals from the current population
-        )
-
-    def initialize(self, param_space: Dict[str, List[Any]]):
-        """
-        Initialize the search algorithm with the parameter space and create the initial population.
-        """
-        if not param_space:
-            raise ValueError("Parameter space cannot be empty.")
-        for name, values in param_space.items():
-            if not isinstance(values, list) or not values:
-                raise ValueError(
-                    f"Parameter '{name}' must have a non-empty list of possible values."
-                )
-
-        self.param_space = param_space
+        self.selection_type = selection_type
+        self.crossover_type = crossover_type
+        self.__checks()
         self.reset()
 
-    def _create_individual(self) -> Dict[str, Any]:
-        """Helper function to create a random individual based on param_space."""
-        if self.param_space is None:
-            raise RuntimeError("param_space is not initialized.")
-        individual_params = {}
-        for param_name, possible_values in self.param_space.items():
-            individual_params[param_name] = random.choice(possible_values)
-        return individual_params
+    def __checks(self):
+        """
+        Validates the initialization parameters.
 
-    def reset(self):
-        """Reset the search algorithm to its initial state (requires param_space to be set)."""
-        if self.param_space is None:
+        Raises:
+            ValueError: If any parameter is outside its valid range.
+        """
+        if self.population_size <= 0:
+            raise ValueError("population_size must be greater than 0")
+        if self.n_generations <= 0:
+            raise ValueError("n_generations must be greater than 0")
+        if not (0 <= self.mutation_rate <= 1):
+            raise ValueError("mutation_rate must be between 0 and 1")
+        if not (0 <= self.crossover_rate <= 1):
+            raise ValueError("crossover_rate must be between 0 and 1")
+        if self.tournament_size <= 0:
+            raise ValueError("tournament_size must be greater than 0")
+        if self.elitism_count < 0:
+            raise ValueError("elitism_count must be greater than or equal to 0")
+        if self.selection_type not in [
+            "roulette_wheel_selection",
+            "tournament_selection",
+            "random_selection",
+        ]:
             raise ValueError(
-                "Parameter space not initialized. Call initialize() first."
+                f"selection_type must be one of ['roulette_wheel_selection', 'tournament_selection', 'random_selection'], got {self.selection_type}"
+            )
+        if self.crossover_type not in [
+            "uniform_crossover",
+            "single_point_crossover",
+            "two_point_crossover",
+        ]:
+            raise ValueError(
+                f"crossover_type must be one of ['uniform_crossover', 'single_point_crossover', 'two_point_crossover'], got {self.crossover_type}"
             )
 
-        self.population = []
-        for _ in range(self.population_size):
-            self.population.append({"params": self._create_individual(), "score": None})
-
-        self.best_params = {}
-        self.best_score = -float("inf")
-        self.current_generation = 0
-        self.evaluations_count = 0
-        self._current_individual_index = 0
-
-    def get_next_params(self) -> Optional[Dict[str, Any]]:
+    def initialize(self, param_space: Dict[str, List]):
         """
-        Get the next set of parameters to try. Evolves to a new generation if the current one is complete.
-        Returns None if the search is finished.
+        Initialize the search algorithm with the parameter space.
+        This method sets up the initial population for the evolutionary process.
+
+        Args:
+            param_space: Dictionary of parameter names and their possible values.
+        """
+        self.reset()
+        self.param_space = param_space
+        self.indexed_param_space = self._generate_indexed_param_space()
+        self.tournament_size = min(self.tournament_size, self.population_size)
+
+        i = 0
+        # Create the initial population by randomly selecting from the indexed parameter space
+        while i < self.population_size:
+            choice = torch.random.randint(
+                low=0, high=len(self.indexed_param_space), size=1, dtype=torch.int32
+            )[0]
+
+            params = self.indexed_param_space[choice]
+            self.indexed_param_space.pop(choice)
+            self.population_to_eval[i] = params
+            i = i + 1
+
+    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple]:
+        """
+        Computes the Cartesian product of a list of lists.
+        Example: _my_product([[1, 2], ['a', 'b']]) -> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
+
+        Args:
+            value_lists: A list of lists, where each inner list contains values for a parameter.
+
+        Returns:
+            A list of tuples, where each tuple is a unique combination of values.
+        """
+        if not value_lists:
+            return [()]  # Product of no lists is a list with one empty tuple
+
+        # Initialize with a list containing an empty tuple.
+        # Each item from the subsequent lists will be appended to these tuples.
+        product_tuples = [()]
+
+        for current_list_values in value_lists:
+            if not current_list_values:
+                # If any input list is empty, the Cartesian product is empty.
+                return []
+
+            # Build the new product by combining existing tuples with items from the current list
+            product_tuples = [
+                existing_tuple + (item,)
+                for existing_tuple in product_tuples
+                for item in current_list_values
+            ]
+
+        return product_tuples
+
+    def _generate_indexed_param_space(self):
+        """
+        Generates an indexed parameter space from the provided param_space.
+        The indexed parameter space is a list of dictionaries, where each dictionary
+        represents a unique combination of parameter values. This is used for
+        initializing the population and for mutation if new individuals are needed.
+
+        Raises:
+            ValueError: If param_space is None.
+
+        Returns:
+            List[Dict[str, Any]]: The indexed parameter space.
+        """
+        if self.param_space is None:
+            raise ValueError("param_space is None")
+
+        param_names = list(self.param_space.keys())
+        value_lists = list(self.param_space.values())
+
+        values_combined = self._my_product(value_lists)
+        indexed_param_space = [{} for _ in range(len(values_combined))]
+
+        i = 0
+        for value_combination in values_combined:
+            param = {}
+            j = 0
+            for value in value_combination:
+                param[param_names[j]] = value
+                j = j + 1
+            indexed_param_space[i] = param
+            i = i + 1
+
+        return indexed_param_space
+
+    def get_next_params(self) -> Dict[str, Any]:
+        """
+        Get the next set of parameters to try.
+
+        Returns:
+            Dictionary of parameter names and values to try, or None if the search is finished.
         """
         if self.is_finished():
             return None
 
-        if self._current_individual_index >= self.population_size:
-            # Current generation fully dispatched, time to evolve
-            self._evolve_population()
-            self.current_generation += 1
-            self._current_individual_index = 0
-
-            # Check if finished after evolution (due to reaching n_generations)
-            if self.is_finished():
-                return None
-
-        if not self.population or self._current_individual_index >= len(
-            self.population
-        ):
-            # Should not happen if logic is correct, means population is exhausted unexpectedly
-            return None
-
-        # Get next individual to evaluate
-        individual_to_evaluate = self.population[self._current_individual_index]
-
-        # Ensure it hasn't been scored from a previous partial generation (e.g. after load_state)
-        # Or simply rely on the flow: only unevaluated individuals are processed by _evolve_population setting score to None
-
-        self._current_individual_index += 1
-        self.evaluations_count += 1
-
-        # Return a deep copy to prevent external modification of internal state
-        return copy.deepcopy(individual_to_evaluate["params"])
+        if len(self.population_to_eval) > 0:
+            # If there are individuals in the current population to evaluate
+            param = self.population_to_eval[self.current_individual_index]
+            self.population_to_eval.pop(self.current_individual_index)
+            self.current_individual_index = self.current_individual_index + 1
+            return param
+        else:
+            # If the current population has been evaluated, evolve to the next generation
+            self._evolve()
+            # Recursively call get_next_params to get an individual from the new population
+            self.get_next_params()
 
     def update(self, params: Dict[str, Any], score: float):
         """
         Update the search algorithm with the results of the latest trial.
+        This involves recording the score of the evaluated parameters and
+        updating the best-known parameters if the current score is better.
+
+        Args:
+            params: Dictionary of parameter names and values that were tried.
+            score: The evaluation score for the parameters.
         """
-        if self.param_space is None:  # Should be initialized before any update
-            return
+        params["score"] = score
+        self.evaluated_population.append(params)
 
-        # Find the individual in the population that matches `params` and assign its score
-        # This assumes `params` is one of the individuals dispatched from the current generation
-        # and its score hasn't been set yet for this generation.
-        found_individual = False
-        for individual in self.population:
-            # We need to compare params carefully. If params were deepcopied, this direct comparison should work.
-            # This relies on the 'params' dict not having its 'score' field yet from THIS generation's eval.
-            if individual["params"] == params and individual["score"] is None:
-                individual["score"] = score
-                found_individual = True
-                break
-
-        # If not found, it might be an issue, or it was already scored (e.g. if update is called twice for same params)
-        # For simplicity, we assume valid usage where update is called once per dispatched param set.
-
-        if score > self.best_score:
+        if self.best_score < score:
             self.best_score = score
-            self.best_params = copy.deepcopy(params)
+            self.best_params = params
 
-    def _all_individuals_scored(self) -> bool:
-        """Checks if all individuals in the current population have been scored."""
-        if not self.population:
-            return (
-                False  # Or True if population is empty, depending on desired behavior
-            )
-        return all(indiv.get("score") is not None for indiv in self.population)
+    def _evolve(self):
+        """
+        Evolves the population to the next generation.
+        This method implements the core evolutionary loop:
+        1. Normalizes scores.
+        2. Applies elitism.
+        3. Performs selection, crossover, and mutation to generate the new population.
+        """
+        self.curr_generation = self.curr_generation + 1
+        new_population = []
 
-    def _evolve_population(self):
-        """Evolve the population to the next generation using selection, crossover, and mutation."""
-        if not self._all_individuals_scored():
-            # This state should ideally not be reached if get_next_params and update are used correctly.
-            # It means we are trying to evolve before all scores are in.
-            # For robustness, one might wait or raise an error. Here, we proceed, but scores might be missing.
-            # print("Warning: Evolving population with potentially unscored individuals.") # For debugging
-            pass  # Or handle more gracefully
+        # Normalize scores for selection (e.g., roulette wheel)
+        scores = torch.tensor([indv["score"] for indv in self.evaluated_population])
+        min_score = scores.min()
+        max_score = scores.max()
+        for indv in self.evaluated_population:
+            # Add a small epsilon to avoid division by zero if all scores are the same
+            indv["score"] = indv["score"] - min_score / ((max_score - min_score) + 1e-4)
 
-        new_population: List[Dict[str, Any]] = []
-
-        # 1. Elitism: Carry over the best individuals
-        # Sort by score (descending, hence -indiv['score']). Handle None scores by treating them as worst.
-        sorted_population = sorted(
-            [indiv for indiv in self.population if indiv["score"] is not None],
-            key=lambda x: x["score"],
-            reverse=True,
+        population_sorted_normalized = sorted(
+            self.evaluated_population, key=lambda indv: -indv["score"]
         )
 
-        for i in range(self.elitism_count):
-            if i < len(sorted_population):
-                elite_individual = sorted_population[i]
-                new_population.append(
-                    {"params": copy.deepcopy(elite_individual["params"]), "score": None}
-                )
-
-        # 2. Generate offspring using selection, crossover, and mutation
-        while len(new_population) < self.population_size:
-            parent1_struct = self._tournament_selection()
-            parent2_struct = self._tournament_selection()
-
-            # Ensure parents were actually selected (e.g. population not empty of scored individuals)
-            if parent1_struct is None or parent2_struct is None:
-                # Fallback: create random individuals if selection fails (e.g. no scored individuals)
-                child1_params = self._create_individual()
-                child2_params = self._create_individual()
-            else:
-                parent1_params = parent1_struct["params"]
-                parent2_params = parent2_struct["params"]
-
-                if random.random() < self.crossover_rate:
-                    child1_params, child2_params = self._uniform_crossover(
-                        parent1_params, parent2_params
-                    )
-                else:
-                    child1_params = copy.deepcopy(parent1_params)
-                    child2_params = copy.deepcopy(parent2_params)
-
-            mutated_child1_params = self._mutate(child1_params)
-            new_population.append({"params": mutated_child1_params, "score": None})
-
-            if len(new_population) < self.population_size:
-                mutated_child2_params = self._mutate(child2_params)
-                new_population.append({"params": mutated_child2_params, "score": None})
-
-        self.population = new_population[: self.population_size]  # Ensure correct size
-
-    def _tournament_selection(self) -> Optional[Dict[str, Any]]:
-        """Selects an individual using tournament selection."""
-        # Consider only individuals that have a score
-        scored_population = [
-            indiv for indiv in self.population if indiv["score"] is not None
+        # 1. Elitism: Carry over the best individuals to the next generation
+        new_population[: self.elitism_count] = population_sorted_normalized[
+            : self.elitism_count
         ]
-        if not scored_population:
-            return None  # Cannot select if no individuals have scores
 
-        if self.tournament_size > len(scored_population):
-            # If tournament is larger than available scored population, compete among all available
-            actual_tournament_size = len(scored_population)
-        else:
-            actual_tournament_size = self.tournament_size
+        # 2. Genetic operations: Fill the rest of the new population
+        while len(new_population) < self.population_size:
+            parent1 = self._selection(population_sorted_normalized)
+            parent2 = self._selection(population_sorted_normalized)
 
-        if actual_tournament_size == 0:  # Should be caught by not scored_population
+            child1 = None
+            child2 = None
+
+            # Crossover
+            if (
+                parent1 is not None
+                and parent2 is not None
+                and self.crossover_rate > torch.rand().item()
+            ):
+                child1, child2 = self._cross_over(parent1, parent2)
+            else:
+                # If crossover doesn't happen or parents are missing,
+                # either keep parents or generate new random individuals
+                if parent1 is not None:
+                    child1 = parent1.copy()
+                elif (
+                    len(new_population) < self.population_size
+                ):  # Ensure we don't exceed population size
+                    choice = torch.random.randint(
+                        low=0,
+                        high=len(
+                            self.indexed_param_space
+                        ),  # Ensure index is within bounds
+                        size=1,
+                        dtype=torch.int32,
+                    )[0]
+
+                    params = self.indexed_param_space[choice]
+                    self.indexed_param_space.pop(
+                        choice
+                    )  # Avoid re-selecting the same random individual
+                    child1 = params
+
+                if parent2 is not None:
+                    child2 = parent2.copy()
+                elif (
+                    len(new_population) < self.population_size
+                ):  # Ensure we don't exceed population size
+                    choice = torch.random.randint(
+                        low=0,
+                        high=len(
+                            self.indexed_param_space
+                        ),  # Ensure index is within bounds
+                        size=1,
+                        dtype=torch.int32,
+                    )[0]
+
+                    params = self.indexed_param_space[choice]
+                    self.indexed_param_space.pop(
+                        choice
+                    )  # Avoid re-selecting the same random individual
+                    child2 = params
+
+            # Mutation
+            if child1 is not None:
+                child1 = self._mutate(child1)
+
+            if child2 is not None:
+                child2 = self._mutate(child2)
+
+            if child1 is not None:
+                new_population.append(child1)
+
+            if (
+                child2 is not None and len(new_population) < self.population_size
+            ):  # Ensure we don't exceed population size
+                new_population.append(child2)
+
+        self.population_to_eval = new_population
+        self.evaluated_population = []
+        self.current_individual_index = 0
+
+    def _roulette_wheel_selection(self, population_sorted_normalized):
+        """
+        Performs roulette wheel selection.
+        Individuals are selected based on their fitness (score), where higher
+        fitness means a higher probability of being selected.
+
+        Args:
+            population_sorted_normalized: A list of individuals sorted by score (descending)
+                                          and scores normalized.
+
+        Returns:
+            The selected individual.
+        """
+        scores = torch.tensor([indv["score"] for indv in population_sorted_normalized])
+        probabilities = scores / scores.sum()
+        selected_index = torch.multinomial(probabilities, 1).item()
+        indv = population_sorted_normalized[selected_index]
+        population_sorted_normalized.pop(
+            selected_index
+        )  # Remove selected individual to avoid re-selection in the same step
+        return indv
+
+    def _tournament_selection(self, population_sorted_normalized):
+        """
+        Performs tournament selection.
+        A subset of individuals (tournament) is randomly selected from the population,
+        and the fittest individual from this tournament is chosen as a parent.
+
+        Args:
+            population_sorted_normalized: A list of individuals sorted by score (descending)
+                                          and scores normalized.
+
+        Returns:
+            The selected individual.
+        """
+        if not population_sorted_normalized:
             return None
 
-        tournament_contenders = random.sample(scored_population, actual_tournament_size)
+        tournament_candidates_indices = torch.randperm(
+            len(population_sorted_normalized)
+        )[: self.tournament_size]
 
-        best_in_tournament = sorted(
-            tournament_contenders, key=lambda x: x["score"], reverse=True
-        )[0]
-        return (
-            best_in_tournament  # Returns the full struct {'params': ..., 'score': ...}
+        tournament_candidates = [
+            population_sorted_normalized[i] for i in tournament_candidates_indices
+        ]
+
+        # need to sort them again unfortunatelly
+        tournament_candidates_sorted = sorted(
+            tournament_candidates, key=lambda indv: -indv["score"]
         )
 
-    def _uniform_crossover(
-        self, parent1_params: Dict[str, Any], parent2_params: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Performs uniform crossover between two parents."""
-        if self.param_space is None:
-            raise RuntimeError("param_space is not initialized.")
+        # The population is already sorted by score, so the first one is the best
+        winner = tournament_candidates_sorted[0]
 
-        child1_params = {}
-        child2_params = {}
-        for param_name in self.param_space.keys():
-            if random.random() < 0.5:
-                child1_params[param_name] = parent1_params[param_name]
-                child2_params[param_name] = parent2_params[param_name]
+        # Find and remove the winner from the original population list to avoid re-selection.
+        # We remove the specific 'winner' object by identity to ensure the correct individual is removed,
+        # which is more robust if multiple individuals have identical parameters.
+        index_to_remove = -1
+        for i, indv in enumerate(population_sorted_normalized):
+            if indv is winner:  # Compare by object identity
+                index_to_remove = i
+                break
+
+        if index_to_remove != -1:
+            population_sorted_normalized.pop(index_to_remove)
+        # else:
+        # If winner is not found by identity, it indicates an issue.
+        # The previous value-based comparison might have masked this if it found a
+        # different object with the same parameters.
+        # For robustness, one might add an assertion or logging here, e.g.:
+        # print("Warning: Winner object not found for removal in tournament selection by identity.")
+        # This situation would imply an unexpected state in population management.
+
+        return winner
+
+    def _random_selection(self, population_sorted_normalized):
+        """
+        Performs random selection.
+        An individual is chosen randomly from the population.
+
+        Args:
+            population_sorted_normalized: A list of individuals (can be unsorted for this method).
+
+        Returns:
+            The selected individual.
+        """
+        if not population_sorted_normalized:
+            return None
+        choice = torch.random.randint(
+            low=0,
+            high=len(population_sorted_normalized),  # Ensure index is within bounds
+            size=1,
+            dtype=torch.int32,
+        )[0]
+
+        indv = population_sorted_normalized[choice]
+        population_sorted_normalized.pop(choice)
+        return indv
+
+    def _selection(self, population_sorted_normalized):
+        """
+        Selects individuals from the population for reproduction.
+        Currently supports roulette wheel selection.
+
+        Args:
+            population_sorted_normalized: A list of individuals sorted by score (descending)
+                                          and scores normalized.
+
+        Returns:
+            The selected individual.
+
+        Raises:
+            NotImplementedError: If the specified selection_type is not implemented.
+        """
+        if self.selection_type == "roulette_wheel_selection":
+            return self._roulette_wheel_selection(population_sorted_normalized)
+        elif self.selection_type == "tournament_selection":
+            return self._tournament_selection(population_sorted_normalized)
+        elif self.selection_type == "random_selection":
+            return self._random_selection(population_sorted_normalized)
+        else:
+            raise (
+                NotImplementedError(
+                    f"Selection type {self.selection_type} is not implemented."
+                )
+            )
+
+    def _cross_over(self, parent1, parent2):
+        """
+        Performs crossover between two parents to create two children.
+        The type of crossover is determined by `self.crossover_type`.
+
+        Args:
+            parent1: The first parent individual (dictionary of parameters).
+            parent2: The second parent individual (dictionary of parameters).
+
+        Returns:
+            A tuple containing two children (child1, child2).
+        """
+        if self.crossover_type == "uniform_crossover":
+            return self._uniform_crossover(parent1, parent2)
+        elif self.crossover_type == "single_point_crossover":
+            return self._single_point_crossover(parent1, parent2)
+        elif self.crossover_type == "two_point_crossover":
+            return self._two_point_crossover(parent1, parent2)
+        else:
+            raise NotImplementedError(
+                f"Crossover type {self.crossover_type} is not implemented."
+            )
+
+    def _uniform_crossover(self, parent1, parent2):
+        """
+        Performs uniform crossover between two parents to create two children.
+        For each parameter, the value is randomly chosen from one of the parents.
+
+        Args:
+            parent1: The first parent individual.
+            parent2: The second parent individual.
+
+        Returns:
+            A tuple containing two children.
+        """
+        child1 = {}
+        child2 = {}
+
+        for param in parent1.keys():
+            if param == "score":
+                continue
+            if torch.rand().item() < 0.5:
+                child1[param] = parent1[param]
+                child2[param] = parent2[param]
             else:
-                child1_params[param_name] = parent2_params[param_name]
-                child2_params[param_name] = parent1_params[param_name]
-        return child1_params, child2_params
+                child1[param] = parent2[param]
+                child2[param] = parent1[param]
 
-    def _mutate(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Mutates an individual's parameters."""
-        if self.param_space is None:
-            raise RuntimeError("param_space is not initialized.")
+        return child1, child2
 
-        mutated_params = copy.deepcopy(params)
-        for param_name in self.param_space.keys():
-            if random.random() < self.mutation_rate:
-                possible_values = self.param_space[param_name]
-                if possible_values:  # Ensure there are values to choose from
-                    # Simple mutation: pick any random value.
-                    # Could be enhanced to pick a *different* value if desired.
-                    mutated_params[param_name] = random.choice(possible_values)
-        return mutated_params
+    def _single_point_crossover(self, parent1, parent2):
+        """
+        Performs single-point crossover between two parents.
+        A single crossover point is selected, and parameters are swapped
+        between parents after this point to create two children.
 
-    def get_best_params(self) -> Dict[str, Any]:
-        """Get the best set of parameters found so far."""
-        return copy.deepcopy(self.best_params)
+        Args:
+            parent1: The first parent individual.
+            parent2: The second parent individual.
 
-    def get_best_score(self) -> float:
-        """Get the best score achieved so far."""
-        return self.best_score
+        Returns:
+            A tuple containing two children.
+        """
+        child1 = {}
+        child2 = {}
+        params_keys = [k for k in parent1.keys() if k != "score"]
+        if not params_keys:  # No parameters to crossover
+            return parent1.copy(), parent2.copy()
 
-    def is_finished(self) -> bool:
-        """Check if the search algorithm has finished (e.g., n_generations reached)."""
-        return self.current_generation >= self.n_generations
+        crossover_point = torch.randint(0, len(params_keys) + 1, (1,)).item()
+
+        for i, key in enumerate(params_keys):
+            if i < crossover_point:
+                child1[key] = parent1[key]
+                child2[key] = parent2[key]
+            else:
+                child1[key] = parent2[key]
+                child2[key] = parent1[key]
+        return child1, child2
+
+    def _two_point_crossover(self, parent1, parent2):
+        """
+        Performs two-point crossover between two parents.
+        Two crossover points are selected, and parameters between these
+        points are swapped between parents.
+
+        Args:
+            parent1: The first parent individual.
+            parent2: The second parent individual.
+
+        Returns:
+            A tuple containing two children.
+        """
+        child1 = {}
+        child2 = {}
+        params_keys = [k for k in parent1.keys() if k != "score"]
+        if (
+            not params_keys or len(params_keys) < 2
+        ):  # Not enough parameters for two points
+            return self._uniform_crossover(parent1, parent2)  # fallback to uniform
+
+        point1 = torch.randint(0, len(params_keys), (1,)).item()
+        point2 = torch.randint(0, len(params_keys), (1,)).item()
+
+        start_point = min(point1, point2)
+        end_point = max(point1, point2)
+
+        for i, key in enumerate(params_keys):
+            if start_point <= i < end_point:
+                child1[key] = parent2[key]
+                child2[key] = parent1[key]
+            else:
+                child1[key] = parent1[key]
+                child2[key] = parent2[key]
+        return child1, child2
+
+    def _mutate(self, indv):
+        """
+        Performs mutation on an individual.
+        For each parameter in the individual, there is a `mutation_rate` chance
+        that its value will be changed to a randomly selected value from its
+        possible range in the `param_space`.
+
+        Args:
+            indv: The individual (dictionary of parameters) to mutate.
+
+        Returns:
+            The mutated individual.
+        """
+        new_indv = indv.copy()
+
+        for param in indv.keys():
+            if param == "score":
+                continue
+
+            values = self.param_space[param]
+
+            choice = torch.random.randint(
+                low=0, high=len(values), size=1, dtype=torch.int32
+            )[0]
+
+            if torch.rand().item() < self.mutation_rate:
+                new_indv[param] = values[choice]
+
+        return new_indv
 
     def save_state(self, filepath: str):
-        """Save the current state of the search algorithm to a file."""
+        """
+        Save the current state of the search algorithm to a file.
+
+        Args:
+            filepath: The path to the file where the state should be saved.
+        """
         state = {
             "population_size": self.population_size,
             "n_generations": self.n_generations,
@@ -327,31 +608,28 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
             "crossover_rate": self.crossover_rate,
             "tournament_size": self.tournament_size,
             "elitism_count": self.elitism_count,
+            "selection_type": self.selection_type,
             "param_space": self.param_space,
-            "population": self.population,  # population includes params and scores
+            "curr_generation": self.curr_generation,
+            "indexed_param_space": self.indexed_param_space,
             "best_params": self.best_params,
             "best_score": self.best_score,
-            "current_generation": self.current_generation,
-            "evaluations_count": self.evaluations_count,
-            "_current_individual_index": self._current_individual_index,
-            "random_state": random.getstate(),  # Save Python's random generator state
+            "population_to_eval": self.population_to_eval,
+            "evaluated_population": self.evaluated_population,
+            "current_individual_index": self.current_individual_index,
         }
-        try:
-            with open(filepath, "w") as f:
-                json.dump(state, f, indent=4)
-        except (IOError, TypeError) as e:
-            # Handle cases where state is not JSON serializable or file cannot be written
-            # print(f"Error saving state: {e}") # Or raise a custom exception
-            raise RuntimeError(f"Failed to save state to {filepath}: {e}")
+        with open(filepath, "wb") as f:
+            pickle.dump(state, f)
 
     def load_state(self, filepath: str):
-        """Load the state of the search algorithm from a file."""
-        try:
-            with open(filepath, "r") as f:
-                state = json.load(f)
-        except (IOError, json.JSONDecodeError) as e:
-            # print(f"Error loading state: {e}")
-            raise RuntimeError(f"Failed to load state from {filepath}: {e}")
+        """
+        Load the state of the search algorithm from a file.
+
+        Args:
+            filepath: The path to the file from which the state should be loaded.
+        """
+        with open(filepath, "rb") as f:
+            state = pickle.load(f)
 
         self.population_size = state["population_size"]
         self.n_generations = state["n_generations"]
@@ -359,115 +637,54 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         self.crossover_rate = state["crossover_rate"]
         self.tournament_size = state["tournament_size"]
         self.elitism_count = state["elitism_count"]
+        self.selection_type = state["selection_type"]
         self.param_space = state["param_space"]
-        self.population = state["population"]
+        self.curr_generation = state["curr_generation"]
+        self.indexed_param_space = state["indexed_param_space"]
         self.best_params = state["best_params"]
         self.best_score = state["best_score"]
-        self.current_generation = state["current_generation"]
-        self.evaluations_count = state["evaluations_count"]
-        self._current_individual_index = state["_current_individual_index"]
+        self.population_to_eval = state["population_to_eval"]
+        self.evaluated_population = state["evaluated_population"]
+        self.current_individual_index = state["current_individual_index"]
 
-        if "random_state" in state:
-            # Ensure the loaded state is converted to a tuple for random.setstate
-            random_state_from_file = state["random_state"]
-            if isinstance(random_state_from_file, list):
-                random.setstate(tuple(random_state_from_file))
-            else:
-                # If it's already a tuple (e.g. if loaded from a non-JSON source in future)
-                random.setstate(random_state_from_file)
+    def get_best_params(self) -> Dict[str, Any]:
+        """
+        Get the best set of parameters found so far.
 
-        # After loading, the algorithm is ready to continue from where it left off.
-        # Ensure that loaded population scores are correctly handled (e.g. None for unevaluated)
+        Returns:
+            Dictionary of the best parameter names and values.
+        """
+        return self.best_params
 
+    def get_best_score(self) -> float:
+        """
+        Get the best score achieved so far.
 
-# Example Usage (Illustrative - not part of the class itself)
-if __name__ == "__main__":
-    param_space_example = {
-        "learning_rate": [0.001, 0.01, 0.1],
-        "batch_size": [32, 64, 128],
-        "optimizer": ["adam", "sgd"],
-    }
+        Returns:
+            The best score.
+        """
+        return self.best_score
 
-    ga = EvolutionaryAlgorithm(
-        population_size=10,
-        n_generations=5,
-        mutation_rate=0.1,
-        crossover_rate=0.7,
-        tournament_size=3,
-        elitism_count=1,
-        random_seed=42,
-    )
+    def reset(self):
+        """
+        Reset the search algorithm to its initial state.
+        """
+        self.param_space = None
+        self.curr_generation = 0
+        self.indexed_param_space = []
+        self.best_params = None
+        self.best_score = -float("inf")
+        self.population_to_eval = [
+            {} for _ in range(self.population_size)
+        ]  # individuals to be evaluated in the current generation
+        self.evaluated_population = []  # individuals that have been evaluated in the current generation, with their scores
+        self.current_individual_index = 0
 
-    ga.initialize(param_space_example)
+    def is_finished(self) -> bool:
+        """
+        Check if the search algorithm has finished its search (e.g., budget exhausted).
 
-    print(
-        f"Running GA for {ga.n_generations} generations with population size {ga.population_size}"
-    )
-
-    for gen in range(
-        ga.n_generations * ga.population_size + 5
-    ):  # Try to get a few more to see None
-        if ga.is_finished():
-            print(
-                f"Search finished at evaluation {ga.evaluations_count}, generation {ga.current_generation}."
-            )
-            break
-
-        print(
-            f"\n--- Generation: {ga.current_generation}, Evaluation: {ga.evaluations_count + 1} ---"
-        )
-        current_params = ga.get_next_params()
-
-        if current_params is None:
-            print(
-                "Received None from get_next_params, likely search is finished or waiting for evolution."
-            )
-            if ga.is_finished():
-                print("Confirmed finished.")
-                break
-            else:
-                print(
-                    "All params for current generation dispatched. Next call should evolve."
-                )
-                continue
-
-        print(f"Trying params: {current_params}")
-
-        # Simulate evaluation
-        mock_score = sum(
-            current_params.get(k, 0)
-            if isinstance(current_params.get(k), (int, float))
-            else random.random()
-            for k in current_params
-        )
-        mock_score += random.uniform(-0.1, 0.1)  # Add some noise
-        if current_params.get("optimizer") == "adam":
-            mock_score += 0.5
-
-        print(f"Achieved score: {mock_score}")
-        ga.update(current_params, mock_score)
-        print(
-            f"Best score so far: {ga.get_best_score()}, Best params: {ga.get_best_params()}"
-        )
-
-        # Illustrate save/load (optional)
-        if ga.evaluations_count == 15:
-            print("\nSAVING STATE...")
-            ga.save_state("ga_state.json")
-            print("LOADING STATE...")
-            # Create a new instance or re-initialize to demonstrate loading
-            ga_loaded = EvolutionaryAlgorithm(
-                1, 1, 0, 0, 1
-            )  # Dummy params, will be overwritten
-            ga_loaded.load_state("ga_state.json")
-            ga = ga_loaded  # Continue with the loaded state
-            print(
-                f"Resumed. Current gen: {ga.current_generation}, evals: {ga.evaluations_count}"
-            )
-            print(f"Population size of loaded: {len(ga.population)}")
-
-    print("\n--- Final Results ---")
-    print(f"Best score: {ga.get_best_score()}")
-    print(f"Best parameters: {ga.get_best_params()}")
-    print(f"Total evaluations: {ga.evaluations_count}")
-    print(f"Generations run: {ga.current_generation}")
+        Returns:
+            True if the search is finished, False otherwise.
+        """
+        return self.curr_generation == self.n_generations
