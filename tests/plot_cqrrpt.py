@@ -16,6 +16,12 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 
+z_to_name = {
+    "GEQP3": "Scipy GEQP3",
+    "GEQRF": "Torch GEQRF",
+    "CQRRPT": "Panther CQRRPT",
+}
+
 
 def plot_metric(df, metric_col, ylabel, log_scale=False, output_filename=None):
     """
@@ -30,12 +36,14 @@ def plot_metric(df, metric_col, ylabel, log_scale=False, output_filename=None):
         sub = df[df["m"] == m]
         plt.figure(figsize=(8, 5))
         for alg in algorithms:
+            if alg not in z_to_name:
+                continue
             sub_alg = sub[sub["algorithm"] == alg]
             # sort by n
             sub_alg = sub_alg.sort_values("n")
             n_values = sub_alg["n"].values
             y_values = sub_alg[metric_col].values
-            plt.plot(n_values, y_values, marker="o", label=alg)
+            plt.plot(n_values, y_values, marker="o", label=z_to_name[alg])
 
         plt.title(f"{ylabel} vs. n  (m = {m})")
         plt.xlabel("n")
