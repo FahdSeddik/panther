@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 
 from .SearchAlgorithm import SearchAlgorithm
 
+
 class GridSearch(SearchAlgorithm):
     """
     Grid search algorithm that systematically tries all combinations of parameters up to a maximum number of iterations.
@@ -31,11 +32,11 @@ class GridSearch(SearchAlgorithm):
         """
         self.max_iterations = max_iterations
         self.reset()
-    
+
     def initialize(self, param_space: Dict[str, List]):
         """
         Initialize the search algorithm with the parameter space.
-        
+
         Args:
             param_space: Dictionary of parameter names and their possible values
         """
@@ -50,18 +51,20 @@ class GridSearch(SearchAlgorithm):
         Example: _my_product([[1, 2], ['a', 'b']]) -> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
         """
         if not value_lists:
-            return [()]  
+            return [()]
 
         product_tuples = [()]
 
         for current_list_values in value_lists:
             if not current_list_values:
                 return []
-            
-            product_tuples = [existing_tuple + (item,)
-                              for existing_tuple in product_tuples
-                              for item in current_list_values]
-        
+
+            product_tuples = [
+                existing_tuple + (item,)
+                for existing_tuple in product_tuples
+                for item in current_list_values
+            ]
+
         return product_tuples
 
     def _generate_indexed_param_space(self):
@@ -78,7 +81,7 @@ class GridSearch(SearchAlgorithm):
         """
         if self.param_space is None:
             raise ValueError("param_space is None")
-        
+
         param_names = list(self.param_space.keys())
         value_lists = list(self.param_space.values())
 
@@ -96,25 +99,25 @@ class GridSearch(SearchAlgorithm):
             i = i + 1
 
         return indexed_param_space
-    
+
     def get_next_params(self) -> Dict[str, Any]:
         """
         Get the next set of parameters to try.
-        
+
         Returns:
             Dictionary of parameter names and values to try
         """
         if self.is_finished():
             return None
-        
+
         params = self.indexed_param_space[self.curr_iteration]
         self.curr_iteration = self.curr_iteration + 1
         return params
-    
+
     def update(self, params: Dict[str, Any], score: float):
         """
         Update the search algorithm with the results of the latest trial.
-        
+
         Args:
             params: Dictionary of parameter names and values that were tried
             score: The evaluation score for the parameters
@@ -131,11 +134,11 @@ class GridSearch(SearchAlgorithm):
             filepath: The path to the file where the state should be saved.
         """
         state = {
-            "param_space" : self.param_space,
-            "curr_iteration" : self.curr_iteration,
-            "indexed_param_space" : self.indexed_param_space,
-            "best_params" : self.best_params,
-            "best_score" : self.best_score,
+            "param_space": self.param_space,
+            "curr_iteration": self.curr_iteration,
+            "indexed_param_space": self.indexed_param_space,
+            "best_params": self.best_params,
+            "best_score": self.best_score,
         }
 
         with open(filepath, "wb") as f:

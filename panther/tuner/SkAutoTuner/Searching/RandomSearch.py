@@ -5,6 +5,7 @@ import numpy as np
 
 from .SearchAlgorithm import SearchAlgorithm
 
+
 class RandomSearch(SearchAlgorithm):
     """
     Random search algorithm that randomly samples parameter combinations.
@@ -28,11 +29,11 @@ class RandomSearch(SearchAlgorithm):
     def __init__(self, max_trials: int = 10):
         self.max_trials = max_trials
         self.reset()
-    
+
     def initialize(self, param_space: Dict[str, List]):
         """
         Initialize the search algorithm with the parameter space.
-        
+
         Args:
             param_space: Dictionary of parameter names and their possible values
         """
@@ -57,12 +58,14 @@ class RandomSearch(SearchAlgorithm):
             if not current_list_values:
                 # If any input list is empty, the Cartesian product is empty.
                 return []
-            
+
             # Build the new product by combining existing tuples with items from the current list
-            product_tuples = [existing_tuple + (item,)
-                              for existing_tuple in product_tuples
-                              for item in current_list_values]
-        
+            product_tuples = [
+                existing_tuple + (item,)
+                for existing_tuple in product_tuples
+                for item in current_list_values
+            ]
+
         return product_tuples
 
     def _generate_indexed_param_space(self):
@@ -79,7 +82,7 @@ class RandomSearch(SearchAlgorithm):
         """
         if self.param_space is None:
             raise ValueError("param_space is None")
-        
+
         param_names = list(self.param_space.keys())
         value_lists = list(self.param_space.values())
 
@@ -97,34 +100,31 @@ class RandomSearch(SearchAlgorithm):
             i = i + 1
 
         return indexed_param_space
-    
+
     def get_next_params(self) -> Dict[str, Any]:
         """
         Get the next set of parameters to try.
-        
+
         Returns:
             Dictionary of parameter names and values to try
         """
         if self.is_finished():
             return None
-        
+
         choice = np.random.randint(
-            low=0,
-            high=len(self.indexed_param_space),
-            size = 1,
-            dtype=np.int32
-            )[0]
-        
+            low=0, high=len(self.indexed_param_space), size=1, dtype=np.int32
+        )[0]
+
         params = self.indexed_param_space[choice]
         self.indexed_param_space.pop(choice)
-        
+
         self.curr_iteration = self.curr_iteration + 1
         return params
-    
+
     def update(self, params: Dict[str, Any], score: float):
         """
         Update the search algorithm with the results of the latest trial.
-        
+
         Args:
             params: Dictionary of parameter names and values that were tried
             score: The evaluation score for the parameters
@@ -141,11 +141,11 @@ class RandomSearch(SearchAlgorithm):
             filepath: The path to the file where the state should be saved.
         """
         state = {
-            "param_space" : self.param_space,
-            "curr_iteration" : self.curr_iteration,
-            "indexed_param_space" : self.indexed_param_space,
-            "best_params" : self.best_params,
-            "best_score" : self.best_score,
+            "param_space": self.param_space,
+            "curr_iteration": self.curr_iteration,
+            "indexed_param_space": self.indexed_param_space,
+            "best_params": self.best_params,
+            "best_score": self.best_score,
         }
 
         with open(filepath, "wb") as f:
