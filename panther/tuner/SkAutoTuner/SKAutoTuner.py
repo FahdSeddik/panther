@@ -59,7 +59,7 @@ class SKAutoTuner:
         self.paramsResolver = ParamsResolver(model, self.layer_map)
         # Resolve layer names in configs
         self.configs = self._resolve_configs_names(configs)
-        # self.configs = self._resolve_params_names(self.configs)
+        self.configs = self._resolve_params_names(self.configs)
 
         self._check_configs()
 
