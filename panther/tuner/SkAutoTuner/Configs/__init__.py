@@ -1,5 +1,6 @@
 from .LayerConfig import LayerConfig
-from .TuningConfigs import TuningConfigs
 from .LayerNameResolver import LayerNameResolver
+from .ParamsResolver import ParamsResolver
+from .TuningConfigs import TuningConfigs
 
-__all__ = ["LayerConfig", "TuningConfigs", "LayerNameResolver"]
+__all__ = ["LayerConfig", "TuningConfigs", "LayerNameResolver", "ParamsResolver"]

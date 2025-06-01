@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch.nn as nn
 
-from .Configs import LayerConfig, LayerNameResolver, TuningConfigs
+from .Configs import LayerConfig, LayerNameResolver, ParamsResolver, TuningConfigs
 from .layer_type_mapping import LAYER_TYPE_MAPPING
 from .Searching import GridSearch, SearchAlgorithm
 
@@ -56,12 +56,14 @@ class SKAutoTuner:
         # Initialize the layer name resolver
         self._build_layer_map(model)
         self.resolver = LayerNameResolver(model, self.layer_map)
+        self.paramsResolver = ParamsResolver(model, self.layer_map)
         # Resolve layer names in configs
-        self.configs = self._resolve_configs(configs)
+        self.configs = self._resolve_configs_names(configs)
+        self.configs = self._resolve_params_names(self.configs)
 
         self._check_configs()
 
-    def _resolve_configs(self, configs: TuningConfigs) -> TuningConfigs:
+    def _resolve_configs_names(self, configs: TuningConfigs) -> TuningConfigs:
         """
         Resolve layer names in configs to actual layer names in the model.
 
@@ -82,6 +84,26 @@ class SKAutoTuner:
                 copy_weights=config.copy_weights,
             )
             resolved_configs.configs.append(resolved_config)
+
+        return resolved_configs
+
+    def _resolve_params_names(self, configs: TuningConfigs) -> TuningConfigs:
+        """
+        Resolve parameter names in configs to actual parameter names in the model.
+
+        Args:
+            configs: Configuration for the layers to tune
+
+        Returns:
+            Updated configuration with resolved parameter names
+        """
+        resolved_configs = TuningConfigs([])
+
+        for config in configs.configs:
+            # Make a deep copy of the config to avoid modifying the original
+            tmp_resolved_configs = self.paramsResolver.resolve(config)
+            # this can return list of configs
+            resolved_configs.merge(tmp_resolved_configs)
 
         return resolved_configs
 
@@ -889,3 +911,24 @@ class SKAutoTuner:
             The resolver for the model
         """
         return self.resolver
+
+    def getConfigs(self) -> TuningConfigs:
+        """
+        Get the current tuning configurations.
+
+        Returns:
+            The current tuning configurations
+        """
+        return self.configs
+
+    def setConfigs(self, configs: TuningConfigs):
+        """
+        Set the tuning configurations.
+
+        Args:
+            configs: The new tuning configurations
+        """
+        self.configs = configs
+        self.configs = self._resolve_configs_names(self.configs)
+        self.configs = self._resolve_params_names(self.configs)
+        self._check_configs()
