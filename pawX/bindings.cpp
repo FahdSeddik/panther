@@ -121,7 +121,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
       m.def("srht", &srht,
             py::arg("x"), py::arg("m"));
 
-      py::class_<torch::nn::Module, std::shared_ptr<torch::nn::Module>>(m, "Module");
+      py::class_<torch::nn::Module, std::shared_ptr<torch::nn::Module>>(m, "Module", py::module_local());
 
       py::class_<sinSRPEImpl,       /* C++ type */
                  torch::nn::Module, /* base class */
