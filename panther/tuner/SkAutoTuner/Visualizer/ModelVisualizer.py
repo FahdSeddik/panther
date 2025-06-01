@@ -1032,7 +1032,7 @@ class ModelVisualizer:
             "model_size_mb": sum(p.numel() for p in model.parameters())
             * 4
             / (1024 * 1024),
-            "input_variations": {},  # type: Dict[str, Dict[str, Any]]
+            "input_variations": {},
         }
 
         for name, shape in input_shapes.items():

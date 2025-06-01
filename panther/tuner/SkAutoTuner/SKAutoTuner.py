@@ -4,7 +4,7 @@ import pickle
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 import matplotlib.pyplot as plt
-import pandas as pd
+import pandas as pd  # type: ignore
 import torch.nn as nn
 
 from .Configs import LayerConfig, LayerNameResolver, ParamsResolver, TuningConfigs
@@ -21,7 +21,7 @@ class SKAutoTuner:
         self,
         model: nn.Module,
         configs: TuningConfigs,
-        accuracy_eval_func: Callable[[nn.Module], float],
+        accuracy_eval_func: Callable[..., Optional[Any]],
         search_algorithm: Optional[SearchAlgorithm] = None,
         verbose: bool = False,
         accuracy_threshold: Optional[float] = None,
@@ -59,7 +59,7 @@ class SKAutoTuner:
         self.paramsResolver = ParamsResolver(model, self.layer_map)
         # Resolve layer names in configs
         self.configs = self._resolve_configs_names(configs)
-        self.configs = self._resolve_params_names(self.configs)
+        # self.configs = self._resolve_params_names(self.configs)
 
         self._check_configs()
 

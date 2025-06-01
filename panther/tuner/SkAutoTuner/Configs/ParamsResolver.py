@@ -76,9 +76,11 @@ class ParamsResolver:
                     f"and num_terms {num_terms_values} yielded no efficient ranks starting from k={start_k_iter}. "
                     "Applying fallback: [1, 2, 4, 8]."
                 )
-                linear_all_low_rank_values.update([1, 2, 4, 8])
+                linear_all_low_rank_values = {1, 2, 4, 8}
 
-            recommended_params["low_rank"] = linear_all_low_rank_values
+            recommended_params["low_rank"] = [
+                item for item in linear_all_low_rank_values
+            ]
 
             return recommended_params
 
@@ -142,9 +144,9 @@ class ParamsResolver:
                     f"and num_terms {num_terms_values} yielded no efficient ranks starting from k={start_k_iter} "
                     f"using formula (D1*D2) > (2*L*K*(D1+D2)). Applying fallback: [1, 2, 4, 8]."
                 )
-                conv_all_low_rank_values.update([1, 2, 4, 8])
+                conv_all_low_rank_values = set([1, 2, 4, 8])
 
-            recommended_params["low_rank"] = conv_all_low_rank_values
+            recommended_params["low_rank"] = list(conv_all_low_rank_values)
 
             return recommended_params
 
