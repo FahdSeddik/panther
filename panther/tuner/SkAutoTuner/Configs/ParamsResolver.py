@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from ..layer_type_mapping import LAYER_TYPE_MAPPING
 from .LayerConfig import LayerConfig
-from .TuningConfigs import TunningConfigs
+from .TuningConfigs import TuningConfigs
 
 
 class ParamsResolver:
@@ -157,18 +157,18 @@ class ParamsResolver:
             recommended_params["low_rank"] = [4, 8, 16, 32]
             return recommended_params
 
-    def resolve(self, config: LayerConfig) -> TunningConfigs:
+    def resolve(self, config: LayerConfig) -> TuningConfigs:
         """
         Resolves and returns the parameters.
 
-        If config.params is a dictionary, it's returned as is, wrapped in TunningConfigs.
+        If config.params is a dictionary, it's returned as is, wrapped in TuningConfigs.
         If config.params is "auto", it automatically determines parameters based on layer types and sizes.
         Otherwise, raises a ValueError.
 
-        :return: The resolved parameters as TunningConfigs.
+        :return: The resolved parameters as TuningConfigs.
         """
         if isinstance(config.params, dict):
-            return TunningConfigs([config])
+            return TuningConfigs([config])
 
         if config.params != "auto":
             raise ValueError(
@@ -243,6 +243,6 @@ class ParamsResolver:
                 f"Auto parameter resolution for layers {config.layer_names} resulted in no valid tuning configurations. "
                 "This might be due to unsupported layer types or issues with LAYER_TYPE_MAPPING."
             )
-            return TunningConfigs([])
+            return TuningConfigs([])
 
-        return TunningConfigs(resolved_layer_configs)
+        return TuningConfigs(resolved_layer_configs)
