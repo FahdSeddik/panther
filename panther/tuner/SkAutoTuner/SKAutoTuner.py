@@ -104,10 +104,6 @@ class SKAutoTuner:
             tmp_resolved_configs = self.paramsResolver.resolve(config)
             # this can return list of configs
             resolved_configs = resolved_configs.merge(tmp_resolved_configs)
-            print("tmp_resolved_configs")
-            print(tmp_resolved_configs)
-            print("resolved_configs")
-            print(resolved_configs)
 
         return resolved_configs
 
