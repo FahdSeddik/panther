@@ -166,12 +166,17 @@ class SKConv2d(nn.Module):
         self.low_rank = low_rank
         self.out_channels = out_channels
         self.in_channels = in_channels
+        self.kernel_size = (
+            kernel_size
+            if isinstance(kernel_size, tuple)
+            else (kernel_size, kernel_size)
+        )
         self.stride = stride if isinstance(stride, tuple) else (stride, stride)
         if isinstance(padding, str):
             if padding == "same":
                 self.padding = (
-                    (kernel_size[0] - 1) // 2,
-                    (kernel_size[1] - 1) // 2,
+                    (self.kernel_size[0] - 1) // 2,
+                    (self.kernel_size[1] - 1) // 2,
                 )
             elif padding == "valid":
                 self.padding = (0, 0)
@@ -188,11 +193,6 @@ class SKConv2d(nn.Module):
                 f"Invalid padding type: {padding}. Use 'same', 'valid', or a tuple."
             )
 
-        self.kernel_size = (
-            kernel_size
-            if isinstance(kernel_size, tuple)
-            else (kernel_size, kernel_size)
-        )
         self.register_buffer(
             "U1s",
             torch.stack(

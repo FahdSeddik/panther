@@ -25,30 +25,6 @@ void log_experiment_results(const std::string &filename,
 }
 
 /**
- * @brief Runs a parameter sweep for sketched_conv2d_forward and logs results.
- *
- * This function runs sketched_conv2d_forward with different parameter combinations
- * and logs the results for later analysis.
- *
- * @param x Input tensor
- * @param S1s Sketching weight tensor
- * @param U1s Low-rank basis tensor
- * @param stride_options List of stride options
- * @param padding_options List of padding options
- * @param kernel_size_options List of kernel size options
- * @param log_file Log file to save results
- */
-void run_parameter_sweep(const torch::Tensor &x,
-                         const torch::Tensor &S1s,
-                         const torch::Tensor &U1s,
-                         const std::vector<std::vector<int64_t>> &stride_options,
-                         const std::vector<std::vector<int64_t>> &padding_options,
-                         const std::vector<std::vector<int64_t>> &kernel_size_options,
-                         const std::string &log_file) {
-    // This is a stub. Actual implementation should call sketched_conv2d_forward and analyze_performance.
-}
-
-/**
  * @brief Saves a tensor to a binary file for later analysis.
  *
  * @param filename The name of the file
