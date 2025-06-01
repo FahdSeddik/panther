@@ -25,7 +25,7 @@ class SKAutoTuner:
         search_algorithm: Optional[SearchAlgorithm] = None,
         verbose: bool = False,
         accuracy_threshold: Optional[float] = None,
-        optmization_eval_func: Optional[Callable[[nn.Module], float]] = None,
+        optmization_eval_func: Optional[Callable[..., Optional[Any]]] = None,
         num_runs_per_param=1,
     ):
         """
@@ -56,7 +56,9 @@ class SKAutoTuner:
         # Initialize the layer name resolver
         self._build_layer_map(model)
         self.resolver = LayerNameResolver(model, self.layer_map)
-        self.paramsResolver = ParamsResolver(model, self.layer_map)
+        self.paramsResolver = ParamsResolver(
+            model, self.layer_map, verbose=self.verbose
+        )
         # Resolve layer names in configs
         self.configs = self._resolve_configs_names(configs)
         self.configs = self._resolve_params_names(self.configs)
@@ -352,7 +354,7 @@ class SKAutoTuner:
 
         return sketched_layer
 
-    def _evaluate_model(self, accuracy_score):
+    def _evaluate_model(self, accuracy_score, resource=None):
         """
         Evaluate the model and calculate the optimization score.
 
