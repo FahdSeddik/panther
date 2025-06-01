@@ -676,6 +676,7 @@ class SKAutoTuner:
                         print(f"No parameters found for layer {layer_name}. Skipping.")
                     continue
                 layer = self._get_layer_by_name(layer_name)  # noqa: F841
+                print("debug, data:", data)
                 self._replace_layer(layer_name, data["best_layer"])
 
         return self.model
