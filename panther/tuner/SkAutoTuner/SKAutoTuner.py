@@ -61,7 +61,7 @@ class SKAutoTuner:
         )
         # Resolve layer names in configs
         self.configs = self._resolve_configs_names(configs)
-        self.configs = self._resolve_params_names(self.configs)
+        self.configs = self._resolve_params_names(self.configs, self.verbose)
 
         self._check_configs()
 
