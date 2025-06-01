@@ -1,4 +1,3 @@
-# filepath: d:\Gaser\Univeristy\GP\myPanther\panther\panther\utils\SkAutoTuner\ConfigVisualizer.py
 import json
 import logging
 import webbrowser

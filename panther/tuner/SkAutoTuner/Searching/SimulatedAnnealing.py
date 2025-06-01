@@ -76,7 +76,7 @@ class SimulatedAnnealing(SearchAlgorithm):
 
     def get_next_params(self) -> Dict[str, Any]:
         if self.is_finished():
-            return self.get_best_params()
+            return None
 
         if self.iterations == 0:
             # If current_solution is empty (e.g., just after __init__ but before/without initialize),

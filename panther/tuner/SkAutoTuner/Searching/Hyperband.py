@@ -289,3 +289,16 @@ class Hyperband(SearchAlgorithm):
             # print(f"Hyperband finished due to max_total_iterations: {self.total_iterations_done}")
             return True
         return False
+
+    def get_resource(self) -> int:
+        # get the resource level for the current SH round
+        if self.current_sh_round < len(self.resource_allocations):
+            return self.resource_allocations[self.current_sh_round]
+        else:
+            # If we are past the last round, return 0 or raise an error
+            # depending on how you want to handle this case.
+            # For now, we return 0 to indicate no resources are allocated.
+            # This should not happen in a well-formed Hyperband usage.
+            raise ValueError(
+                "Current SH round exceeds resource allocations. Check Hyperband setup."
+            )

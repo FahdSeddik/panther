@@ -4,11 +4,10 @@ import pickle
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 import matplotlib.pyplot as plt
-import pandas as pd
-import torch
+import pandas as pd  # type: ignore
 import torch.nn as nn
 
-from .Configs import LayerConfig, LayerNameResolver, TuningConfigs
+from .Configs import LayerConfig, LayerNameResolver, ParamsResolver, TuningConfigs
 from .layer_type_mapping import LAYER_TYPE_MAPPING
 from .Searching import GridSearch, SearchAlgorithm
 
@@ -22,11 +21,11 @@ class SKAutoTuner:
         self,
         model: nn.Module,
         configs: TuningConfigs,
-        accuracy_eval_func: Callable[[nn.Module], float],
+        accuracy_eval_func: Callable[..., Optional[Any]],
         search_algorithm: Optional[SearchAlgorithm] = None,
         verbose: bool = False,
         accuracy_threshold: Optional[float] = None,
-        optmization_eval_func: Optional[Callable[[nn.Module], float]] = None,
+        optmization_eval_func: Optional[Callable[..., Optional[Any]]] = None,
         num_runs_per_param=1,
     ):
         """
@@ -57,12 +56,16 @@ class SKAutoTuner:
         # Initialize the layer name resolver
         self._build_layer_map(model)
         self.resolver = LayerNameResolver(model, self.layer_map)
+        self.paramsResolver = ParamsResolver(
+            model, self.layer_map, verbose=self.verbose
+        )
         # Resolve layer names in configs
-        self.configs = self._resolve_configs(configs)
+        self.configs = self._resolve_configs_names(configs)
+        self.configs = self._resolve_params_names(self.configs)
 
         self._check_configs()
 
-    def _resolve_configs(self, configs: TuningConfigs) -> TuningConfigs:
+    def _resolve_configs_names(self, configs: TuningConfigs) -> TuningConfigs:
         """
         Resolve layer names in configs to actual layer names in the model.
 
@@ -83,6 +86,26 @@ class SKAutoTuner:
                 copy_weights=config.copy_weights,
             )
             resolved_configs.configs.append(resolved_config)
+
+        return resolved_configs
+
+    def _resolve_params_names(self, configs: TuningConfigs) -> TuningConfigs:
+        """
+        Resolve parameter names in configs to actual parameter names in the model.
+
+        Args:
+            configs: Configuration for the layers to tune
+
+        Returns:
+            Updated configuration with resolved parameter names
+        """
+        resolved_configs = TuningConfigs([])
+
+        for config in configs.configs:
+            # Make a deep copy of the config to avoid modifying the original
+            tmp_resolved_configs = self.paramsResolver.resolve(config)
+            # this can return list of configs
+            resolved_configs = resolved_configs.merge(tmp_resolved_configs)
 
         return resolved_configs
 
@@ -331,7 +354,7 @@ class SKAutoTuner:
 
         return sketched_layer
 
-    def _evaluate_model(self, accuracy_score):
+    def _evaluate_model(self, accuracy_score, resource=None):
         """
         Evaluate the model and calculate the optimization score.
 
@@ -356,7 +379,7 @@ class SKAutoTuner:
 
         return score, speed_score
 
-    def _try_parameters(self, layer_name, params, copy_weights=True):
+    def _try_parameters(self, layer_name, params, copy_weights=True, resource=None):
         """
         Apply parameters to a layer, evaluate the model, and restore the original layer.
 
@@ -376,9 +399,19 @@ class SKAutoTuner:
             layer_name, type(layer), params, copy_weights=copy_weights
         )
 
-        # Evaluate
-        accuracy_score = self.accuracy_eval_func(self.model)
-        score, speed_score = self._evaluate_model(accuracy_score)
+        accuracy_score = None
+        speed_score = None
+        score = None
+
+        # send resouce if its not none else it will be ignored
+        if resource is None:
+            # Evaluate
+            accuracy_score = self.accuracy_eval_func(self.model)
+            score, speed_score = self._evaluate_model(accuracy_score)
+        else:
+            # Evaluate with resource
+            accuracy_score = self.accuracy_eval_func(self.model, resource=resource)
+            score, speed_score = self._evaluate_model(accuracy_score, resource=resource)
 
         return score, accuracy_score, speed_score, layer, new_layer
 
@@ -401,6 +434,13 @@ class SKAutoTuner:
 
             while True:
                 params = self.search_algorithm.get_next_params()
+                # mainly for hyperband search algorithms
+                resource = (
+                    self.search_algorithm.get_resource()
+                    if hasattr(self.search_algorithm, "get_resource")
+                    else None
+                )
+
                 if params is None:
                     break  # No more parameter combinations to try
 
@@ -416,7 +456,10 @@ class SKAutoTuner:
                     # Apply parameters and evaluate
                     score, accuracy_score, speed_score, original_layer, new_layer = (
                         self._try_parameters(
-                            layer_name, params, copy_weights=config.copy_weights
+                            layer_name,
+                            params,
+                            copy_weights=config.copy_weights,
+                            resource=resource,
                         )
                     )
 
@@ -483,6 +526,12 @@ class SKAutoTuner:
 
         while True:
             params = self.search_algorithm.get_next_params()
+            resource = (
+                self.search_algorithm.get_resource()
+                if hasattr(self.search_algorithm, "get_resource")
+                else None
+            )
+
             if params is None:
                 break  # No more parameter combinations to try
 
@@ -509,9 +558,23 @@ class SKAutoTuner:
                     )
                     new_layers.append(new_layer)
 
-                # Evaluate
-                accuracy_score = self.accuracy_eval_func(self.model)
-                score, speed_score = self._evaluate_model(accuracy_score)
+                accuracy_score = None
+                speed_score = None
+                score = None
+
+                # send resouce if its not none else it will be ignored
+                if resource is None:
+                    # Evaluate
+                    accuracy_score = self.accuracy_eval_func(self.model)
+                    score, speed_score = self._evaluate_model(accuracy_score)
+                else:
+                    # Evaluate with resource
+                    accuracy_score = self.accuracy_eval_func(
+                        self.model, resource=resource
+                    )
+                    score, speed_score = self._evaluate_model(
+                        accuracy_score, resource=resource
+                    )
 
                 # Restore original layers
                 for i, layer_name in enumerate(config.layer_names):
@@ -842,324 +905,32 @@ class SKAutoTuner:
         if self.verbose:
             print(f"Tuning results loaded from {file_path}")
 
-    def get_model_summary(self) -> Dict[str, Any]:
+    def getResolver(self):
         """
-        Get a summary of the model architecture, including sketched layers.
+        Get the resolver for the model.
 
         Returns:
-            Dictionary with model summary information
+            The resolver for the model
         """
-        total_params = 0
-        sketched_layers = 0
-        layer_info = []
+        return self.resolver
 
-        # Traverse the model hierarchy
-        for name, module in self.model.named_modules():
-            if name == "":  # Skip the root module
-                continue
-
-            # Calculate parameters
-            params = sum(p.numel() for p in module.parameters() if p.requires_grad)
-
-            # Check if it's a sketched layer
-            is_sketched = False
-            from panther.nn.attention import (
-                RandMultiHeadAttention as SKMultiheadAttention,
-            )
-            from panther.nn.conv2d import SKConv2d
-            from panther.nn.linear import SKLinear
-
-            if isinstance(module, (SKLinear, SKConv2d, SKMultiheadAttention)):
-                is_sketched = True
-                sketched_layers += 1
-
-            # Add layer info
-            layer_info.append(
-                {
-                    "name": name,
-                    "type": type(module).__name__,
-                    "params": params,
-                    "is_sketched": is_sketched,
-                }
-            )
-
-            total_params += params
-
-        return {
-            "total_params": total_params,
-            "sketched_layers": sketched_layers,
-            "layers": layer_info,
-        }
-
-    def print_model_summary(self) -> None:
+    def getConfigs(self) -> TuningConfigs:
         """
-        Print a summary of the model architecture, highlighting sketched layers.
+        Get the current tuning configurations.
 
         Returns:
-            None
+            The current tuning configurations
         """
-        summary = self.get_model_summary()
+        return self.configs
 
-        print("=" * 80)
-        print(
-            f"Model Summary (Total trainable parameters: {summary['total_params']:,})"
-        )
-        print(f"Sketched layers: {summary['sketched_layers']}")
-        print("-" * 80)
-        print(f"{'Layer Name':<40} {'Layer Type':<25} {'Parameters':<15} {'Sketched'}")
-        print("-" * 80)
-
-        for layer in summary["layers"]:
-            print(
-                f"{layer['name']:<40} {layer['type']:<25} {layer['params']:<15,} {'✓' if layer['is_sketched'] else ''}"
-            )
-        print("=" * 80)
-
-    def compare_models(self, original_model: nn.Module) -> Dict[str, Any]:
+    def setConfigs(self, configs: TuningConfigs):
         """
-        Compare the tuned model with the original model to analyze differences.
+        Set the tuning configurations.
 
         Args:
-            original_model: The original model before tuning
-
-        Returns:
-            Dictionary with comparison metrics
+            configs: The new tuning configurations
         """
-        # Collect information about both models
-        original_summary = SKAutoTuner(
-            original_model, self.configs, self.accuracy_eval_func
-        ).get_model_summary()
-
-        tuned_summary = self.get_model_summary()
-
-        # Calculate parameter reduction
-        original_params = original_summary["total_params"]
-        tuned_params = tuned_summary["total_params"]
-        param_reduction = original_params - tuned_params
-        param_reduction_percent = (
-            (param_reduction / original_params) * 100 if original_params > 0 else 0
-        )
-
-        # Collect layer-specific comparisons
-        layer_comparisons = []
-
-        # Build a map of layer names to layer info for both models
-        original_layers = {layer["name"]: layer for layer in original_summary["layers"]}
-        tuned_layers = {layer["name"]: layer for layer in tuned_summary["layers"]}
-
-        # Compare each layer
-        all_layer_names = set(original_layers.keys()) | set(tuned_layers.keys())
-        for name in all_layer_names:
-            if name in original_layers and name in tuned_layers:
-                orig = original_layers[name]
-                tuned = tuned_layers[name]
-
-                # Only add detailed comparison for layers that changed
-                if orig["type"] != tuned["type"] or orig["params"] != tuned["params"]:
-                    layer_comparisons.append(
-                        {
-                            "name": name,
-                            "original_type": orig["type"],
-                            "tuned_type": tuned["type"],
-                            "original_params": orig["params"],
-                            "tuned_params": tuned["params"],
-                            "param_reduction": orig["params"] - tuned["params"],
-                            "param_reduction_percent": (
-                                orig["params"] - tuned["params"]
-                            )
-                            / orig["params"]
-                            * 100
-                            if orig["params"] > 0
-                            else 0,
-                        }
-                    )
-
-        return {
-            "original_params": original_params,
-            "tuned_params": tuned_params,
-            "param_reduction": param_reduction,
-            "param_reduction_percent": param_reduction_percent,
-            "layer_comparisons": layer_comparisons,
-        }
-
-    def print_comparison_summary(self, original_model: nn.Module) -> None:
-        """
-        Print a summary comparing the tuned model with the original model.
-
-        Args:
-            original_model: The original model before tuning
-
-        Returns:
-            None
-        """
-        comparison = self.compare_models(original_model)
-
-        print("=" * 80)
-        print("Model Comparison Summary")
-        print("-" * 80)
-        print(f"Original model parameters: {comparison['original_params']:,}")
-        print(f"Tuned model parameters:    {comparison['tuned_params']:,}")
-        print(
-            f"Parameter reduction:       {comparison['param_reduction']:,} ({comparison['param_reduction_percent']:.2f}%)"
-        )
-        print("-" * 80)
-        print("Modified Layers:")
-        print(
-            f"{'Layer Name':<40} {'Original Type':<20} {'Tuned Type':<20} {'Param Reduction'}"
-        )
-        print("-" * 80)
-
-        for layer in comparison["layer_comparisons"]:
-            print(
-                f"{layer['name']:<40} {layer['original_type']:<20} {layer['tuned_type']:<20} {layer['param_reduction']:,} ({layer['param_reduction_percent']:.2f}%)"
-            )
-        print("=" * 80)
-
-    def export_model(self, file_path: str) -> None:
-        """
-        Export the tuned model to a file.
-
-        Args:
-            file_path: Path to save the model
-
-        Returns:
-            None
-        """
-        directory = os.path.dirname(file_path)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory)
-
-        torch.save(self.model.state_dict(), file_path)
-
-        if self.verbose:
-            print(f"Model exported to {file_path}")
-
-    def visualize_parameter_distribution(
-        self, save_path: Optional[str] = None, show_plot: bool = True
-    ) -> None:
-        """
-        Visualize the distribution of parameters across different layer types in the model.
-
-        Args:
-            save_path: Path to save the visualization. If None, the plot won't be saved.
-            show_plot: Whether to display the plot.
-
-        Returns:
-            None
-        """
-        summary = self.get_model_summary()
-
-        # Group layers by type
-        layer_types = {}
-        for layer in summary["layers"]:
-            layer_type = layer["type"]
-            if layer_type not in layer_types:
-                layer_types[layer_type] = 0
-            layer_types[layer_type] += layer["params"]
-
-        # Create visualization
-        plt.figure(figsize=(10, 6))
-
-        # Pie chart of parameter distribution
-        plt.subplot(1, 2, 1)
-        labels = list(layer_types.keys())
-        sizes = list(layer_types.values())
-
-        # Filter small values for legibility
-        threshold = sum(sizes) * 0.01
-        other_size = sum(size for i, size in enumerate(sizes) if size < threshold)
-        filtered_labels = [
-            label for i, label in enumerate(labels) if sizes[i] >= threshold
-        ]
-        filtered_sizes = [size for size in sizes if size >= threshold]
-
-        if other_size > 0:
-            filtered_labels.append("Other")
-            filtered_sizes.append(other_size)
-
-        plt.pie(
-            filtered_sizes, labels=filtered_labels, autopct="%1.1f%%", startangle=90
-        )
-        plt.axis("equal")
-        plt.title("Parameter Distribution by Layer Type")
-
-        # Bar chart comparing sketched vs non-sketched
-        plt.subplot(1, 2, 2)
-        sketched_params = sum(
-            layer["params"] for layer in summary["layers"] if layer["is_sketched"]
-        )
-        non_sketched_params = sum(
-            layer["params"] for layer in summary["layers"] if not layer["is_sketched"]
-        )
-
-        plt.bar(["Non-Sketched", "Sketched"], [non_sketched_params, sketched_params])
-        plt.ylabel("Number of Parameters")
-        plt.title("Parameters in Sketched vs Non-Sketched Layers")
-
-        plt.tight_layout()
-
-        # Save figure if path provided
-        if save_path:
-            plt.savefig(save_path)
-            print(f"Parameter distribution visualization saved to {save_path}")
-
-        # Show plot if requested
-        if show_plot:
-            plt.show()
-        else:
-            plt.close()
-
-    def get_inference_benchmark(
-        self, input_data: torch.Tensor, num_runs: int = 100, warm_up: int = 10
-    ) -> Dict[str, float]:
-        """
-        Benchmark inference speed of the model.
-
-        Args:
-            input_data: Input tensor to use for benchmarking
-            num_runs: Number of inference runs to perform
-            warm_up: Number of warm-up runs before timing
-
-        Returns:
-            Dictionary with benchmark results
-        """
-        import time
-
-        import numpy as np
-
-        # Move to the same device as the model
-        device = next(self.model.parameters()).device
-        input_data = input_data.to(device)
-
-        # Warm-up runs
-        with torch.no_grad():
-            for _ in range(warm_up):
-                self.model(input_data)
-
-        # Actual benchmark runs
-        times = []
-        with torch.no_grad():
-            for _ in range(num_runs):
-                start_time = time.time()
-                self.model(input_data)
-                # Ensure synchronization if using GPU
-                if device.type == "cuda":
-                    torch.cuda.synchronize()
-                end_time = time.time()
-                times.append(end_time - start_time)
-
-        # Calculate statistics
-        mean_time = np.mean(times)
-        median_time = np.median(times)
-        std_time = np.std(times)
-        min_time = np.min(times)
-        max_time = np.max(times)
-
-        return {
-            "mean_time": float(mean_time),
-            "median_time": float(median_time),
-            "std_time": float(std_time),
-            "min_time": float(min_time),
-            "max_time": float(max_time),
-            "fps": float(1.0 / mean_time),
-        }
+        self.configs = configs
+        self.configs = self._resolve_configs_names(self.configs)
+        self.configs = self._resolve_params_names(self.configs)
+        self._check_configs()

@@ -1,4 +1,4 @@
-import pickle  # Used for state serialization
+import pickle
 from typing import Any, Dict, List
 
 import numpy as np
@@ -8,126 +8,146 @@ from .SearchAlgorithm import SearchAlgorithm
 
 class RandomSearch(SearchAlgorithm):
     """
-    Random search algorithm that randomly samples from the parameter space.
+    Random search algorithm that randomly samples parameter combinations.
 
-    This class implements a simple random search algorithm for hyperparameter optimization.
-    It randomly selects parameter combinations from the defined parameter space and
-    keeps track of the best performing configuration.
+    This implementation first generates all possible parameter combinations from the
+    given parameter space. It then randomly samples a specified number of these
+    combinations (max_trials) without replacement. It keeps track of the best
+    parameters found and their corresponding score throughout the search process.
 
     Attributes:
-        param_space (Dict[str, List]): Dictionary mapping parameter names to possible values
-        max_trials (int): Maximum number of trials to perform
-        current_trial (int): Current trial number
-        param_combinations (List[Dict[str, Any]]): List of all possible parameter combinations
-        history (List[Dict[str, Any]]): History of tried parameters and their scores
-        best_score (float): Best score found so far
-        best_params (Dict[str, Any]): Parameters that achieved the best score
+        max_trials: The maximum number of random parameter combinations to try.
+        param_space: Dictionary mapping parameter names to lists of their possible values.
+        indexed_param_space: A list of dictionaries, where each dictionary represents a unique
+                             combination of parameter values. During the search, tried combinations
+                             are removed from this list.
+        curr_iteration: The current number of trials performed.
+        best_score: The highest score achieved so far during the search.
+        best_params: The dictionary of parameters that achieved the best_score.
     """
 
-    def __init__(self, max_trials: int = 20):
-        """
-        Initialize the RandomSearch algorithm.
-
-        Args:
-            max_trials (int): Maximum number of trials to perform. Defaults to 20.
-        """
-        self.param_space: Dict[str, List] = {}
+    def __init__(self, max_trials: int = 10):
         self.max_trials = max_trials
-        self.current_trial = 0
-        self.param_combinations: List[Dict[str, Any]] = []
-        self.history: List[
-            Dict[str, Any]
-        ] = []  # Stores {'params': params, 'score': score}
-        self.best_score: float = -float("inf")  # Assuming higher score is better
-        self.best_params: Dict[str, Any] | None = None
+        self.reset()
 
     def initialize(self, param_space: Dict[str, List]):
         """
-        Initialize the search algorithm with a parameter space.
+        Initialize the search algorithm with the parameter space.
 
         Args:
-            param_space (Dict[str, List]): Dictionary mapping parameter names to possible values
+            param_space: Dictionary of parameter names and their possible values
         """
+        self.reset()
         self.param_space = param_space
-        self.current_trial = 0
-        self.param_combinations = []
-        self.history: List[Dict[str, Any]] = []
-        self.best_score: float = -float("inf")  # Assuming higher score is better
-        self.best_params: Dict[str, Any] | None = None
-        self._generate_combinations()
+        self.indexed_param_space = self._generate_indexed_param_space()
+        self.max_trials = min(self.max_trials, len(self.indexed_param_space))
 
-    def _generate_combinations(self):
+    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple]:
         """
-        Generate all possible combinations of parameters from the parameter space.
-
-        This method uses itertools.product to create the Cartesian product of all
-        parameter values and stores them as dictionaries in param_combinations.
+        Computes the Cartesian product of a list of lists.
+        Example: _my_product([[1, 2], ['a', 'b']]) -> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
         """
-        from itertools import product
+        if not value_lists:
+            return [()]  # Product of no lists is a list with one empty tuple
 
-        keys = list(self.param_space.keys())
-        values = list(self.param_space.values())
+        # Initialize with a list containing an empty tuple.
+        # Each item from the subsequent lists will be appended to these tuples.
+        product_tuples = [()]
 
-        # Create Cartesian product of all parameter values
-        for combination in product(*values):
-            self.param_combinations.append(dict(zip(keys, combination)))
+        for current_list_values in value_lists:
+            if not current_list_values:
+                # If any input list is empty, the Cartesian product is empty.
+                return []
 
-    def get_next_params(self) -> Dict[str, Any] | None:
+            # Build the new product by combining existing tuples with items from the current list
+            product_tuples = [
+                existing_tuple + (item,)
+                for existing_tuple in product_tuples
+                for item in current_list_values
+            ]
+
+        return product_tuples
+
+    def _generate_indexed_param_space(self):
+        """
+        Generates an indexed parameter space from the provided param_space.
+        The indexed parameter space is a list of dictionaries, where each dictionary
+        represents a unique combination of parameter values.
+
+        Raises:
+            ValueError: If param_space is None.
+
+        Returns:
+            List[Dict[str, Any]]: The indexed parameter space.
+        """
+        if self.param_space is None:
+            raise ValueError("param_space is None")
+
+        param_names = list(self.param_space.keys())
+        value_lists = list(self.param_space.values())
+
+        values_combined = self._my_product(value_lists)
+        indexed_param_space = [{} for _ in range(len(values_combined))]
+
+        i = 0
+        for value_combination in values_combined:
+            param = {}
+            j = 0
+            for value in value_combination:
+                param[param_names[j]] = value
+                j = j + 1
+            indexed_param_space[i] = param
+            i = i + 1
+
+        return indexed_param_space
+
+    def get_next_params(self) -> Dict[str, Any]:
         """
         Get the next set of parameters to try.
 
-        Randomly selects a parameter combination from the remaining untried combinations.
-
         Returns:
-            Dict[str, Any] | None: Dictionary of parameter names and values, or None if
-                                 all trials have been completed or no combinations remain.
+            Dictionary of parameter names and values to try
         """
-        if self.current_trial >= self.max_trials or len(self.param_combinations) == 0:
-            return None  # All trials completed or no combinations left
+        if self.is_finished():
+            return None
 
-        self.current_trial += 1
-        # Randomly select a parameter combination
-        choice = np.random.randint(0, len(self.param_combinations))
-        # Remove and return the chosen combination
-        selected_params = self.param_combinations.pop(choice)
-        return selected_params
+        choice = np.random.randint(
+            low=0, high=len(self.indexed_param_space), size=1, dtype=np.int32
+        )[0]
+
+        params = self.indexed_param_space[choice]
+        self.indexed_param_space.pop(choice)
+
+        self.curr_iteration = self.curr_iteration + 1
+        return params
 
     def update(self, params: Dict[str, Any], score: float):
         """
         Update the search algorithm with the results of the latest trial.
 
-        Records the trial in the history and updates the best parameters if
-        the current score is better than the previous best.
-
         Args:
-            params (Dict[str, Any]): Dictionary of parameter names and values that were tried
-            score (float): The evaluation score for the parameters
+            params: Dictionary of parameter names and values that were tried
+            score: The evaluation score for the parameters
         """
-        self.history.append({"params": params.copy(), "score": score})
-        # Update best parameters if current score is better
-        # Assuming higher score is better. If lower is better, change to score < self.best_score
-        if score > self.best_score:
+        if self.best_score < score:
             self.best_score = score
-            self.best_params = params.copy()
+            self.best_params = params
 
     def save_state(self, filepath: str):
         """
         Save the current state of the search algorithm to a file.
 
-        Serializes all instance variables to preserve the current state for later resumption.
-
         Args:
-            filepath (str): The path to the file where the state should be saved.
+            filepath: The path to the file where the state should be saved.
         """
         state = {
             "param_space": self.param_space,
-            "max_trials": self.max_trials,
-            "current_trial": self.current_trial,
-            "param_combinations": self.param_combinations,
-            "history": self.history,
-            "best_score": self.best_score,
+            "curr_iteration": self.curr_iteration,
+            "indexed_param_space": self.indexed_param_space,
             "best_params": self.best_params,
+            "best_score": self.best_score,
         }
+
         with open(filepath, "wb") as f:
             pickle.dump(state, f)
 
@@ -135,30 +155,24 @@ class RandomSearch(SearchAlgorithm):
         """
         Load the state of the search algorithm from a file.
 
-        Restores all instance variables from a previously saved state.
-
         Args:
-            filepath (str): The path to the file from which the state should be loaded.
+            filepath: The path to the file from which the state should be loaded.
         """
         with open(filepath, "rb") as f:
             state = pickle.load(f)
 
-        # Restore all instance variables
         self.param_space = state["param_space"]
-        self.max_trials = state["max_trials"]
-        self.current_trial = state["current_trial"]
-        self.param_combinations = state["param_combinations"]
-        self.history = state["history"]
-        self.best_score = state["best_score"]
+        self.curr_iteration = state["curr_iteration"]
+        self.indexed_param_space = state["indexed_param_space"]
         self.best_params = state["best_params"]
+        self.best_score = state["best_score"]
 
-    def get_best_params(self) -> Dict[str, Any] | None:
+    def get_best_params(self) -> Dict[str, Any]:
         """
         Get the best set of parameters found so far.
 
         Returns:
-            Dict[str, Any] | None: Dictionary of the best parameter names and values,
-                                 or None if no parameters have been evaluated.
+            Dictionary of the best parameter names and values.
         """
         return self.best_params
 
@@ -167,30 +181,25 @@ class RandomSearch(SearchAlgorithm):
         Get the best score achieved so far.
 
         Returns:
-            float: The best score. Returns -float('inf') if no trials have been updated or if reset.
+            The best score.
         """
         return self.best_score
 
     def reset(self):
         """
         Reset the search algorithm to its initial state.
-
-        Preserves param_space and max_trials, but resets all other instance variables
-        to their initial values and regenerates parameter combinations.
         """
-        self.current_trial = 0
-        self.param_combinations = []
-        self.history = []
-        self.best_score = -float("inf")  # Assuming higher score is better
+        self.param_space = None
+        self.curr_iteration = 0
+        self.indexed_param_space = []
         self.best_params = None
-        if self.param_space:  # Regenerate combinations if param_space is defined
-            self._generate_combinations()
+        self.best_score = -float("inf")
 
     def is_finished(self) -> bool:
         """
-        Check if the search algorithm has finished its search.
+        Check if the search algorithm has finished its search (e.g., budget exhausted).
 
         Returns:
-            bool: True if the search is finished (max_trials reached), False otherwise.
+            True if the search is finished, False otherwise.
         """
-        return self.current_trial >= self.max_trials
+        return self.curr_iteration == self.max_trials

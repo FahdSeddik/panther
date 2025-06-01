@@ -1,4 +1,4 @@
-import pickle  # Used for serialization in save_state and load_state
+import pickle
 from typing import Any, Dict, List
 
 from .SearchAlgorithm import SearchAlgorithm
@@ -6,110 +6,141 @@ from .SearchAlgorithm import SearchAlgorithm
 
 class GridSearch(SearchAlgorithm):
     """
-    Grid search algorithm that systematically tries all combinations of parameters.
+    Grid search algorithm that systematically tries all combinations of parameters up to a maximum number of iterations.
 
-    This implementation performs an exhaustive search through all possible parameter
-    combinations in the defined parameter space. It keeps track of the best parameters
-    found and their corresponding score throughout the search process.
+    This implementation performs a search through a pre-generated grid of parameter
+    combinations. It iterates through these combinations and keeps track of the best
+    parameters found and their corresponding score.
 
     Attributes:
-        param_space: Dictionary mapping parameter names to lists of possible values
-        current_idx: Current index in the parameter combinations list
-        param_combinations: List of all possible parameter combinations
-        history: List of dictionaries containing tried parameters and their scores
-        best_score: The highest score achieved so far
-        best_params: The parameters that achieved the best score
+        max_iterations: The maximum number of parameter combinations to try.
+        param_space: Dictionary mapping parameter names to lists of their possible values.
+        indexed_param_space: A list of dictionaries, where each dictionary represents a unique
+                             combination of parameter values.
+        curr_iteration: The current iteration number, indicating which parameter combination
+                        is being evaluated or will be evaluated next.
+        best_score: The highest score achieved so far during the search.
+        best_params: The dictionary of parameters that achieved the best_score.
     """
 
-    def __init__(self):
-        """Initialize the GridSearch algorithm with default values."""
-        self.param_space: Dict[str, List] = {}
-        self.current_idx = 0
-        self.param_combinations: List[Dict[str, Any]] = []
-        self.history: List[
-            Dict[str, Any]
-        ] = []  # Stores {'params': params, 'score': score}
-        self.best_score: float = -float("inf")  # Assuming higher score is better
-        self.best_params: Dict[str, Any] | None = None
+    def __init__(self, max_iterations: int = 10):
+        """
+        Initialize the GridSearch algorithm.
+
+        Args:
+            max_iterations: The maximum number of iterations to run.
+        """
+        self.max_iterations = max_iterations
+        self.reset()
 
     def initialize(self, param_space: Dict[str, List]):
         """
-        Initialize the grid search with a parameter space.
+        Initialize the search algorithm with the parameter space.
 
         Args:
-            param_space: Dictionary mapping parameter names to lists of possible values
+            param_space: Dictionary of parameter names and their possible values
         """
-        self.current_idx = 0
+        self.reset()
         self.param_space = param_space
-        self.param_combinations = []
-        self.history: List[Dict[str, Any]] = []
-        self.best_score: float = -float("inf")  # Assuming higher score is better
-        self.best_params: Dict[str, Any] | None = None
-        self._generate_combinations()
+        self.indexed_param_space = self._generate_indexed_param_space()
+        self.max_iterations = min(self.max_iterations, len(self.indexed_param_space))
 
-    def _generate_combinations(self):
+    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple]:
         """
-        Generate all possible combinations of parameters from the parameter space.
-
-        Uses itertools.product to create the Cartesian product of all parameter values.
+        Computes the Cartesian product of a list of lists.
+        Example: _my_product([[1, 2], ['a', 'b']]) -> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
         """
-        from itertools import product
+        if not value_lists:
+            return [()]
 
-        keys = list(self.param_space.keys())
-        values = list(self.param_space.values())
+        product_tuples = [()]
 
-        # Create all possible combinations using Cartesian product
-        for combination in product(*values):
-            self.param_combinations.append(dict(zip(keys, combination)))
+        for current_list_values in value_lists:
+            if not current_list_values:
+                return []
 
-    def get_next_params(self) -> Dict[str, Any] | None:
+            product_tuples = [
+                existing_tuple + (item,)
+                for existing_tuple in product_tuples
+                for item in current_list_values
+            ]
+
+        return product_tuples
+
+    def _generate_indexed_param_space(self):
+        """
+        Generates an indexed parameter space from the provided param_space.
+        The indexed parameter space is a list of dictionaries, where each dictionary
+        represents a unique combination of parameter values.
+
+        Raises:
+            ValueError: If param_space is None.
+
+        Returns:
+            List[Dict[str, Any]]: The indexed parameter space.
+        """
+        if self.param_space is None:
+            raise ValueError("param_space is None")
+
+        param_names = list(self.param_space.keys())
+        value_lists = list(self.param_space.values())
+
+        values_combined = self._my_product(value_lists)
+        indexed_param_space = [{} for _ in range(len(values_combined))]
+
+        i = 0
+        for value_combination in values_combined:
+            param = {}
+            j = 0
+            for value in value_combination:
+                param[param_names[j]] = value
+                j = j + 1
+            indexed_param_space[i] = param
+            i = i + 1
+
+        return indexed_param_space
+
+    def get_next_params(self) -> Dict[str, Any]:
         """
         Get the next set of parameters to try.
 
         Returns:
-            Dictionary of parameter names and values to try next, or None if all combinations have been tried
+            Dictionary of parameter names and values to try
         """
-        if self.current_idx >= len(self.param_combinations):
-            return None  # All combinations tried
+        if self.is_finished():
+            return None
 
-        params = self.param_combinations[self.current_idx]
-        self.current_idx += 1
+        params = self.indexed_param_space[self.curr_iteration]
+        self.curr_iteration = self.curr_iteration + 1
         return params
 
     def update(self, params: Dict[str, Any], score: float):
         """
         Update the search algorithm with the results of the latest trial.
 
-        Stores the parameters and score in history and updates the best parameters
-        if the current score is better than the previous best.
-
         Args:
             params: Dictionary of parameter names and values that were tried
             score: The evaluation score for the parameters
         """
-        self.history.append({"params": params.copy(), "score": score})
-        # Assuming higher score is better. If lower is better, change to score < self.best_score
-        if score > self.best_score:
+        if self.best_score < score:
             self.best_score = score
-            self.best_params = params.copy()
+            self.best_params = params
 
     def save_state(self, filepath: str):
         """
         Save the current state of the search algorithm to a file.
-
-        Serializes the entire state using pickle to enable resuming the search later.
 
         Args:
             filepath: The path to the file where the state should be saved.
         """
         state = {
             "param_space": self.param_space,
-            "current_idx": self.current_idx,
-            "param_combinations": self.param_combinations,
-            "history": self.history,
-            "best_score": self.best_score,
+            "curr_iteration": self.curr_iteration,
+            "indexed_param_space": self.indexed_param_space,
             "best_params": self.best_params,
+            "best_score": self.best_score,
         }
+
         with open(filepath, "wb") as f:
             pickle.dump(state, f)
 
@@ -117,28 +148,24 @@ class GridSearch(SearchAlgorithm):
         """
         Load the state of the search algorithm from a file.
 
-        Restores a previously saved state to continue the search process.
-
         Args:
             filepath: The path to the file from which the state should be loaded.
         """
         with open(filepath, "rb") as f:
             state = pickle.load(f)
 
-        # Restore all state variables
         self.param_space = state["param_space"]
-        self.current_idx = state["current_idx"]
-        self.param_combinations = state["param_combinations"]
-        self.history = state["history"]
-        self.best_score = state["best_score"]
+        self.curr_iteration = state["curr_iteration"]
+        self.indexed_param_space = state["indexed_param_space"]
         self.best_params = state["best_params"]
+        self.best_score = state["best_score"]
 
-    def get_best_params(self) -> Dict[str, Any] | None:
+    def get_best_params(self) -> Dict[str, Any]:
         """
         Get the best set of parameters found so far.
 
         Returns:
-            Dictionary of the best parameter names and values, or None if no parameters have been evaluated.
+            Dictionary of the best parameter names and values.
         """
         return self.best_params
 
@@ -147,30 +174,25 @@ class GridSearch(SearchAlgorithm):
         Get the best score achieved so far.
 
         Returns:
-            The best score. Returns -float('inf') if no trials have been updated or if reset.
+            The best score.
         """
         return self.best_score
 
     def reset(self):
         """
-        Reset the search algorithm to its initial state, preserving param_space.
-
-        This allows reusing the same GridSearch instance for multiple searches
-        without regenerating parameter combinations.
+        Reset the search algorithm to its initial state.
         """
-        self.current_idx = 0
-        # self.param_combinations are not regenerated here as they are fixed for GridSearch once initialized
-        self.history = []
-        self.best_score = -float("inf")  # Assuming higher score is better
+        self.param_space = None
+        self.curr_iteration = 0
+        self.indexed_param_space = []
         self.best_params = None
-        # If param_space is available, param_combinations would have been set by initialize
-        # and _generate_combinations. Resetting current_idx is sufficient.
+        self.best_score = -float("inf")
 
     def is_finished(self) -> bool:
         """
-        Check if the search algorithm has finished its search (e.g., all combinations tried).
+        Check if the search algorithm has finished its search (e.g., budget exhausted).
 
         Returns:
             True if the search is finished, False otherwise.
         """
-        return self.current_idx >= len(self.param_combinations)
+        return self.curr_iteration == self.max_iterations

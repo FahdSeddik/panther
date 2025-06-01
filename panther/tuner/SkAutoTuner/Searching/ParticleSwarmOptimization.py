@@ -18,8 +18,6 @@ class ParticleSwarmOptimization(SearchAlgorithm):
         w: float = 0.5,
         c1: float = 1.5,
         c2: float = 1.5,
-        min_values: Optional[Dict[str, Any]] = None,
-        max_values: Optional[Dict[str, Any]] = None,
         seed: Optional[int] = None,
     ):
         """
@@ -31,8 +29,6 @@ class ParticleSwarmOptimization(SearchAlgorithm):
             w: Inertia weight.
             c1: Cognitive coefficient.
             c2: Social coefficient.
-            min_values: Dictionary of minimum values for each parameter (for continuous params).
-            max_values: Dictionary of maximum values for each parameter (for continuous params).
             seed: Random seed for reproducibility.
         """
         self.num_particles = num_particles
@@ -40,8 +36,8 @@ class ParticleSwarmOptimization(SearchAlgorithm):
         self.w = w
         self.c1 = c1
         self.c2 = c2
-        self.min_values = min_values if min_values else {}
-        self.max_values = max_values if max_values else {}
+        self.min_values: Dict[str, Any] = {}  # Initialize as empty dict
+        self.max_values: Dict[str, Any] = {}  # Initialize as empty dict
         self.seed = seed
         if self.seed is not None:
             random.seed(self.seed)
@@ -61,12 +57,31 @@ class ParticleSwarmOptimization(SearchAlgorithm):
     def initialize(self, param_space: Dict[str, List]):
         """
         Initialize the search algorithm with the parameter space.
+        Each parameter in param_space should map to a list of two numbers: [min_value, max_value].
         """
         if not param_space:
             raise ValueError("Parameter space cannot be empty.")
 
         self.param_space = param_space
         self.param_names = list(param_space.keys())
+        self.min_values = {key: val[0] for key, val in param_space.items()}
+        self.max_values = {key: val[1] for key, val in param_space.items()}
+
+        for param_name in self.param_names:
+            if not (
+                isinstance(self.param_space[param_name], list)
+                and len(self.param_space[param_name]) == 2
+                and isinstance(self.param_space[param_name][0], (int, float))
+                and isinstance(self.param_space[param_name][1], (int, float))
+            ):
+                raise ValueError(
+                    f"Parameter '{param_name}' in param_space must be a list of two numbers [min, max]."
+                )
+            if self.min_values[param_name] >= self.max_values[param_name]:
+                raise ValueError(
+                    f"Min value must be less than max value for parameter '{param_name}'."
+                )
+
         self.particles = []
         self.gbest_position = {}
         self.gbest_score = -float("inf")  # Assuming higher is better
@@ -94,20 +109,11 @@ class ParticleSwarmOptimization(SearchAlgorithm):
     def _initialize_particle_position(self) -> Dict[str, Any]:
         position = {}
         for param_name in self.param_names:
-            values = self.param_space[param_name]
-            if isinstance(values, list) and values:  # Categorical
-                position[param_name] = random.choice(values)
-            elif (
-                param_name in self.min_values and param_name in self.max_values
-            ):  # Continuous
-                position[param_name] = random.uniform(
-                    self.min_values[param_name], self.max_values[param_name]
-                )
-            else:  # Fallback or error
-                raise ValueError(
-                    f"Parameter '{param_name}' is not well-defined for initialization. "
-                    "Provide a list of categorical values or min/max for continuous values."
-                )
+            # All parameters are treated as continuous, defined by min_values and max_values
+            min_val = self.min_values[param_name]
+            max_val = self.max_values[param_name]
+            # Initialize as float, will be rounded to nearest int after position updates if min_step=1 behavior is desired
+            position[param_name] = random.uniform(min_val, max_val)
         return position
 
     def _initialize_particle_velocity(
@@ -115,17 +121,11 @@ class ParticleSwarmOptimization(SearchAlgorithm):
     ) -> Union[Dict[str, float], Dict[str, int], None]:
         velocity = {}
         for param_name in self.param_names:
-            # For categorical parameters, velocity concept might not directly apply or needs adaptation.
-            # For simplicity, we'll focus on continuous parameters for velocity.
-            # If it's categorical, we can assign a default or skip.
-            if param_name in self.min_values and param_name in self.max_values:
-                # Initialize velocity typically between some range related to the parameter's range
-                v_max = (
-                    self.max_values[param_name] - self.min_values[param_name]
-                ) * 0.1  # e.g., 10% of range
-                velocity[param_name] = random.uniform(-v_max, v_max)
-            else:  # Categorical or not specified for continuous treatment
-                velocity[param_name] = 0.0  # Or handle differently
+            # All parameters are treated as continuous for velocity initialization
+            min_val = self.min_values[param_name]
+            max_val = self.max_values[param_name]
+            v_max = (max_val - min_val) * 0.1  # e.g., 10% of range
+            velocity[param_name] = random.uniform(-v_max, v_max)
         return velocity
 
     def get_next_params(self) -> Any:
@@ -188,72 +188,38 @@ class ParticleSwarmOptimization(SearchAlgorithm):
             new_position = {}
 
             for param_name in self.param_names:
-                if (
-                    param_name in self.min_values and param_name in self.max_values
-                ):  # Continuous
-                    r1, r2 = random.random(), random.random()
+                # All parameters are treated as continuous
+                r1, r2 = random.random(), random.random()
 
-                    current_pos = particle["position"][param_name]
-                    current_vel = particle["velocity"][param_name]
-                    pbest_pos = particle["pbest_position"][param_name]
-                    gbest_pos = self.gbest_position.get(
-                        param_name, current_pos
-                    )  # Fallback if gbest not set for param
+                current_pos = particle["position"][param_name]
+                current_vel = particle["velocity"][param_name]
+                pbest_pos = particle["pbest_position"][param_name]
+                gbest_pos = self.gbest_position.get(
+                    param_name, current_pos
+                )  # Fallback if gbest not set for param
 
-                    cognitive_component = self.c1 * r1 * (pbest_pos - current_pos)
-                    social_component = self.c2 * r2 * (gbest_pos - current_pos)
+                cognitive_component = self.c1 * r1 * (pbest_pos - current_pos)
+                social_component = self.c2 * r2 * (gbest_pos - current_pos)
 
-                    new_vel = (
-                        self.w * current_vel + cognitive_component + social_component
-                    )
+                new_vel = self.w * current_vel + cognitive_component + social_component
 
-                    # Optional: Velocity clamping
-                    # v_max = (self.max_values[param_name] - self.min_values[param_name]) * 0.5
-                    # new_vel = max(min(new_vel, v_max), -v_max)
+                # Optional: Velocity clamping can be added here if needed
+                # v_max_abs = (self.max_values[param_name] - self.min_values[param_name]) * 0.5 # Example limit
+                # new_vel = max(min(new_vel, v_max_abs), -v_max_abs)
 
-                    new_pos = current_pos + new_vel
+                new_pos_float = current_pos + new_vel
 
-                    # Clamping position to bounds
-                    new_pos = max(
-                        min(new_pos, self.max_values[param_name]),
-                        self.min_values[param_name],
-                    )
+                # Clamping position to bounds
+                new_pos_clamped = max(
+                    min(new_pos_float, self.max_values[param_name]),
+                    self.min_values[param_name],
+                )
 
-                    new_velocity[param_name] = new_vel
-                    new_position[param_name] = new_pos
+                # Apply min step = 1 by rounding to the nearest integer
+                new_pos_stepped = round(new_pos_clamped)
 
-                else:  # Categorical - position updated by different means (e.g. probability, or no direct velocity update)
-                    # For simplicity, categorical params might change based on gbest or pbest directly,
-                    # or use a probability to switch based on velocity-like "influence"
-                    # Here we just keep the old position/velocity for categorical params if not handled by velocity update.
-                    new_velocity[param_name] = particle["velocity"].get(
-                        param_name, 0.0
-                    )  # Keep old or 0
-
-                    # For categorical, a common approach is to not use velocity but to probabilistically switch
-                    # to pbest or gbest. Or, one might discretize velocity.
-                    # Simplest: if influence (e.g. from social/cognitive) is high, pick from pbest/gbest.
-                    # For now, let's try a simple approach for categorical:
-                    # If random number < some_prob, take from pbest, else if < some_other_prob, take from gbest, else keep.
-                    # This is a placeholder for a more sophisticated categorical PSO handling.
-
-                    # Simplified: if particle is "moving" towards a better categorical, it might adopt it.
-                    # A more robust way: model probability of choosing a category.
-                    # For now, keep it simple: update based on a mix strategy for categorical values if needed.
-                    # Let's try a probabilistic switch for categorical parameters
-                    rand_val = random.random()
-                    if (
-                        rand_val < 0.33 and param_name in particle["pbest_position"]
-                    ):  # Probability to switch to pbest
-                        new_position[param_name] = particle["pbest_position"][
-                            param_name
-                        ]
-                    elif (
-                        rand_val < 0.66 and param_name in self.gbest_position
-                    ):  # Probability to switch to gbest
-                        new_position[param_name] = self.gbest_position[param_name]
-                    else:  # Keep current
-                        new_position[param_name] = particle["position"][param_name]
+                new_velocity[param_name] = new_vel
+                new_position[param_name] = new_pos_stepped  # Store the stepped position
 
             particle["velocity"] = new_velocity
             particle["position"] = new_position
@@ -341,8 +307,6 @@ class ParticleSwarmOptimization(SearchAlgorithm):
             "w": self.w,
             "c1": self.c1,
             "c2": self.c2,
-            "min_values": self.min_values,
-            "max_values": self.max_values,
             "seed": self.seed,
             "param_space": self.param_space,
             "param_names": self.param_names,
@@ -404,8 +368,6 @@ class ParticleSwarmOptimization(SearchAlgorithm):
         self.w = state["w"]
         self.c1 = state["c1"]
         self.c2 = state["c2"]
-        self.min_values = state.get("min_values", {})  # Handle older saves
-        self.max_values = state.get("max_values", {})  # Handle older saves
         self.seed = state["seed"]
         if self.seed is not None:  # Re-apply seed if loaded
             random.seed(self.seed)
@@ -413,6 +375,15 @@ class ParticleSwarmOptimization(SearchAlgorithm):
 
         self.param_space = state["param_space"]
         self.param_names = state["param_names"]
+
+        # Derive min_values and max_values from loaded param_space
+        if self.param_space:
+            self.min_values = {key: val[0] for key, val in self.param_space.items()}
+            self.max_values = {key: val[1] for key, val in self.param_space.items()}
+        else:
+            self.min_values = {}
+            self.max_values = {}
+
         self.particles = state["particles"]
         self.gbest_position = state["gbest_position"]
         self.gbest_score = state["gbest_score"]
