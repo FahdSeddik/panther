@@ -52,6 +52,7 @@ autodoc_class_signature = "mixed"
 # Mock only the C++ extension that can't be built on Read the Docs
 autodoc_mock_imports = [
     "pawX",
+    "pawX.pawX",
 ]
 
 # Napoleon settings for Google/NumPy style docstrings
