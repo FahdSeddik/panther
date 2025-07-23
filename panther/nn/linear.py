@@ -127,6 +127,8 @@ class SketchedLinearFunction(Function):
 class SKLinear(nn.Module):
     """
     SKLinear is a custom linear (fully connected) layer with sketching and optional low-rank approximation, designed for efficient computation and potential GPU Tensor Core acceleration.
+
+    Args:
         in_features (int): Number of input features.
         out_features (int): Number of output features.
         num_terms (int): Number of sketching terms (controls the number of low-rank approximations).
@@ -135,6 +137,7 @@ class SKLinear(nn.Module):
         bias (bool, optional): If True, adds a learnable bias to the output. Default: True.
         dtype (torch.dtype, optional): Data type of the parameters.
         device (torch.device, optional): Device to store the parameters.
+
     Attributes:
         in_features (int): Number of input features.
         out_features (int): Number of output features.
@@ -147,13 +150,16 @@ class SKLinear(nn.Module):
         bias (torch.nn.Parameter or None): Optional learnable bias.
         has_tensor_core (bool): Indicates if Tensor Core support is available.
         use_gpu (bool): Indicates if GPU acceleration is enabled.
+
     Warnings:
         - If the total number of parameters in the sketching layer exceeds that of a standard fully connected layer, a warning is issued.
         - If in_features, out_features, or low_rank are not multiples of 16, Tensor Core optimizations are disabled and a warning is issued.
         - If the batch size during the forward pass is not a multiple of 16, Tensor Core optimizations are disabled and a warning is issued.
+
     Forward Input:
         - The input tensor can be of any shape, but the last dimension must match in_features.
         - If the input is 1D, it is reshaped to 2D for processing.
+
     Forward Output:
         - The layer uses custom sketching matrices (S1s, S2s, U1s, U2s) for efficient approximation of the linear transformation.
         - If running on CUDA with Tensor Core support and the input dimensions and batch size are compatible, computation is accelerated.

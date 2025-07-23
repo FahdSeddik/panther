@@ -21,15 +21,18 @@ class LayerConfig:
 
         Args:
             layer_names: Layer selector, can be:
+
                 - A string: Regex pattern or substring (e.g., "encoder", "layer1.*conv")
                 - A list of strings: Multiple patterns or exact layer names (e.g., ["encoder", "decoder"])
                 - A dictionary with selection criteria:
+
                     - "pattern": String or list of regex patterns (e.g., "encoder.*")
                     - "type": Layer type or list of types (e.g., "Linear", ["Conv2d", "ConvTranspose2d"])
                     - "contains": String that layer name must contain (e.g., "attention")
                     - "indices": Specific indices to select from matched layers (e.g., [0, 2, 4])
                     - "range": Range of indices as [start, end, step] (e.g., [0, 6] or [0, 12, 2])
                     - Multiple criteria can be combined (e.g., {"pattern": "encoder.*", "type": "Linear"})
+
             params: Dictionary of parameter names and their possible values to try
             separate: Whether these layers should be tuned separately or together
             copy_weights: Whether to copy weights when replacing layers

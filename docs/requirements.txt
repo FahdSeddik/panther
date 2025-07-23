@@ -1,0 +1,15 @@
+# Documentation build requirements for Read the Docs
+sphinx>=8.0.0
+sphinx-book-theme>=1.0.0
+sphinx-design>=0.5.0
+myst-parser>=2.0.0
+# Real dependencies needed for documentation (CPU-only versions for Read the Docs)
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+numpy>=1.21.0
+botorch>=0.14.0
+matplotlib>=3.7.0
+# Additional dependencies that might be needed
+scipy>=1.9.0
+pandas>=1.5.0

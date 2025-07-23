@@ -49,19 +49,9 @@ autodoc_default_options = {
 autodoc_typehints = "none"
 autodoc_class_signature = "mixed"
 
-# Suppress warnings for mocked objects
-suppress_warnings = ["autodoc.mock_object"]
-
+# Mock only the C++ extension that can't be built on Read the Docs
 autodoc_mock_imports = [
     "pawX",
-    "pawX.pawX",
-    "triton",
-    "botorch",
-    "panther.nn",
-    "panther.nn.attention",
-    "panther.nn.linear",
-    "panther.nn.conv",
-    "panther.utils",
 ]
 
 # Napoleon settings for Google/NumPy style docstrings
