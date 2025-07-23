@@ -33,7 +33,18 @@ extensions = [
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "panther.rst"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "panther.rst",
+    "modules.rst",
+    "panther.linalg.rst",
+    "panther.nn.rst",
+    "panther.sketch.rst",
+    "panther.tuner.rst",
+    "panther.utils.rst",
+]
 source_suffix = [".rst", ".md"]
 
 # Autodoc configuration
@@ -49,10 +60,22 @@ autodoc_default_options = {
 autodoc_typehints = "none"
 autodoc_class_signature = "mixed"
 
-# Mock only the C++ extension that can't be built on Read the Docs
+# Suppress warnings for mocked objects and duplicate descriptions
+suppress_warnings = [
+    "autodoc.mock_object",
+    "autodoc.duplicate_object",
+    "toc.not_included",
+    "toc.excluded",
+]
+
+# Mock only the C++ extension and problematic dependencies that can't be built on Read the Docs
 autodoc_mock_imports = [
     "pawX",
     "pawX.pawX",
+    "triton",
+    # Mock specific submodules that depend on pawX
+    "panther.nn.pawXimpl",
+    "panther.nn.linear_kernels",
 ]
 
 # Napoleon settings for Google/NumPy style docstrings

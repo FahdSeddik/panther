@@ -87,14 +87,15 @@ class LayerNameResolver:
 
         Args:
             selectors: One or more selectors to match layers. Can be:
+
                 - A single string pattern (e.g., "encoder.*attention")
                 - A list of string patterns
                 - A dictionary with keys:
+
                     - 'pattern': String or list of regex patterns
                     - 'type': Layer type or list of types (e.g., 'Linear', 'Conv2d')
                     - 'contains': String that layer name must contain
-                    - 'indices': Indices to select from matched layers
-                      (e.g., [0, 2, 4] for first, third, fifth)
+                    - 'indices': Indices to select from matched layers (e.g., [0, 2, 4] for first, third, fifth)
                     - 'range': Range of indices as [start, end, step]
 
         Returns:
