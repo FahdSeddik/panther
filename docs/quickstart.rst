@@ -282,6 +282,6 @@ Now that you understand the basics, explore these advanced topics:
 Need Help?
 ----------
 
-* Check the :doc:`api/index` for detailed API documentation
+* Check the API documentation: :doc:`api/linalg`, :doc:`api/nn`, :doc:`api/sketch`, :doc:`api/tuner`, :doc:`api/utils`
 * Visit our `GitHub repository <https://github.com/FahdSeddik/panther>`_ for issues and discussions
 * See :doc:`examples/index` for more comprehensive examples

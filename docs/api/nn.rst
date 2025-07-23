@@ -1,5 +1,5 @@
 Neural Networks API
-==================
+===================
 
 The :mod:`panther.nn` module provides sketched neural network layers that reduce memory usage while maintaining performance.
 
@@ -11,10 +11,12 @@ Linear Layers
 .. autoclass:: SKLinear
    :members:
    :special-members: __init__
+   :no-index:
 
 .. autoclass:: SKLinear_triton
    :members:
    :special-members: __init__
+   :no-index:
 
 Convolution Layers
 ------------------
@@ -22,12 +24,14 @@ Convolution Layers
 .. autoclass:: SKConv2d
    :members:
    :special-members: __init__
+   :no-index:
 
 Attention Mechanisms
 --------------------
 
 .. autoclass:: RandMultiHeadAttention
    :members:
+   :no-index:
    :special-members: __init__
 
 Examples

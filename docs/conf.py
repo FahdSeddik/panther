@@ -29,10 +29,11 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
+    "sphinx_design",
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "panther.rst"]
 source_suffix = [".rst", ".md"]
 
 # Autodoc configuration
@@ -44,11 +45,23 @@ autodoc_default_options = {
     "exclude-members": "__weakref__",
 }
 
+# Handle import errors gracefully
+autodoc_typehints = "none"
+autodoc_class_signature = "mixed"
+
+# Suppress warnings for mocked objects
+suppress_warnings = ["autodoc.mock_object"]
+
 autodoc_mock_imports = [
     "pawX",
     "pawX.pawX",
     "triton",
     "botorch",
+    "panther.nn",
+    "panther.nn.attention",
+    "panther.nn.linear",
+    "panther.nn.conv",
+    "panther.utils",
 ]
 
 # Napoleon settings for Google/NumPy style docstrings
@@ -71,6 +84,9 @@ html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 html_logo = "_static/panther-logo.png"
 html_title = "Panther Documentation"
+html_css_files = [
+    "custom.css",
+]
 
 html_theme_options = {
     "repository_url": "https://github.com/FahdSeddik/panther",
@@ -81,4 +97,8 @@ html_theme_options = {
     "show_toc_level": 2,
     "navigation_with_keys": True,
     "show_navbar_depth": 2,
+    "collapse_navigation": True,
+    "navigation_depth": 4,
+    "use_sidenotes": True,
+    "show_prev_next": False,
 }

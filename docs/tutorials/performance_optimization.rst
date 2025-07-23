@@ -1,5 +1,5 @@
 Performance Optimization
-=======================
+========================
 
 This tutorial covers techniques to maximize performance when using Panther's sketched layers, including GPU acceleration, memory optimization, and Tensor Core usage.
 

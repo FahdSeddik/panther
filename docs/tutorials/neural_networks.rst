@@ -1,5 +1,5 @@
 Neural Networks with Sketching
-=============================
+==============================
 
 This tutorial demonstrates how to build complete neural networks using Panther's sketched layers, from simple MLPs to complex architectures.
 

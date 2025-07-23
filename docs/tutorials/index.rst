@@ -43,8 +43,8 @@ Explore advanced features and customization options.
     Create custom sketching operators and extend Panther's functionality.
 
 Additional Resources
--------------------
+--------------------
 
 * :doc:`../examples/index` - Complete examples and use cases
-* :doc:`../api/index` - Full API reference
+* API Reference: :doc:`../api/linalg`, :doc:`../api/nn`, :doc:`../api/sketch`, :doc:`../api/tuner`, :doc:`../api/utils`
 * `GitHub Repository <https://github.com/FahdSeddik/panther>`_ - Source code and issues

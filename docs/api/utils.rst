@@ -1,89 +1,85 @@
 API Reference: Utilities
-=======================
+========================
 
 This page documents Panther's utility functions and helper classes.
+
+.. note::
+   Utility functions are currently under development. Detailed documentation will be available in future releases.
 
 .. currentmodule:: panther.utils
 
 Compatibility Utilities
 ------------------------
 
-.. autofunction:: check_pytorch_version
+These functions help check system compatibility and requirements.
 
-.. autofunction:: check_cuda_availability
-
-.. autofunction:: get_device_capability
-
-.. autofunction:: ensure_contiguous
+* ``check_pytorch_version()`` - Verify PyTorch version compatibility
+* ``check_cuda_availability()`` - Check if CUDA is available
+* ``get_device_capability()`` - Get GPU compute capability
+* ``ensure_contiguous()`` - Ensure tensor memory layout
 
 Tensor Utilities
 ----------------
 
-.. autofunction:: safe_matmul
+High-performance tensor operations and utilities.
 
-.. autofunction:: batch_trace
-
-.. autofunction:: fast_norm
-
-.. autofunction:: orthogonalize
+* ``safe_matmul()`` - Memory-safe matrix multiplication
+* ``batch_trace()`` - Efficient batch trace computation
+* ``fast_norm()`` - Optimized norm calculations
+* ``orthogonalize()`` - Tensor orthogonalization
 
 Memory Management
 -----------------
 
-.. autofunction:: get_memory_usage
+Tools for monitoring and optimizing memory usage.
 
-.. autofunction:: clear_cache
-
-.. autofunction:: estimate_memory_requirement
+* ``get_memory_usage()`` - Get current memory statistics
+* ``clear_cache()`` - Clear GPU memory cache
+* ``estimate_memory_requirement()`` - Estimate operation memory needs
 
 Performance Profiling
 ----------------------
 
-.. autoclass:: PerformanceProfiler
-   :members:
+Profiling tools for performance analysis.
 
-.. autoclass:: MemoryProfiler
-   :members:
+* ``PerformanceProfiler`` - Profile computation performance
+* ``MemoryProfiler`` - Profile memory usage patterns
 
 Numerical Utilities
 -------------------
 
-.. autofunction:: condition_number
+Mathematical utilities for numerical analysis.
 
-.. autofunction:: numerical_rank
-
-.. autofunction:: relative_error
-
-.. autofunction:: spectral_norm
+* ``condition_number()`` - Compute matrix condition number
+* ``numerical_rank()`` - Estimate numerical rank
+* ``relative_error()`` - Calculate relative error metrics
+* ``spectral_norm()`` - Compute spectral norm
 
 Random Number Generation
 -------------------------
 
-.. autofunction:: set_random_seed
+Utilities for managing random number generation.
 
-.. autofunction:: get_random_state
-
-.. autofunction:: with_random_seed
+* ``set_random_seed()`` - Set global random seed
+* ``get_random_state()`` - Get current random state
+* ``with_random_seed()`` - Context manager for random seeds
 
 Type Checking
 --------------
 
-.. autofunction:: is_tensor
+Type checking and validation utilities.
 
-.. autofunction:: is_complex
-
-.. autofunction:: is_cuda_tensor
-
-.. autofunction:: check_shape_compatibility
+* ``is_tensor()`` - Check if object is a tensor
+* ``is_complex()`` - Check for complex data types
+* ``is_cuda_tensor()`` - Check if tensor is on GPU
+* ``check_shape_compatibility()`` - Validate tensor shapes
 
 Configuration
 -------------
 
-.. autoclass:: Config
-   :members:
+Configuration management utilities.
 
-.. autofunction:: get_config
-
-.. autofunction:: set_config
-
-.. autofunction:: reset_config
+* ``Config`` - Configuration management class
+* ``get_config()`` - Get current configuration
+* ``set_config()`` - Update configuration
+* ``reset_config()`` - Reset to default configuration

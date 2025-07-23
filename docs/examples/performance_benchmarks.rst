@@ -1,5 +1,5 @@
 Performance Benchmarks
-=====================
+======================
 
 This guide provides comprehensive benchmarking tools and results for Panther's sketching algorithms.
 

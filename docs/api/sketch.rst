@@ -9,23 +9,31 @@ Sketching Operators
 -------------------
 
 .. autofunction:: dense_sketch_operator
+   :no-index:
 
 .. autofunction:: sparse_sketch_operator
+   :no-index:
 
 .. autofunction:: sketch_tensor
+   :no-index:
 
 .. autofunction:: scaled_sign_sketch
+   :no-index:
 
 Specific Sketching Methods
 --------------------------
 
 .. autofunction:: gaussian_skop
+   :no-index:
 
 .. autofunction:: srht
+   :no-index:
 
 .. autofunction:: sjlt_skop
+   :no-index:
 
 .. autofunction:: count_skop
+   :no-index:
 
 Distribution Families
 ---------------------
@@ -33,10 +41,12 @@ Distribution Families
 .. autoclass:: DistributionFamily
    :members:
    :undoc-members:
+   :no-index:
 
 .. autoclass:: Axis
    :members:
    :undoc-members:
+   :no-index:
 
 Examples
 --------

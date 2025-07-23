@@ -1,5 +1,5 @@
 Custom Sketching Methods
-=======================
+========================
 
 This advanced guide covers implementing your own sketching operators and integrating them with Panther's framework.
 

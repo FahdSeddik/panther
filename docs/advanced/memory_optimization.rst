@@ -1,5 +1,5 @@
 Memory Optimization
-==================
+===================
 
 This guide covers advanced memory optimization techniques when using Panther for large-scale applications.
 

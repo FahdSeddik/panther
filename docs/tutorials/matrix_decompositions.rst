@@ -1,5 +1,5 @@
 Matrix Decompositions
-====================
+=====================
 
 This tutorial covers Panther's randomized matrix decomposition algorithms: CQRRPT and RSVD.
 
@@ -657,7 +657,7 @@ Practical Applications
    print(f"  Explained variance: {torch.sum(reducer.singular_values_**2):.2f}")
 
 Computational Complexity and Algorithm Comparison
-------------------------------------------------
+-------------------------------------------------
 
 **Complexity Analysis**
 

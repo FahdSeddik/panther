@@ -137,7 +137,7 @@ Known Issues
 ============
 
 Current Limitations
-------------------
+-------------------
 
 **CUDA Support**
 
@@ -163,7 +163,7 @@ Current Limitations
 - Memory benefits are most apparent for large layers
 
 Planned Features
-===============
+================
 
 **Version 0.2.0 (Planned Q1 2025)**
 

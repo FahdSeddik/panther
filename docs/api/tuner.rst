@@ -14,6 +14,7 @@ AutoTuner Class
 .. automodule:: panther.tuner.SkAutoTuner
    :members:
    :special-members: __init__
+   :no-index:
 
 Examples
 --------

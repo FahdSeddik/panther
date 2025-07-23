@@ -9,8 +9,10 @@ Core Functions
 --------------
 
 .. autofunction:: cqrrpt
+   :no-index:
 
 .. autofunction:: randomized_svd
+   :no-index:
 
 Distribution Families
 ---------------------
@@ -18,6 +20,7 @@ Distribution Families
 .. autoclass:: DistributionFamily
    :members:
    :undoc-members:
+   :no-index:
 
 Examples
 --------

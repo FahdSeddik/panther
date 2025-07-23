@@ -1,15 +1,31 @@
 .. Panther documentation master file
 
-Panther: Faster & Cheaper Computations with RandNLA
-===================================================
-
 .. raw:: html
 
    <script>
-      /* Along with some CSS settings in style.css (look for `body:has(.hero)`)
-         this will ensure that the menu sidebar is hidden on the main page. */
+      /* Mark this as the main page and hide sidebar by default on desktop */
+      document.body.classList.add('main-index-page');
+      
+      // Only auto-hide sidebar on desktop screens
       if (window.innerWidth >= 960) {
-         document.getElementById("__primary").checked = true;
+         // Wait for DOM to be ready
+         document.addEventListener('DOMContentLoaded', function() {
+            const primarySidebar = document.getElementById("__primary");
+            if (primarySidebar) {
+               primarySidebar.checked = false;
+            }
+         });
+         
+         // If DOM is already loaded
+         if (document.readyState === 'loading') {
+            // Document still loading, wait for DOMContentLoaded
+         } else {
+            // Document already loaded
+            const primarySidebar = document.getElementById("__primary");
+            if (primarySidebar) {
+               primarySidebar.checked = false;
+            }
+         }
       }
    </script>
 
@@ -96,11 +112,6 @@ Panther: Faster & Cheaper Computations with RandNLA
    :hidden:
    
    examples/index
-   examples/basic_usage
-   examples/resnet_sketching
-   examples/autotuner_guide
-   examples/custom_sketching
-   examples/performance_benchmarks
 
 .. toctree::
    :maxdepth: 1
@@ -154,83 +165,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. raw:: html
-
-   <style>
-   .product-offerings {
-       margin: 3rem 0;
-   }
-   
-   .product-offerings .sd-card {
-       text-align: center;
-       padding: 2rem 1rem;
-       border: none !important;
-       box-shadow: none !important;
-   }
-   
-   .product-offerings .sd-card-title {
-       font-size: 1.25rem;
-       font-weight: 600;
-       color: #374151;
-       margin-bottom: 1rem;
-   }
-   
-   .product-offerings .sd-card-text {
-       color: #6b7280;
-       line-height: 1.6;
-   }
-   
-   .color-cards {
-       margin: 2rem 0;
-       gap: 2rem;
-   }
-   
-   .color-cards .sd-card {
-       text-align: center;
-       padding: 2rem 1rem;
-       border-radius: 1rem;
-       transition: transform 0.3s ease, box-shadow 0.3s ease;
-       text-decoration: none;
-       color: white;
-       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-   }
-   
-   .color-cards .sd-card:hover {
-       transform: translateY(-5px);
-       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-       text-decoration: none;
-       color: white;
-   }
-   
-   .color-cards .installation {
-       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-   }
-   
-   .color-cards .getting-started {
-       background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-   }
-   
-   .color-cards .user-guides {
-       background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-   }
-   
-   .color-cards .sd-card-title {
-       font-size: 1.1rem;
-       font-weight: 600;
-       margin-bottom: 0.5rem;
-       color: white;
-   }
-   
-   .color-cards .sd-card-text {
-       font-size: 0.9rem;
-       opacity: 0.9;
-       color: white;
-   }
-   
-   .color-cards .material-icons {
-       font-size: 2em;
-       margin-bottom: 1rem;
-       display: block;
-   }
-   </style>

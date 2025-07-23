@@ -1,5 +1,5 @@
 Distributed Training
-===================
+====================
 
 This guide covers distributed training strategies for Panther models across multiple GPUs and nodes.
 
