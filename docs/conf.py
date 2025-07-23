@@ -66,9 +66,9 @@ suppress_warnings = [
     "autodoc.duplicate_object",
     "toc.not_included",
     "toc.excluded",
-]
-
-# Mock only the C++ extension and problematic dependencies that can't be built on Read the Docs
+    "autodoc.import_object",
+    "autodoc.failed_import",
+]  # Mock only the C++ extension and problematic dependencies that can't be built on Read the Docs
 autodoc_mock_imports = [
     "pawX",
     "pawX.pawX",
@@ -76,6 +76,13 @@ autodoc_mock_imports = [
     # Mock specific submodules that depend on pawX
     "panther.nn.pawXimpl",
     "panther.nn.linear_kernels",
+    "panther.nn.linear_kernels.backward",
+    "panther.nn.linear_kernels.forward",
+    # Mock entire nn module components that have import issues
+    "panther.nn.attention",
+    "panther.nn.conv2d",
+    "panther.nn.linear",
+    "panther.nn.linear_tr",
 ]
 
 # Napoleon settings for Google/NumPy style docstrings

@@ -3,36 +3,88 @@ Neural Networks API
 
 The :mod:`panther.nn` module provides sketched neural network layers that reduce memory usage while maintaining performance.
 
-.. currentmodule:: panther.nn
+.. note::
+   The neural network classes below require compiled C++ extensions (pawX) which may not be available in all environments.
 
 Linear Layers
 -------------
 
-.. autoclass:: SKLinear
-   :members:
-   :special-members: __init__
-   :no-index:
+SKLinear
+~~~~~~~~
 
-.. autoclass:: SKLinear_triton
-   :members:
-   :special-members: __init__
-   :no-index:
+.. py:class:: SKLinear(in_features, out_features, num_terms, low_rank, W_init=None, bias=True, dtype=None, device=None)
+
+   SKLinear is a custom linear (fully connected) layer with sketching and optional low-rank approximation, designed for efficient computation and potential GPU Tensor Core acceleration.
+
+   :param int in_features: Number of input features.
+   :param int out_features: Number of output features.
+   :param int num_terms: Number of sketching terms (controls the number of low-rank approximations).
+   :param int low_rank: Rank of the low-rank approximation for each term.
+   :param torch.Tensor W_init: Optional initial weight matrix. If None, weights are initialized using Kaiming uniform initialization.
+   :param bool bias: If True, adds a learnable bias to the output. Default: True.
+   :param torch.dtype dtype: Data type of the parameters.
+   :param torch.device device: Device to store the parameters.
+
+SKLinear_triton
+~~~~~~~~~~~~~~~
+
+.. py:class:: SKLinear_triton(in_features, out_features, num_terms, low_rank, W_init=None, bias=True, dtype=None, device=None)
+
+   Triton-accelerated version of SKLinear for enhanced GPU performance.
+
+   :param int in_features: Number of input features.
+   :param int out_features: Number of output features.
+   :param int num_terms: Number of sketching terms.
+   :param int low_rank: Rank of the low-rank approximation for each term.
+   :param torch.Tensor W_init: Optional initial weight matrix.
+   :param bool bias: If True, adds a learnable bias to the output.
+   :param torch.dtype dtype: Data type of the parameters.
+   :param torch.device device: Device to store the parameters.
 
 Convolution Layers
 ------------------
 
-.. autoclass:: SKConv2d
-   :members:
-   :special-members: __init__
-   :no-index:
+SKConv2d
+~~~~~~~~
+
+.. py:class:: SKConv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True, num_terms=1, low_rank=64, W_init=None, dtype=None, device=None)
+
+   Sketched 2D convolution layer for memory-efficient convolution operations.
+
+   :param int in_channels: Number of input channels.
+   :param int out_channels: Number of output channels.
+   :param int kernel_size: Size of the convolution kernel.
+   :param int stride: Stride of the convolution operation.
+   :param int padding: Padding applied to the input.
+   :param bool bias: If True, adds a learnable bias.
+   :param int num_terms: Number of sketching terms.
+   :param int low_rank: Rank of the low-rank approximation.
+   :param torch.Tensor W_init: Optional initial weight matrix.
+   :param torch.dtype dtype: Data type of the parameters.
+   :param torch.device device: Device to store the parameters.
 
 Attention Mechanisms
 --------------------
 
-.. autoclass:: RandMultiHeadAttention
-   :members:
-   :no-index:
-   :special-members: __init__
+RandMultiHeadAttention
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: RandMultiHeadAttention(embed_dim, num_heads, dropout=0.0, bias=True, add_bias_kv=False, add_zero_attn=False, kdim=None, vdim=None, batch_first=False, device=None, dtype=None, SRPE=None)
+
+   Randomized Multi-Head Attention mechanism with optional sketching for memory efficiency.
+
+   :param int embed_dim: Total dimension of the model.
+   :param int num_heads: Number of parallel attention heads.
+   :param float dropout: Dropout probability. Default: 0.0.
+   :param bool bias: If True, adds bias to input/output projections.
+   :param bool add_bias_kv: If True, adds bias to the key and value sequences.
+   :param bool add_zero_attn: If True, adds a new batch of zeros to the key and value sequences.
+   :param int kdim: Total number of features for keys. Default: None (uses embed_dim).
+   :param int vdim: Total number of features for values. Default: None (uses embed_dim).
+   :param bool batch_first: If True, batch dimension comes first.
+   :param torch.device device: Device to store the parameters.
+   :param torch.dtype dtype: Data type of the parameters.
+   :param SRPE: Sketched Random Positional Encoding. Default: None.
 
 Examples
 --------
