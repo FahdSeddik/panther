@@ -38,15 +38,19 @@ Specific Sketching Methods
 Distribution Families
 ---------------------
 
-.. autoclass:: DistributionFamily
-   :members:
-   :undoc-members:
-   :no-index:
+.. py:class:: DistributionFamily
 
-.. autoclass:: Axis
-   :members:
-   :undoc-members:
-   :no-index:
+   Enumeration of available distribution families for sketching operators.
+   
+   .. note::
+      This class is provided by the pawX C++ extension and may not be available in all environments.
+
+.. py:class:: Axis
+
+   Enumeration of axis specifications for sketching operations.
+   
+   .. note::
+      This class is provided by the pawX C++ extension and may not be available in all environments.
 
 Examples
 --------

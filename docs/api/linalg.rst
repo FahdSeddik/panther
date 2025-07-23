@@ -17,10 +17,12 @@ Core Functions
 Distribution Families
 ---------------------
 
-.. autoclass:: DistributionFamily
-   :members:
-   :undoc-members:
-   :no-index:
+.. py:class:: DistributionFamily
+
+   Enumeration of available distribution families for linear algebra operations.
+   
+   .. note::
+      This class is provided by the pawX C++ extension and may not be available in all environments.
 
 Examples
 --------

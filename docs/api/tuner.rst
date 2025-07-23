@@ -11,7 +11,20 @@ The :mod:`panther.tuner` module provides automatic hyperparameter optimization f
 AutoTuner Class
 ---------------
 
-.. automodule:: panther.tuner.SkAutoTuner
+.. autoclass:: SKAutoTuner
+   :members:
+   :special-members: __init__
+   :no-index:
+
+Configuration Classes
+---------------------
+
+.. autoclass:: LayerConfig
+   :members:
+   :special-members: __init__
+   :no-index:
+
+.. autoclass:: TuningConfigs
    :members:
    :special-members: __init__
    :no-index:
