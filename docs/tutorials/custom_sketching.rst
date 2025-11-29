@@ -1,7 +1,7 @@
 Custom Sketching Implementation
 ===============================
 
-This tutorial shows how to create custom sketching operators and extend Panther's functionality with your own algorithms.
+This tutorial shows how to use Panther's sketching operators for custom applications.
 
 Understanding Sketching Fundamentals
 -------------------------------------
@@ -18,186 +18,153 @@ For a matrix :math:`A \\in \\mathbb{R}^{m \\times n}`, a sketch :math:`S \\in \\
 
 where :math:`k \\ll m` and :math:`\\widetilde{A}` preserves key properties of :math:`A`.
 
-**Basic Custom Sketching Operator**
+**Using Panther's Built-in Sketching Operators**
+
+Panther provides several sketching operators through the `panther.sketch` module:
+
+.. code-block:: python
+
+   import torch
+   import panther as pr
+   
+   # Create a matrix to sketch
+   A = torch.randn(1000, 500)
+   
+   # Gaussian sketching operator
+   S_gaussian = pr.sketch.gaussian_skop(
+       m=100,  # output dimension
+       n=1000  # input dimension
+   )
+   
+   # Apply sketch
+   SA = S_gaussian @ A
+   print(f"Original: {A.shape}, Sketched: {SA.shape}")
+   
+   # Sparse sketching (more memory efficient)
+   S_sparse = pr.sketch.sparse_sketch_operator(
+       m=100,
+       n=1000,
+       vec_nnz=3,  # non-zeros per column
+       axis=pr.sketch.Axis.Rows
+   )
+   
+   # SRHT (Subsampled Randomized Hadamard Transform)
+   # Note: SRHT operates on 1D tensors, not matrices
+   x = torch.randn(1024)  # must be power of 2
+   x_srht = pr.sketch.srht(
+       x=x,
+       m=100
+   )
+   
+   # Count sketch
+   S_count = pr.sketch.count_skop(
+       m=100,
+       n=1000
+   )
+
+Available Sketching Methods
+----------------------------
+
+**1. Gaussian Sketching**
+
+.. code-block:: python
+
+   import torch
+   import panther as pr
+   
+   # Dense Gaussian sketching matrix
+   m, n = 200, 1000
+   S = pr.sketch.gaussian_skop(m, n)
+   
+   # Apply to data
+   X = torch.randn(1000, 500)
+   X_sketched = S @ X
+   
+   print(f"Compression ratio: {n/m:.1f}x")
+
+**2. Sparse Sketching**
+
+.. code-block:: python
+
+   # Sparse sketching for memory efficiency
+   S_sparse = pr.sketch.sparse_sketch_operator(
+       m=200,
+       n=5000,
+       vec_nnz=3,
+       axis=pr.sketch.Axis.Rows
+   )
+   
+   # Much less memory than dense sketching
+   X_large = torch.randn(5000, 2000)
+   X_sparse_sketched = S_sparse @ X_large
+
+**3. SRHT (Fast Walsh-Hadamard Transform)**
+
+.. code-block:: python
+
+   # SRHT is very fast for power-of-2 dimensions
+   # SRHT operates on 1D tensors
+   n = 1024  # power of 2
+   m = 128
+   x = torch.randn(n)
+   x_srht_sketched = pr.sketch.srht(x, m)
+   print(f"Sketched from {n} to {m} dimensions")
+
+**4. Count Sketch**
+
+.. code-block:: python
+
+   # Count sketch using feature hashing
+   S_count = pr.sketch.count_skop(m=100, n=1000)
+   X = torch.randn(1000, 400)
+   X_count_sketched = S_count @ X
+
+**5. SJLT (Sparse Johnson-Lindenstrauss Transform)**
+
+.. code-block:: python
+
+   # SJLT with sparse random projections
+   S_sjlt = pr.sketch.sjlt_skop(m=100, n=1000)
+   X = torch.randn(1000, 300)
+   X_sjlt_sketched = S_sjlt @ X
+
+Using Sketching in Custom Neural Network Layers
+------------------------------------------------
+
+**Creating a Simple Sketched Layer**
 
 .. code-block:: python
 
    import torch
    import torch.nn as nn
-   import numpy as np
-   from abc import ABC, abstractmethod
+   import panther as pr
    
-   class BaseSketchingOperator(nn.Module, ABC):
-       \"\"\"Base class for all sketching operators.\"\"\""
+   class SimpleSketchedLayer(nn.Module):
+       """Custom layer using sketching for dimensionality reduction."""
        
-       def __init__(self, input_dim, sketch_dim, device=None):
+       def __init__(self, input_dim, sketch_dim, output_dim):
            super().__init__()
            self.input_dim = input_dim
            self.sketch_dim = sketch_dim
-           self.device = device or torch.device('cpu')
            
-           # Initialize sketching matrix
-           self._init_sketch_matrix()
+           # Create sketching operator
+           self.register_buffer('sketch_matrix', 
+               pr.sketch.gaussian_skop(sketch_dim, input_dim))
            
-       @abstractmethod
-       def _init_sketch_matrix(self):
-           \"\"\"Initialize the sketching matrix.\"\"\""
-           pass
-       
-       @abstractmethod
-       def forward(self, x):
-           \"\"\"Apply sketching to input tensor.\"\"\""
-           pass
-       
-       def sketch_dimension_reduction(self):
-           \"\"\"Return the compression ratio.\"\"\""
-           return self.input_dim / self.sketch_dim
-   
-   class GaussianSketch(BaseSketchingOperator):
-       \"\"\"Gaussian random projection sketching.\"\"\""
-       
-       def _init_sketch_matrix(self):
-           # Gaussian random matrix with proper normalization
-           sketch_matrix = torch.randn(self.sketch_dim, self.input_dim, device=self.device)
-           sketch_matrix /= np.sqrt(self.sketch_dim)
-           self.register_buffer('sketch_matrix', sketch_matrix)
+           # Linear transformation after sketching
+           self.linear = nn.Linear(sketch_dim, output_dim)
        
        def forward(self, x):
-           # x: (batch_size, input_dim)
-           # output: (batch_size, sketch_dim)
-           return torch.matmul(x, self.sketch_matrix.t())
+           # Apply sketching
+           x_sketched = x @ self.sketch_matrix.T
+           # Apply linear transformation
+           return self.linear(x_sketched)
    
    # Example usage
-   input_dim, sketch_dim = 1000, 200
-   gaussian_sketch = GaussianSketch(input_dim, sketch_dim)
-   
-   x = torch.randn(64, input_dim)
-   sketched_x = gaussian_sketch(x)
-   
-   print(f"Original shape: {x.shape}")
-   print(f"Sketched shape: {sketched_x.shape}")
-   print(f"Compression ratio: {gaussian_sketch.sketch_dimension_reduction():.2f}x")
-
-Advanced Sketching Algorithms
-------------------------------
-
-**Subsampled Randomized Hadamard Transform (SRHT)**
-
-.. code-block:: python
-
-   class SubsampledRandomizedHadamardTransform(BaseSketchingOperator):
-       \"\"\"SRHT sketching operator with fast Walsh-Hadamard transform.\"\"\""
-       
-       def _init_sketch_matrix(self):
-           # Find next power of 2 for Hadamard transform
-           self.hadamard_size = 2 ** int(np.ceil(np.log2(self.input_dim)))
-           
-           # Random diagonal matrix D with ±1 entries
-           diagonal = torch.randint(0, 2, (self.hadamard_size,), device=self.device) * 2 - 1
-           self.register_buffer('diagonal', diagonal.float())
-           
-           # Random subsampling indices
-           indices = torch.randperm(self.hadamard_size, device=self.device)[:self.sketch_dim]
-           self.register_buffer('indices', indices)
-           
-           # Normalization factor
-           self.norm_factor = np.sqrt(self.hadamard_size / self.sketch_dim)
-       
-       def fast_hadamard_transform(self, x):
-           \"\"\"Compute fast Walsh-Hadamard transform.\"\"\""
-           batch_size, input_size = x.shape
-           
-           # Pad to power of 2
-           if input_size < self.hadamard_size:
-               padding = torch.zeros(batch_size, self.hadamard_size - input_size, 
-                                   device=x.device, dtype=x.dtype)
-               x_padded = torch.cat([x, padding], dim=1)
-           else:
-               x_padded = x[:, :self.hadamard_size]
-           
-           # Apply diagonal scaling
-           x_scaled = x_padded * self.diagonal
-           
-           # Fast Walsh-Hadamard Transform
-           h = self.hadamard_size
-           while h > 1:
-               h //= 2
-               x_reshaped = x_scaled.view(batch_size, -1, 2 * h)
-               left = x_reshaped[:, :, :h]
-               right = x_reshaped[:, :, h:]
-               x_scaled = torch.cat([left + right, left - right], dim=2)
-               x_scaled = x_scaled.view(batch_size, -1)
-           
-           return x_scaled
-       
-       def forward(self, x):
-           # Apply Hadamard transform
-           x_transformed = self.fast_hadamard_transform(x)
-           
-           # Subsample
-           x_subsampled = x_transformed[:, self.indices]
-           
-           # Normalize
-           return x_subsampled * self.norm_factor
-
-**Sparse Johnson-Lindenstrauss Transform**
-
-.. code-block:: python
-
-   class SparseJohnsonLindenstrauss(BaseSketchingOperator):
-       \"\"\"Sparse JL transform with very few non-zeros per column.\"\"\""
-       
-       def _init_sketch_matrix(self):
-           # Sparsity parameter (number of non-zeros per column)
-           self.sparsity = max(1, int(np.log(self.input_dim)))
-           
-           # Create sparse sketching matrix
-           sketch_matrix = torch.zeros(self.sketch_dim, self.input_dim, device=self.device)
-           
-           for col in range(self.input_dim):
-               # Random row indices for this column
-               row_indices = torch.randperm(self.sketch_dim)[:self.sparsity]
-               
-               # Random ±1 values
-               values = torch.randint(0, 2, (self.sparsity,), device=self.device) * 2 - 1
-               sketch_matrix[row_indices, col] = values.float()
-           
-           # Normalize
-           sketch_matrix *= np.sqrt(self.sketch_dim / self.sparsity)
-           
-           # Convert to sparse format for efficiency
-           self.register_buffer('sketch_matrix', sketch_matrix)
-       
-       def forward(self, x):
-           return torch.matmul(x, self.sketch_matrix.t())
-
-**CountSketch (Feature Hashing)**
-
-.. code-block:: python
-
-   class CountSketch(BaseSketchingOperator):
-       \"\"\"CountSketch using feature hashing.\"\"\""
-       
-       def _init_sketch_matrix(self):
-           # Hash function: maps each feature to a bucket
-           hash_indices = torch.randint(0, self.sketch_dim, (self.input_dim,), device=self.device)
-           self.register_buffer('hash_indices', hash_indices)
-           
-           # Sign function: ±1 for each feature
-           signs = torch.randint(0, 2, (self.input_dim,), device=self.device) * 2 - 1
-           self.register_buffer('signs', signs.float())
-       
-       def forward(self, x):
-           batch_size = x.shape[0]
-           
-           # Apply signs
-           x_signed = x * self.signs
-           
-           # Initialize output
-           output = torch.zeros(batch_size, self.sketch_dim, device=x.device, dtype=x.dtype)
-           
-           # Hash and accumulate
-           for i in range(self.input_dim):
+   layer = SimpleSketchedLayer(1000, 200, 100)
+   x = torch.randn(32, 1000)
+   output = layer(x)
+   print(f"Input: {x.shape}, Output: {output.shape}")
                bucket = self.hash_indices[i]
                output[:, bucket] += x_signed[:, i]
            

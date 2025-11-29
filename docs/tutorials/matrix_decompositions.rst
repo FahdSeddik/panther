@@ -139,12 +139,11 @@ CQRRPT's implementation follows this detailed process:
 
 .. code-block:: python
 
-   # Advanced CQRRPT with custom parameters
+   # CQRRPT with custom parameters
    Q, R, P = pr.linalg.cqrrpt(
        A,
-       panel_size=64,        # Panel size for blocked algorithm
-       tournament_size=4,    # Tournament size for pivoting
-       oversampling=10       # Extra samples for stability
+       gamma=1.5,                                    # Oversampling parameter
+       F=pr.linalg.DistributionFamily.Gaussian       # Distribution family
    )
    
    # Check orthogonality of Q

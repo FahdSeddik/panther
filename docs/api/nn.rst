@@ -69,22 +69,20 @@ Attention Mechanisms
 RandMultiHeadAttention
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:class:: RandMultiHeadAttention(embed_dim, num_heads, dropout=0.0, bias=True, add_bias_kv=False, add_zero_attn=False, kdim=None, vdim=None, batch_first=False, device=None, dtype=None, SRPE=None)
+.. py:class:: RandMultiHeadAttention(embed_dim, num_heads, num_random_features, dropout=0.0, bias=True, kernel_fn=\"softmax\", iscausal=False, SRPE=None, device=None, dtype=None)
 
-   Randomized Multi-Head Attention mechanism with optional sketching for memory efficiency.
+   Randomized Multi-Head Attention mechanism using random feature approximation for efficient attention computation.
 
    :param int embed_dim: Total dimension of the model.
    :param int num_heads: Number of parallel attention heads.
+   :param int num_random_features: Number of random features for the projection matrix.
    :param float dropout: Dropout probability. Default: 0.0.
    :param bool bias: If True, adds bias to input/output projections.
-   :param bool add_bias_kv: If True, adds bias to the key and value sequences.
-   :param bool add_zero_attn: If True, adds a new batch of zeros to the key and value sequences.
-   :param int kdim: Total number of features for keys. Default: None (uses embed_dim).
-   :param int vdim: Total number of features for values. Default: None (uses embed_dim).
-   :param bool batch_first: If True, batch dimension comes first.
+   :param str kernel_fn: Kernel function to use (\"softmax\" or \"relu\"). Default: \"softmax\".
+   :param bool iscausal: If True, applies causal masking for autoregressive tasks. Default: False.
+   :param SRPE: Sketched Random Positional Encoding. Default: None.
    :param torch.device device: Device to store the parameters.
    :param torch.dtype dtype: Data type of the parameters.
-   :param SRPE: Sketched Random Positional Encoding. Default: None.
 
 Examples
 --------
@@ -158,19 +156,35 @@ Examples
 
 .. code-block:: python
 
-   import panther as pr
+   from panther.nn import RandMultiHeadAttention
+   from panther.nn.pawXimpl import sinSRPE
+   import torch
    
-   # Randomized multi-head attention
-   attention = pr.nn.RandMultiHeadAttention(
+   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+   
+   # Randomized multi-head attention with SPRE
+   spre = sinSRPE(
+       num_heads=8,
+       perHead_in=512 // 8,  # embed_dim // num_heads
+       sines=16,
+       num_realizations=256,
+       device=device,
+       dtype=torch.float32
+   )
+   
+   randomized_attention = RandMultiHeadAttention(
        embed_dim=512,
        num_heads=8,
-       sketch_dim=64,      # Sketching dimension
-       dropout=0.1
+       num_random_features=256,  # Number of random features for approximation
+       kernel_fn="softmax",      # Can be "softmax" or "relu"
+       SRPE=spre,                # Sketched Random Positional Encoding
+       device=device
    )
    
    # Self-attention
-   x = torch.randn(10, 32, 512)  # (seq_len, batch, embed_dim)
-   output, attn_weights = attention(x, x, x)
+   x = torch.randn(32, 100, 512, device=device)  # (batch, seq_len, embed_dim)
+   output, attn_weights = randomized_attention(x, x, x)
+   print(f"Output shape: {output.shape}")  # (32, 100, 512)
 
 Parameter Selection Guidelines
 ------------------------------
@@ -186,14 +200,16 @@ The key parameters for sketched layers are:
 
 .. code-block:: python
 
+   from panther.nn import SKLinear
+   
    # Conservative: Fewer parameters, faster but less accurate
-   conservative = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=32)
+   conservative = SKLinear(1024, 512, num_terms=1, low_rank=32)
    
    # Balanced: Good accuracy/speed tradeoff  
-   balanced = pr.nn.SKLinear(1024, 512, num_terms=8, low_rank=64)
+   balanced = SKLinear(1024, 512, num_terms=4, low_rank=64)
    
    # Aggressive: More parameters, slower but more accurate
-   aggressive = pr.nn.SKLinear(1024, 512, num_terms=16, low_rank=128)
+   aggressive = SKLinear(1024, 512, num_terms=8, low_rank=128)
 
 **Parameter count constraint:**
 
@@ -212,8 +228,10 @@ For optimal GPU performance on modern hardware:
 
 .. code-block:: python
 
+   from panther.nn import SKLinear
+   
    # All dimensions should be multiples of 16
-   layer = pr.nn.SKLinear(
+   layer = SKLinear(
        in_features=1024,    # ✓ Multiple of 16
        out_features=512,    # ✓ Multiple of 16
        num_terms=8,
@@ -228,13 +246,14 @@ For optimal GPU performance on modern hardware:
 .. code-block:: python
 
    import torch
+   from panther.nn import SKLinear
    
    def compare_memory_usage():
        # Standard layer
        standard = torch.nn.Linear(2048, 2048)
        
        # Sketched layer
-       sketched = pr.nn.SKLinear(2048, 2048, num_terms=8, low_rank=128)
+       sketched = SKLinear(2048, 2048, num_terms=8, low_rank=128)
        
        print(f"Standard parameters: {sum(p.numel() for p in standard.parameters()):,}")
        print(f"Sketched parameters: {sum(p.numel() for p in sketched.parameters()):,}")
@@ -249,13 +268,14 @@ Sketched layers support full backpropagation:
 .. code-block:: python
 
    import torch.nn as nn
+   from panther.nn import SKLinear
    
    model = nn.Sequential(
-       pr.nn.SKLinear(784, 512, num_terms=8, low_rank=64),
+       SKLinear(784, 512, num_terms=8, low_rank=64),
        nn.ReLU(),
-       pr.nn.SKLinear(512, 256, num_terms=6, low_rank=32), 
+       SKLinear(512, 256, num_terms=6, low_rank=32), 
        nn.ReLU(),
-       pr.nn.SKLinear(256, 10, num_terms=4, low_rank=16)
+       SKLinear(256, 10, num_terms=4, low_rank=16)
    )
    
    # Standard training loop works
@@ -282,51 +302,9 @@ Sketched layers may benefit from different learning rates:
        {'params': [p for name, p in model.named_parameters() if 'bias' in name], 'lr': 1e-4}
    ])
 
-Performance Benchmarks
-----------------------
+See Also
+--------
 
-Memory usage comparison for different layer sizes:
-
-.. list-table::
-   :header-rows: 1
-   
-   * - Layer Size
-     - Standard (MB)
-     - Sketched (MB)
-     - Memory Savings
-   * - 1024 → 1024
-     - 4.19
-     - 1.05
-     - 75%
-   * - 2048 → 2048  
-     - 16.78
-     - 2.10
-     - 87%
-   * - 4096 → 4096
-     - 67.11
-     - 4.20
-     - 94%
-
-Speed comparison (forward + backward pass):
-
-.. list-table::
-   :header-rows: 1
-   
-   * - Layer Size
-     - Standard (ms)
-     - Sketched (ms)
-     - Speed Change
-   * - 1024 → 1024
-     - 0.82
-     - 0.96
-     - -17%
-   * - 2048 → 2048
-     - 2.34
-     - 2.18
-     - +7%
-   * - 4096 → 4096
-     - 8.91
-     - 6.24
-     - +30%
-
-*Note: Benchmarks run on NVIDIA A100 with Tensor Cores enabled.*
+* :doc:`../examples/basic_usage` - Practical examples of using sketched layers
+* :doc:`../tutorials/sketched_linear_layers` - In-depth tutorial on sketched linear layers
+* :doc:`../examples/autotuner_guide` - Automatic parameter optimization

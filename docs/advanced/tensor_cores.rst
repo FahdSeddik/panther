@@ -3,6 +3,10 @@ Tensor Core Optimization
 
 This guide covers using NVIDIA Tensor Cores with Panther for maximum performance on modern GPUs.
 
+.. note::
+   Tensor Core optimization is a general GPU technique. This guide shows how to configure
+   Panther layers to take advantage of Tensor Cores on supported hardware.
+
 Overview
 --------
 
@@ -79,12 +83,12 @@ Mixed Precision Training
    # Enable automatic mixed precision
    scaler = GradScaler()
    
-   model = pr.nn.Sequential(
-       pr.nn.SKLinear(784, 512, sketch_size=256),
+   model = torch.nn.Sequential(
+       pr.nn.SKLinear(784, 512, num_terms=4, low_rank=64),
        torch.nn.ReLU(),
-       pr.nn.SKLinear(512, 256, sketch_size=128),
+       pr.nn.SKLinear(512, 256, num_terms=4, low_rank=32),
        torch.nn.ReLU(),
-       pr.nn.SKLinear(256, 10, sketch_size=64)
+       pr.nn.SKLinear(256, 10, num_terms=2, low_rank=16)
    ).half().cuda()
    
    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -112,10 +116,10 @@ Mixed Precision Training
    class MixedPrecisionSKLinear(torch.nn.Module):
        """SKLinear with manual mixed precision control."""
        
-       def __init__(self, in_features, out_features, sketch_size):
+       def __init__(self, in_features, out_features, num_terms, low_rank):
            super().__init__()
            self.sk_linear = pr.nn.SKLinear(
-               in_features, out_features, sketch_size,
+               in_features, out_features, num_terms, low_rank,
                dtype=torch.float16
            )
            
@@ -141,7 +145,7 @@ Performance Monitoring
    def profile_tensor_core_usage():
        """Profile Tensor Core utilization during training."""
        
-       model = pr.nn.SKLinear(1024, 512, sketch_size=256).half().cuda()
+       model = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64).half().cuda()
        x = torch.randn(128, 1024, dtype=torch.float16, device='cuda')
        
        with torch.profiler.profile(
@@ -179,9 +183,9 @@ Performance Monitoring
        import time
        
        configurations = [
-           {'batch_size': 128, 'in_features': 1024, 'out_features': 512, 'sketch_size': 256},
-           {'batch_size': 256, 'in_features': 2048, 'out_features': 1024, 'sketch_size': 512},
-           {'batch_size': 512, 'in_features': 4096, 'out_features': 2048, 'sketch_size': 1024},
+           {'batch_size': 128, 'in_features': 1024, 'out_features': 512, 'num_terms': 4, 'low_rank': 64},
+           {'batch_size': 256, 'in_features': 2048, 'out_features': 1024, 'num_terms': 4, 'low_rank': 128},
+           {'batch_size': 512, 'in_features': 4096, 'out_features': 2048, 'num_terms': 8, 'low_rank': 128},
        ]
        
        results = []
@@ -191,7 +195,8 @@ Performance Monitoring
            model = pr.nn.SKLinear(
                config['in_features'], 
                config['out_features'],
-               config['sketch_size']
+               config['num_terms'],
+               config['low_rank']
            ).half().cuda()
            
            x = torch.randn(
@@ -239,10 +244,10 @@ Optimization Guidelines
 .. code-block:: python
 
    # Good: Dimensions aligned to Tensor Core requirements
-   good_layer = pr.nn.SKLinear(1024, 512, sketch_size=256)  # All multiples of 16
+   good_layer = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64)  # All multiples of 16
    
    # Suboptimal: Misaligned dimensions
-   bad_layer = pr.nn.SKLinear(1000, 500, sketch_size=250)   # Not aligned
+   bad_layer = pr.nn.SKLinear(1000, 500, num_terms=4, low_rank=62)   # Not aligned
 
 2. **Batch Size Optimization**
 
@@ -303,35 +308,35 @@ Integration with Panther
 
 .. code-block:: python
 
-   # SKLinear automatically detects and uses Tensor Cores
+   # SKLinear automatically detects and uses Tensor Cores when using half precision
    layer = pr.nn.SKLinear(
        in_features=1024,
        out_features=512, 
-       sketch_size=256,
+       num_terms=4,
+       low_rank=64,
        dtype=torch.float16,      # Enable Tensor Cores
        device='cuda'
    )
    
-   # Verify Tensor Core usage
-   print(f"Tensor Core compatible: {layer.tensor_core_compatible}")
+   # Tensor Cores are used automatically when dtype is float16 or bfloat16
 
 **Sketching with Tensor Cores**
 
 .. code-block:: python
 
-   # Sketching operators also benefit from Tensor Cores
-   from panther.sketch import GaussianSketch, SRHTSketch
+   # Sketching operators also benefit from Tensor Cores when using half precision
+   import panther as pr
    
-   # Use half precision for sketching
-   sketch = GaussianSketch(
-       input_dim=2048,
-       sketch_dim=512,
-       dtype=torch.float16,
-       device='cuda'
+   # Use half precision for sketching operations
+   S = pr.sketch.dense_sketch_operator(
+       m=512,
+       n=2048,
+       distribution=pr.sketch.DistributionFamily.Gaussian
    )
+   S = S.half().cuda()
    
    # Apply sketch with Tensor Core acceleration
    x = torch.randn(256, 2048, dtype=torch.float16, device='cuda')
-   sketched = sketch(x)
+   sketched = x @ S.T
 
 This guide provides comprehensive coverage of Tensor Core optimization with Panther. For more advanced topics, see the CUDA kernels documentation.

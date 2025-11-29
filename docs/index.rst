@@ -112,6 +112,7 @@
    :hidden:
    
    examples/index
+   benchmarks
 
 .. toctree::
    :maxdepth: 1

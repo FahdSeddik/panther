@@ -3,6 +3,11 @@ Memory Optimization
 
 This guide covers advanced memory optimization techniques when using Panther for large-scale applications.
 
+.. note::
+   Many techniques in this guide (like gradient checkpointing and mixed precision training) 
+   are standard PyTorch practices that work with any model. The focus here is on how to apply 
+   them effectively with Panther's sketched layers.
+
 Memory Profiling and Analysis
 -----------------------------
 
@@ -13,71 +18,48 @@ Memory Profiling and Analysis
    import torch
    import psutil
    import panther as pr
-   from torch.profiler import profile, ProfilerActivity
    
-   class MemoryProfiler:
-       """Comprehensive memory profiling for Panther operations."""
+   def get_memory_usage():
+       """Get current memory usage."""
+       if torch.cuda.is_available():
+           gpu_memory = torch.cuda.memory_allocated() / 1024**2  # MB
+           gpu_cached = torch.cuda.memory_reserved() / 1024**2   # MB
+       else:
+           gpu_memory, gpu_cached = 0, 0
+           
+       cpu_memory = psutil.Process().memory_info().rss / 1024**2  # MB
        
-       def __init__(self):
-           self.baseline_memory = self._get_memory_usage()
-           
-       def _get_memory_usage(self):
-           """Get current memory usage."""
-           if torch.cuda.is_available():
-               gpu_memory = torch.cuda.memory_allocated() / 1024**2  # MB
-               gpu_cached = torch.cuda.memory_reserved() / 1024**2   # MB
-           else:
-               gpu_memory, gpu_cached = 0, 0
-               
-           cpu_memory = psutil.Process().memory_info().rss / 1024**2  # MB
-           
-           return {
-               'cpu': cpu_memory,
-               'gpu_allocated': gpu_memory,
-               'gpu_cached': gpu_cached
-           }
+       return {
+           'cpu': cpu_memory,
+           'gpu_allocated': gpu_memory,
+           'gpu_cached': gpu_cached
+       }
+   
+   def profile_layer_memory():
+       """Profile memory usage of a specific layer."""
        
-       def profile_operation(self, operation, operation_name="Operation"):
-           """Profile memory usage of a specific operation."""
-           
-           # Clear GPU cache
-           if torch.cuda.is_available():
-               torch.cuda.empty_cache()
-           
-           # Measure before
-           memory_before = self._get_memory_usage()
-           
-           # Run operation
-           result = operation()
-           
-           # Measure after
-           memory_after = self._get_memory_usage()
-           
-           # Calculate differences
-           memory_diff = {
-               key: memory_after[key] - memory_before[key]
-               for key in memory_before.keys()
-           }
-           
-           print(f"\\n{operation_name} Memory Usage:")
-           print(f"  CPU: {memory_diff['cpu']:+.2f} MB")
-           print(f"  GPU Allocated: {memory_diff['gpu_allocated']:+.2f} MB")
-           print(f"  GPU Cached: {memory_diff['gpu_cached']:+.2f} MB")
-           
-           return result, memory_diff
-   
-   # Example usage
-   profiler = MemoryProfiler()
-   
-   def test_sklinear_memory():
-       # Large SKLinear layer
-       layer = pr.nn.SKLinear(4096, 2048, sketch_size=1024).cuda()
+       # Clear GPU cache
+       if torch.cuda.is_available():
+           torch.cuda.empty_cache()
+       
+       # Measure before
+       memory_before = get_memory_usage()
+       
+       # Create large SKLinear layer
+       layer = pr.nn.SKLinear(4096, 2048, num_terms=8, low_rank=128).cuda()
        x = torch.randn(512, 4096, device='cuda')
-       return layer(x)
+       output = layer(x)
+       
+       # Measure after
+       memory_after = get_memory_usage()
+       
+       # Calculate differences
+       print(f"\\nMemory Usage:")
+       print(f"  CPU: {memory_after['cpu'] - memory_before['cpu']:+.2f} MB")
+       print(f"  GPU Allocated: {memory_after['gpu_allocated'] - memory_before['gpu_allocated']:+.2f} MB")
+       print(f"  GPU Cached: {memory_after['gpu_cached'] - memory_before['gpu_cached']:+.2f} MB")
    
-   output, memory_usage = profiler.profile_operation(
-       test_sklinear_memory, "SKLinear Forward Pass"
-   )
+   profile_layer_memory()
 
 **Detailed Memory Breakdown**
 
@@ -87,9 +69,9 @@ Memory Profiling and Analysis
        """Analyze memory usage of different layer components."""
        
        layer_configs = [
-           {'in_features': 1024, 'out_features': 512, 'sketch_size': 256},
-           {'in_features': 2048, 'out_features': 1024, 'sketch_size': 512},
-           {'in_features': 4096, 'out_features': 2048, 'sketch_size': 1024},
+           {'in_features': 1024, 'out_features': 512, 'num_terms': 4, 'low_rank': 64},
+           {'in_features': 2048, 'out_features': 1024, 'num_terms': 4, 'low_rank': 128},
+           {'in_features': 4096, 'out_features': 2048, 'num_terms': 8, 'low_rank': 128},
        ]
        
        for config in layer_configs:
@@ -104,7 +86,8 @@ Memory Profiling and Analysis
            sk_layer = pr.nn.SKLinear(
                config['in_features'], 
                config['out_features'],
-               config['sketch_size']
+               config['num_terms'],
+               config['low_rank']
            ).cuda()
            
            # Calculate memory for parameters
@@ -133,13 +116,11 @@ Memory Profiling and Analysis
            # Output activation
            output_mem = batch_size * config['out_features'] * 4 / 1024**2
            
-           # Sketched intermediate (only for SKLinear)
-           sketch_mem = batch_size * config['sketch_size'] * 4 / 1024**2
-           
            print(f"  Activation Memory (batch_size={batch_size}):")
            print(f"    Input: {input_mem:.2f} MB")
            print(f"    Output: {output_mem:.2f} MB")
-           print(f"    Sketch intermediate: {sketch_mem:.2f} MB")
+   
+   analyze_layer_memory_components()
 
 Memory-Efficient Training Strategies
 ------------------------------------
@@ -153,7 +134,7 @@ Memory-Efficient Training Strategies
    class MemoryEfficientSketchedModel(torch.nn.Module):
        """Model with gradient checkpointing for memory efficiency."""
        
-       def __init__(self, layer_sizes, sketch_ratios, checkpoint_segments=4):
+       def __init__(self, layer_sizes, num_terms=4, low_rank=32, checkpoint_segments=4):
            super().__init__()
            
            self.checkpoint_segments = checkpoint_segments
@@ -163,9 +144,12 @@ Memory-Efficient Training Strategies
            for i in range(len(layer_sizes) - 1):
                in_size = layer_sizes[i]
                out_size = layer_sizes[i + 1]
-               sketch_size = int(in_size * sketch_ratios[i])
                
-               layers.append(pr.nn.SKLinear(in_size, out_size, sketch_size))
+               layers.append(pr.nn.SKLinear(
+                   in_size, out_size,
+                   num_terms=num_terms,
+                   low_rank=low_rank
+               ))
                if i < len(layer_sizes) - 2:  # No activation after last layer
                    layers.append(torch.nn.ReLU())
            
@@ -198,10 +182,12 @@ Memory-Efficient Training Strategies
    
    # Example usage
    layer_sizes = [1024, 512, 256, 128, 64]
-   sketch_ratios = [0.5, 0.5, 0.5, 0.5]
    
    model = MemoryEfficientSketchedModel(
-       layer_sizes, sketch_ratios, checkpoint_segments=2
+       layer_sizes,
+       num_terms=4,
+       low_rank=32,
+       checkpoint_segments=2
    ).cuda()
    
    # Training with reduced memory footprint
@@ -228,12 +214,12 @@ Memory-Efficient Training Strategies
        """Training loop with automatic mixed precision."""
        
        # Model setup
-       model = pr.nn.Sequential(
-           pr.nn.SKLinear(2048, 1024, sketch_size=512),
+       model = torch.nn.Sequential(
+           pr.nn.SKLinear(2048, 1024, num_terms=4, low_rank=128),
            torch.nn.ReLU(),
-           pr.nn.SKLinear(1024, 512, sketch_size=256),
+           pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64),
            torch.nn.ReLU(),
-           pr.nn.SKLinear(512, 10, sketch_size=128)
+           pr.nn.SKLinear(512, 10, num_terms=2, low_rank=32)
        ).cuda()
        
        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
@@ -264,157 +250,118 @@ Memory-Efficient Training Strategies
                
                if batch_idx % 20 == 0:
                    print(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}")
+   
+   train_with_mixed_precision()
 
-**Dynamic Batch Size Adjustment**
+Memory Monitoring Best Practices
+---------------------------------
 
-.. code-block:: python
-
-   class AdaptiveBatchTrainer:
-       """Trainer that adapts batch size based on memory usage."""
-       
-       def __init__(self, model, optimizer, max_memory_mb=8000):
-           self.model = model
-           self.optimizer = optimizer
-           self.max_memory_mb = max_memory_mb
-           self.current_batch_size = 32
-           self.min_batch_size = 8
-           self.max_batch_size = 512
-           
-       def _get_gpu_memory_mb(self):
-           """Get current GPU memory usage in MB."""
-           if torch.cuda.is_available():
-               return torch.cuda.memory_allocated() / 1024**2
-           return 0
-       
-       def _find_optimal_batch_size(self, data_loader):
-           """Find optimal batch size through binary search."""
-           
-           low, high = self.min_batch_size, self.max_batch_size
-           optimal_batch_size = low
-           
-           while low <= high:
-               mid = (low + high) // 2
-               
-               try:
-                   # Test with this batch size
-                   success = self._test_batch_size(data_loader, mid)
-                   
-                   if success:
-                       optimal_batch_size = mid
-                       low = mid + 1
-                   else:
-                       high = mid - 1
-                       
-               except RuntimeError as e:
-                   if "out of memory" in str(e):
-                       high = mid - 1
-                   else:
-                       raise e
-               
-               # Clear GPU cache
-               torch.cuda.empty_cache()
-           
-           return optimal_batch_size
-       
-       def _test_batch_size(self, data_loader, batch_size):
-           """Test if a batch size works within memory constraints."""
-           
-           # Create test batch
-           sample_batch = next(iter(data_loader))
-           if len(sample_batch[0]) < batch_size:
-               return False
-           
-           x = sample_batch[0][:batch_size].cuda()
-           y = sample_batch[1][:batch_size].cuda()
-           
-           # Test forward and backward pass
-           self.optimizer.zero_grad()
-           output = self.model(x)
-           loss = torch.nn.functional.cross_entropy(output, y)
-           loss.backward()
-           
-           # Check memory usage
-           memory_used = self._get_gpu_memory_mb()
-           
-           return memory_used < self.max_memory_mb
-       
-       def train_epoch(self, data_loader):
-           """Train for one epoch with adaptive batch size."""
-           
-           # Find optimal batch size
-           optimal_batch_size = self._find_optimal_batch_size(data_loader)
-           print(f"Using batch size: {optimal_batch_size}")
-           
-           # Create new data loader with optimal batch size
-           from torch.utils.data import DataLoader
-           adaptive_loader = DataLoader(
-               data_loader.dataset,
-               batch_size=optimal_batch_size,
-               shuffle=True
-           )
-           
-           total_loss = 0
-           for batch_idx, (x, y) in enumerate(adaptive_loader):
-               x, y = x.cuda(), y.cuda()
-               
-               self.optimizer.zero_grad()
-               output = self.model(x)
-               loss = torch.nn.functional.cross_entropy(output, y)
-               loss.backward()
-               self.optimizer.step()
-               
-               total_loss += loss.item()
-               
-               # Monitor memory usage
-               if batch_idx % 10 == 0:
-                   memory_mb = self._get_gpu_memory_mb()
-                   print(f"Batch {batch_idx}, Loss: {loss.item():.4f}, "
-                         f"Memory: {memory_mb:.1f} MB")
-           
-           return total_loss / len(adaptive_loader)
-
-Memory Optimization for Large Models
-------------------------------------
-
-**Model Parallelism with Sketched Layers**
+**Monitoring GPU Memory**
 
 .. code-block:: python
 
-   class DistributedSketchedModel(torch.nn.Module):
-       """Large model split across multiple GPUs."""
+   def monitor_memory_usage(model, input_shape, batch_size=32):
+       """Monitor memory usage during training."""
        
-       def __init__(self, layer_configs, devices):
-           super().__init__()
+       device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+       model = model.to(device)
+       
+       # Clear cache
+       if torch.cuda.is_available():
+           torch.cuda.empty_cache()
+           torch.cuda.reset_peak_memory_stats()
+       
+       # Create sample input
+       x = torch.randn(batch_size, *input_shape, device=device)
+       y = torch.randint(0, 10, (batch_size,), device=device)
+       
+       # Forward pass
+       optimizer = torch.optim.Adam(model.parameters())
+       criterion = torch.nn.CrossEntropyLoss()
+       
+       optimizer.zero_grad()
+       output = model(x)
+       loss = criterion(output, y)
+       loss.backward()
+       optimizer.step()
+       
+       if torch.cuda.is_available():
+           allocated = torch.cuda.memory_allocated() / 1024**3  # GB
+           reserved = torch.cuda.memory_reserved() / 1024**3  # GB
+           peak = torch.cuda.max_memory_allocated() / 1024**3  # GB
            
-           self.devices = devices
-           self.layers = torch.nn.ModuleList()
+           print(f"\\nMemory Usage:")
+           print(f"  Allocated: {allocated:.2f} GB")
+           print(f"  Reserved: {reserved:.2f} GB")
+           print(f"  Peak: {peak:.2f} GB")
+
+**Comparing Memory Usage**
+
+.. code-block:: python
+
+   def compare_layer_memory():
+       """Compare memory usage between standard and sketched layers."""
+       
+       configs = [
+           (1024, 512, 4, 64),
+           (2048, 1024, 8, 128),
+           (4096, 2048, 16, 256)
+       ]
+       
+       print("Memory Comparison:")
+       print("-" * 60)
+       
+       for in_feat, out_feat, num_terms, low_rank in configs:
+           # Standard layer
+           std = torch.nn.Linear(in_feat, out_feat)
+           std_params = sum(p.numel() for p in std.parameters())
+           std_mb = std_params * 4 / 1024**2
            
-           # Distribute layers across devices
-           layers_per_device = len(layer_configs) // len(devices)
+           # Sketched layer
+           sk = pr.nn.SKLinear(in_feat, out_feat, num_terms, low_rank)
+           sk_params = sum(p.numel() for p in sk.parameters())
+           sk_mb = sk_params * 4 / 1024**2
            
-           for i, config in enumerate(layer_configs):
-               device_idx = min(i // layers_per_device, len(devices) - 1)
-               device = devices[device_idx]
-               
-               layer = pr.nn.SKLinear(
-                   config['in_features'],
-                   config['out_features'], 
-                   config['sketch_size']
-               ).to(device)
-               
-               self.layers.append(layer)
+           reduction = (1 - sk_mb / std_mb) * 100
            
-       def forward(self, x):
-           """Forward pass across multiple devices."""
-           
-           current_device = x.device
-           
-           for i, layer in enumerate(self.layers):
-               # Move input to layer's device if necessary
-               if x.device != layer.weight.device:
-                   x = x.to(layer.weight.device)
-               
-               x = layer(x)
+           print(f"\\n{in_feat} → {out_feat}:")
+           print(f"  Standard: {std_params:,} params ({std_mb:.2f} MB)")
+           print(f"  Sketched: {sk_params:,} params ({sk_mb:.2f} MB)")
+           print(f"  Reduction: {reduction:.1f}%")
+   
+   compare_layer_memory()
+
+Tips for Memory-Efficient Training
+-----------------------------------
+
+1. **Use gradient accumulation for large models**
+
+.. code-block:: python
+
+   accumulation_steps = 4
+   
+   for i, (x, y) in enumerate(dataloader):
+       output = model(x)
+       loss = criterion(output, y) / accumulation_steps
+       loss.backward()
+       
+       if (i + 1) % accumulation_steps == 0:
+           optimizer.step()
+           optimizer.zero_grad()
+
+2. **Clear cache periodically**
+
+.. code-block:: python
+
+   if torch.cuda.is_available():
+       torch.cuda.empty_cache()
+
+3. **Use smaller data types when possible**
+
+.. code-block:: python
+
+   model = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64, 
+                         dtype=torch.float16)
                
                # Add activation function between layers
                if i < len(self.layers) - 1:
@@ -431,10 +378,10 @@ Memory Optimization for Large Models
        devices = [f'cuda:{i}' for i in range(4)]
        
        layer_configs = [
-           {'in_features': 4096, 'out_features': 2048, 'sketch_size': 1024},
-           {'in_features': 2048, 'out_features': 1024, 'sketch_size': 512},
-           {'in_features': 1024, 'out_features': 512, 'sketch_size': 256},
-           {'in_features': 512, 'out_features': 256, 'sketch_size': 128},
+           {'in_features': 4096, 'out_features': 2048, 'num_terms': 8, 'low_rank': 128},
+           {'in_features': 2048, 'out_features': 1024, 'num_terms': 4, 'low_rank': 128},
+           {'in_features': 1024, 'out_features': 512, 'num_terms': 4, 'low_rank': 64},
+           {'in_features': 512, 'out_features': 256, 'num_terms': 2, 'low_rank': 64},
        ]
        
        model = DistributedSketchedModel(layer_configs, devices)
@@ -483,7 +430,7 @@ Memory Optimization for Large Models
            return torch.cat(results, dim=0)
    
    # Example usage
-   model = pr.nn.SKLinear(1024, 10, sketch_size=512).cuda()
+   model = pr.nn.SKLinear(1024, 10, num_terms=4, low_rank=64).cuda()
    inference_engine = StreamingInference(model, chunk_size=500)
    
    # Large input that won't fit in memory all at once

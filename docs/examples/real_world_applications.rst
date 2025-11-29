@@ -1,33 +1,44 @@
 Real-World Applications
 =======================
 
-This guide showcases real-world applications of Panther across different domains, demonstrating practical use cases and implementation strategies.
+This guide showcases practical applications of Panther's sketched layers and AutoTuner.
 
-Computer Vision Applications
-----------------------------
+Building Efficient Models with SKLinear
+---------------------------------------
 
-**Image Classification with Sketched ResNets**
+**Using SKLinear for Large Models**
 
 .. code-block:: python
 
    import torch
    import torch.nn as nn
-   import torchvision
-   import torchvision.transforms as transforms
    import panther as pr
    
-   class SketchedResNet18(nn.Module):
-       """ResNet-18 with sketched linear layers for efficiency."""
+   class EfficientClassifier(nn.Module):
+       """Large classifier with memory-efficient sketched layers."""
        
-       def __init__(self, num_classes=1000, sketch_ratio=0.5):
+       def __init__(self, input_dim=4096, hidden_dims=[2048, 1024, 512], num_classes=1000):
            super().__init__()
            
-           # Load standard ResNet-18 architecture
-           resnet = torchvision.models.resnet18(pretrained=False)
+           layers = []
+           current_dim = input_dim
            
-           # Copy convolutional layers (unchanged)
-           self.conv1 = resnet.conv1
-           self.bn1 = resnet.bn1
+           for hidden_dim in hidden_dims:
+               # Use sketched layers for large dimensions
+               layers.extend([
+                   pr.nn.SKLinear(current_dim, hidden_dim, num_terms=8, low_rank=64),
+                   nn.ReLU(),
+                   nn.Dropout(0.2)
+               ])
+               current_dim = hidden_dim
+           
+           # Output layer
+           layers.append(pr.nn.SKLinear(current_dim, num_classes, num_terms=4, low_rank=32))
+           
+           self.network = nn.Sequential(*layers)
+       
+       def forward(self, x):
+           return self.network(x)
            self.relu = resnet.relu
            self.maxpool = resnet.maxpool
            self.layer1 = resnet.layer1
@@ -38,8 +49,11 @@ Computer Vision Applications
            
            # Replace final linear layer with SKLinear
            in_features = resnet.fc.in_features
-           sketch_size = int(in_features * sketch_ratio)
-           self.fc = pr.nn.SKLinear(in_features, num_classes, sketch_size)
+           self.fc = pr.nn.SKLinear(
+               in_features, num_classes,
+               num_terms=4,
+               low_rank=64
+           )
            
        def forward(self, x):
            x = self.conv1(x)
@@ -122,7 +136,7 @@ Computer Vision Applications
    class SketchedFasterRCNN(nn.Module):
        """Faster R-CNN with sketched backbone for memory efficiency."""
        
-       def __init__(self, num_classes=91, sketch_ratio=0.4):
+       def __init__(self, num_classes=91, num_terms=4, low_rank=32):
            super().__init__()
            
            # Load pre-trained Faster R-CNN
@@ -130,16 +144,19 @@ Computer Vision Applications
            
            # Replace classifier head with sketched version
            in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-           sketch_size = int(in_features * sketch_ratio)
            
            # Sketched classification head
            self.model.roi_heads.box_predictor.cls_score = pr.nn.SKLinear(
-               in_features, num_classes, sketch_size
+               in_features, num_classes,
+               num_terms=num_terms,
+               low_rank=low_rank
            )
            
            # Sketched box regression head  
            self.model.roi_heads.box_predictor.bbox_pred = pr.nn.SKLinear(
-               in_features, num_classes * 4, sketch_size
+               in_features, num_classes * 4,
+               num_terms=num_terms * 2,
+               low_rank=low_rank * 2
            )
        
        def forward(self, images, targets=None):
@@ -158,28 +175,33 @@ Computer Vision Applications
 Natural Language Processing
 ---------------------------
 
-**Transformer Models with Sketched Attention**
+**Transformer Models with Randomized Attention**
 
 .. code-block:: python
 
-   class SketchedTransformerBlock(nn.Module):
-       """Transformer block with sketched attention and feed-forward layers."""
+   from panther.nn import RandMultiHeadAttention
+   
+   class TransformerBlock(nn.Module):
+       """Transformer block with RandMultiHeadAttention and sketched feed-forward."""
        
-       def __init__(self, d_model, n_heads, d_ff, sketch_ratio=0.5, dropout=0.1):
+       def __init__(self, d_model, n_heads, d_ff, num_random_features=256, num_terms=6, low_rank=48, dropout=0.1):
            super().__init__()
            
            self.d_model = d_model
            self.n_heads = n_heads
-           self.sketch_dim = int(d_model * sketch_ratio)
            
-           # Sketched multi-head attention
-           self.attention = SketchedMultiHeadAttention(
-               d_model, n_heads, self.sketch_dim
+           # Randomized multi-head attention from Panther
+           self.attention = RandMultiHeadAttention(
+               embed_dim=d_model,
+               num_heads=n_heads,
+               num_random_features=num_random_features,
+               dropout=dropout,
+               kernel_fn="softmax"
            )
            
            # Sketched feed-forward network
-           self.ff1 = pr.nn.SKLinear(d_model, d_ff, int(d_ff * sketch_ratio))
-           self.ff2 = pr.nn.SKLinear(d_ff, d_model, int(d_ff * sketch_ratio))
+           self.ff1 = pr.nn.SKLinear(d_model, d_ff, num_terms=num_terms, low_rank=low_rank)
+           self.ff2 = pr.nn.SKLinear(d_ff, d_model, num_terms=num_terms, low_rank=low_rank)
            
            self.norm1 = nn.LayerNorm(d_model)
            self.norm2 = nn.LayerNorm(d_model)
@@ -187,7 +209,7 @@ Natural Language Processing
            
        def forward(self, x, mask=None):
            # Self-attention with residual connection
-           attn_out = self.attention(x, x, x, mask)
+           attn_out, _ = self.attention(x, x, x, attention_mask=mask)
            x = self.norm1(x + self.dropout(attn_out))
            
            # Feed-forward with residual connection
@@ -196,58 +218,13 @@ Natural Language Processing
            
            return x
    
-   class SketchedMultiHeadAttention(nn.Module):
-       """Multi-head attention with sketched projections."""
-       
-       def __init__(self, d_model, n_heads, sketch_dim):
-           super().__init__()
-           self.d_model = d_model
-           self.n_heads = n_heads
-           self.d_k = d_model // n_heads
-           
-           # Sketched projection layers
-           self.q_proj = pr.nn.SKLinear(d_model, d_model, sketch_dim)
-           self.k_proj = pr.nn.SKLinear(d_model, d_model, sketch_dim)
-           self.v_proj = pr.nn.SKLinear(d_model, d_model, sketch_dim)
-           self.out_proj = pr.nn.SKLinear(d_model, d_model, sketch_dim)
-           
-           self.scale = self.d_k ** -0.5
-           
-       def forward(self, query, key, value, mask=None):
-           batch_size = query.size(0)
-           
-           # Linear projections
-           Q = self.q_proj(query)
-           K = self.k_proj(key)
-           V = self.v_proj(value)
-           
-           # Reshape for multi-head attention
-           Q = Q.view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
-           K = K.view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
-           V = V.view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
-           
-           # Scaled dot-product attention
-           scores = torch.matmul(Q, K.transpose(-2, -1)) * self.scale
-           
-           if mask is not None:
-               scores.masked_fill_(mask == 0, -1e9)
-           
-           attn_weights = torch.softmax(scores, dim=-1)
-           context = torch.matmul(attn_weights, V)
-           
-           # Concatenate heads
-           context = context.transpose(1, 2).contiguous().view(
-               batch_size, -1, self.d_model
-           )
-           
-           return self.out_proj(context)
-   
    # Complete model for language modeling
-   class SketchedLanguageModel(nn.Module):
-       """Complete language model with sketched transformer blocks."""
+   class LanguageModel(nn.Module):
+       """Complete language model with RandMultiHeadAttention and sketched layers."""
        
        def __init__(self, vocab_size, d_model=512, n_heads=8, n_layers=6, 
-                    d_ff=2048, max_seq_len=512, sketch_ratio=0.5):
+                    d_ff=2048, max_seq_len=512, num_random_features=256, 
+                    num_terms=6, low_rank=48):
            super().__init__()
            
            self.d_model = d_model
@@ -259,13 +236,12 @@ Natural Language Processing
            
            # Transformer blocks
            self.blocks = nn.ModuleList([
-               SketchedTransformerBlock(d_model, n_heads, d_ff, sketch_ratio)
+               TransformerBlock(d_model, n_heads, d_ff, num_random_features, num_terms, low_rank)
                for _ in range(n_layers)
            ])
            
            # Output projection (sketched)
-           sketch_dim = int(d_model * sketch_ratio)
-           self.output_projection = pr.nn.SKLinear(d_model, vocab_size, sketch_dim)
+           self.output_projection = pr.nn.SKLinear(d_model, vocab_size, num_terms=num_terms, low_rank=low_rank)
            
            self.dropout = nn.Dropout(0.1)
            
@@ -313,19 +289,17 @@ Scientific Computing Applications
        b = A @ x_true + 0.01 * torch.randn(n)  # Add noise
        
        # Sketched preconditioning using CQRRPT
-       def sketched_preconditioner(A, sketch_ratio=0.3):
-           \"\"\"Create sketched preconditioner.\"\"\""
-           m, n = A.shape
-           sketch_size = int(min(m, n) * sketch_ratio)
+       def sketched_preconditioner(A):
+           """Create sketched preconditioner."""
            
            # Compute CQRRPT of A
-           Q, R, P = pr.linalg.cqrrpt(A)
+           Q, R, P = pr.linalg.cqrrpt(
+               A,
+               gamma=1.25,
+               F=pr.linalg.DistributionFamily.Gaussian
+           )
            
-           # Use leading block as preconditioner
-           R_block = R[:sketch_size, :sketch_size]
-           Q_block = Q[:, :sketch_size]
-           
-           return Q_block, R_block, P[:sketch_size]
+           return Q, R, P
        
        # Create preconditioner
        Q_prec, R_prec, P_prec = sketched_preconditioner(A)
@@ -339,7 +313,7 @@ Scientific Computing Applications
            
            # Apply preconditioner: solve R_prec @ z = Q_prec^T @ r
            z = torch.linalg.solve_triangular(
-               R_prec, Q_prec.T @ r[:len(P_prec)], upper=True
+               R_prec, Q_prec.T @ r[P_prec], upper=True
            )
            z_full = torch.zeros_like(r)
            z_full[P_prec] = z

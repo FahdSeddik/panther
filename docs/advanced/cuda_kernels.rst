@@ -1,35 +1,50 @@
 CUDA Kernels and GPU Optimization
 ==================================
 
-This guide covers Panther's CUDA kernels and how to optimize GPU performance.
+This guide covers Panther's GPU acceleration and optimization techniques.
 
-Understanding Panther's CUDA Architecture
-------------------------------------------
+.. note::
+   Panther's layers automatically leverage GPU acceleration when tensors are on CUDA devices.
+   Many of the techniques in this guide (like mixed precision training and memory monitoring) 
+   are standard PyTorch practices that apply to any model, not just Panther layers.
 
-Panther uses custom CUDA kernels to accelerate sketched operations. The main kernels are:
+GPU Acceleration
+----------------
 
-**Linear Operations**
-- ``sketched_linear_forward_cuda``: Forward pass for sketched linear layers
-- ``sketched_linear_backward_cuda``: Backward pass with gradient computation
+Panther includes optimized CUDA kernels for GPU acceleration that are automatically used when tensors are on CUDA devices.
 
-**Matrix Operations**
-- ``batch_matmul_cuda``: Optimized batch matrix multiplication
-- ``tensor_core_matmul``: Tensor Core accelerated matrix multiplication
+.. code-block:: python
 
-**Sketching Operations**
-- ``dense_sketch_cuda``: Apply dense sketching matrices
-- ``sparse_sketch_cuda``: Apply sparse sketching matrices
+   import torch
+   import panther as pr
+   
+   # Check for GPU availability
+   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+   print(f"Using device: {device}")
+   
+   # Create layer on GPU - CUDA kernels used automatically
+   layer = pr.nn.SKLinear(
+       in_features=1024,
+       out_features=512,
+       num_terms=4,
+       low_rank=64,
+       device=device
+   )
+   
+   # Forward pass uses GPU acceleration
+   x = torch.randn(128, 1024, device=device)
+   y = layer(x)
 
 Tensor Core Optimization
 -------------------------
 
-Modern NVIDIA GPUs (V100, A100, RTX 30/40 series) include Tensor Cores for accelerated mixed-precision operations.
+Modern NVIDIA GPUs (V100, A100, RTX 30/40 series) include Tensor Cores for accelerated operations.
 
 **Requirements for Tensor Core Usage**
 
-1. **Dimension Constraints**: All dimensions must be multiples of 16
-2. **Data Types**: FP16, BF16, or mixed precision
-3. **Memory Alignment**: Proper tensor memory layout
+1. **Dimension Constraints**: Dimensions should be multiples of 16
+2. **Data Types**: FP16 or mixed precision
+3. **GPU Device**: Tensor with CUDA device
 
 .. code-block:: python
 
@@ -40,9 +55,9 @@ Modern NVIDIA GPUs (V100, A100, RTX 30/40 series) include Tensor Cores for accel
    layer = pr.nn.SKLinear(
        in_features=1024,    # Multiple of 16 ✓
        out_features=512,    # Multiple of 16 ✓
-       num_terms=1,
-       low_rank=32,         # Multiple of 16 ✓
-       dtype=torch.float16  # FP16 on Tensor Cores
+       num_terms=4,
+       low_rank=64,         # Multiple of 16 ✓
+       dtype=torch.float16  # FP16 for Tensor Cores
    )
    
    # Batch size should also be multiple of 16
@@ -52,54 +67,31 @@ Modern NVIDIA GPUs (V100, A100, RTX 30/40 series) include Tensor Cores for accel
    with torch.cuda.amp.autocast():
        y = layer(x)
 
-**Checking Tensor Core Usage**
+**Checking Tensor Core Support**
 
 .. code-block:: python
 
    from panther.utils.compatibility import has_tensor_core_support
    
-   print(f"Tensor Core support: {has_tensor_core_support()}")
-   
-   # Check if specific layer will use Tensor Cores
-   layer = pr.nn.SKLinear(1024, 512, num_terms=1, low_rank=64)
-   print(f"Layer uses GPU: {layer.use_gpu}")
-   print(f"Has Tensor Core support: {layer.has_tensor_core}")
+   if has_tensor_core_support():
+       print("Tensor Core support available")
+   else:
+       print("Tensor Cores not available")
 
 Memory Optimization Techniques
 -------------------------------
 
-**1. Gradient Checkpointing**
+**1. Mixed Precision Training**
 
-For very deep networks, use gradient checkpointing to trade computation for memory:
-
-.. code-block:: python
-
-   import torch.utils.checkpoint as checkpoint
-   
-   class MemoryEfficientModel(nn.Module):
-       def __init__(self):
-           super().__init__()
-           self.layers = nn.ModuleList([
-               pr.nn.SKLinear(4096, 4096, num_terms=1, low_rank=16)
-               for _ in range(20)  # Very deep network
-           ])
-       
-       def forward(self, x):
-           for layer in self.layers:
-               # Use checkpointing to save memory
-               x = checkpoint.checkpoint(layer, x)
-           return x
-
-**2. Mixed Precision Training**
-
-Reduce memory usage and increase speed with automatic mixed precision:
+Use PyTorch's automatic mixed precision for memory efficiency:
 
 .. code-block:: python
 
    from torch.cuda.amp import autocast, GradScaler
+   import torch.nn as nn
+   import panther as pr
    
-   model = pr.nn.SKLinear(4096, 4096, num_terms=1, low_rank=16)
-   model = model.cuda().half()  # Convert to FP16
+   model = pr.nn.SKLinear(4096, 4096, num_terms=4, low_rank=64).cuda()
    
    scaler = GradScaler()
    optimizer = torch.optim.Adam(model.parameters())
@@ -116,110 +108,89 @@ Reduce memory usage and increase speed with automatic mixed precision:
            scaler.step(optimizer)
            scaler.update()
 
-**3. Memory Pooling**
+**2. Gradient Checkpointing**
 
-Use PyTorch's memory allocator efficiently:
+For very deep networks, use gradient checkpointing:
 
 .. code-block:: python
 
-   # Pre-allocate memory pool
-   torch.cuda.empty_cache()
-   torch.cuda.set_per_process_memory_fraction(0.9)  # Use 90% of GPU memory
+   import torch.utils.checkpoint as checkpoint
+   import torch.nn as nn
+   import panther as pr
    
-   # Monitor memory usage
+   class MemoryEfficientModel(nn.Module):
+       def __init__(self):
+           super().__init__()
+           self.layers = nn.ModuleList([
+               pr.nn.SKLinear(4096, 4096, num_terms=2, low_rank=32)
+               for _ in range(20)
+           ])
+       
+       def forward(self, x):
+           for layer in self.layers:
+               x = checkpoint.checkpoint(layer, x, use_reentrant=False)
+           return x
+
+**3. Memory Monitoring**
+
+.. code-block:: python
+
+   import torch
+   
    def print_gpu_memory():
-       allocated = torch.cuda.memory_allocated() / 1024**3
-       cached = torch.cuda.memory_reserved() / 1024**3
-       print(f"Allocated: {allocated:.2f}GB, Cached: {cached:.2f}GB")
+       if torch.cuda.is_available():
+           allocated = torch.cuda.memory_allocated() / 1024**3
+           reserved = torch.cuda.memory_reserved() / 1024**3
+           print(f"Allocated: {allocated:.2f}GB, Reserved: {reserved:.2f}GB")
    
    print_gpu_memory()
-   model = create_large_model()
+   model = create_model()
    print_gpu_memory()
 
-Custom CUDA Kernel Development
--------------------------------
+Performance Best Practices
+---------------------------
 
-**Understanding the Kernel Interface**
+**1. Dimension Alignment**
 
-Panther's CUDA kernels follow this pattern:
+For best performance, use dimensions that are multiples of 16:
 
-.. code-block:: cpp
+.. code-block:: python
 
-   // C++ header (linear.h)
-   torch::Tensor sketched_linear_forward_cuda(
-       const torch::Tensor& input,
-       const torch::Tensor& S1s,
-       const torch::Tensor& S2s,
-       const torch::Tensor& U1s, 
-       const torch::Tensor& U2s,
-       const torch::Tensor& bias
-   );
-
-**Kernel Implementation Structure**
-
-.. code-block:: cuda
-
-   // CUDA kernel (linear_cuda.cu)
-   __global__ void sketched_linear_kernel(
-       const float* __restrict__ input,     // [batch_size, in_features]
-       const float* __restrict__ S1s,       // [num_terms, in_features, low_rank]
-       const float* __restrict__ S2s,       // [num_terms, low_rank, out_features]
-       const float* __restrict__ U1s,       // [num_terms, low_rank, out_features]
-       const float* __restrict__ U2s,       // [num_terms, low_rank, in_features]
-       float* __restrict__ output,          // [batch_size, out_features]
-       int batch_size,
-       int in_features,
-       int out_features,
-       int num_terms,
-       int low_rank
-   ) {
-       // Kernel implementation
-       int batch_idx = blockIdx.x * blockDim.x + threadIdx.x;
-       int output_idx = blockIdx.y * blockDim.y + threadIdx.y;
-       
-       if (batch_idx < batch_size && output_idx < out_features) {
-           float result = 0.0f;
-           
-           // Compute sketched linear transformation
-           for (int term = 0; term < num_terms; term++) {
-               // Implementation details...
-           }
-           
-           output[batch_idx * out_features + output_idx] = result;
-       }
-   }
-
-**Tensor Core Kernel Example**
-
-.. code-block:: cuda
-
-   #include <mma.h>
-   using namespace nvcuda;
+   # Good - dimensions are multiples of 16
+   layer_good = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64)
    
-   __global__ void tensor_core_matmul_kernel(
-       const half* A,    // [M, K] - must be aligned
-       const half* B,    // [K, N] - must be aligned  
-       half* C,          // [M, N] - output
-       int M, int N, int K
-   ) {
-       // Tensor Core fragment declarations
-       wmma::fragment<wmma::matrix_a, 16, 16, 16, half, wmma::row_major> a_frag;
-       wmma::fragment<wmma::matrix_b, 16, 16, 16, half, wmma::col_major> b_frag;
-       wmma::fragment<wmma::accumulator, 16, 16, 16, half> c_frag;
-       
-       // Initialize accumulator
-       wmma::fill_fragment(c_frag, 0.0f);
-       
-       // Compute matrix multiplication using Tensor Cores
-       for (int k = 0; k < K; k += 16) {
-           wmma::load_matrix_sync(a_frag, A + k, K);
-           wmma::load_matrix_sync(b_frag, B + k * N, N);
-           wmma::mma_sync(c_frag, a_frag, b_frag, c_frag);
-       }
-       
-       // Store result
-       wmma::store_matrix_sync(C, c_frag, N, wmma::mem_row_major);
-   }
+   # Suboptimal - dimensions not aligned
+   layer_suboptimal = pr.nn.SKLinear(1000, 500, num_terms=3, low_rank=50)
+
+**2. Batch Size Selection**
+
+Use batch sizes that are multiples of 16 for Tensor Core acceleration:
+
+.. code-block:: python
+
+   # Optimal batch sizes: 16, 32, 64, 128, 256, etc.
+   x_optimal = torch.randn(128, 1024, device='cuda')
+   
+   # Suboptimal batch size
+   x_suboptimal = torch.randn(100, 1024, device='cuda')
+
+**3. Data Type Selection**
+
+.. code-block:: python
+
+   # FP16 for maximum speed on modern GPUs
+   model_fp16 = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64, 
+                               dtype=torch.float16, device='cuda')
+   
+   # FP32 for better numerical stability if needed
+   model_fp32 = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64,
+                               dtype=torch.float32, device='cuda')
+
+See Also
+--------
+
+* :doc:`../tutorials/performance_optimization` - Detailed performance tuning guide
+* :doc:`../examples/performance_benchmarks` - Benchmark results and comparisons
 
 Performance Profiling and Debugging
 ------------------------------------
@@ -276,66 +247,6 @@ Profile CUDA kernels with Nsight Compute:
        
        return peak_memory
 
-Optimization Best Practices
-----------------------------
-
-**1. Kernel Launch Configuration**
-
-Choose optimal block and grid sizes:
-
-.. code-block:: cpp
-
-   // Calculate optimal launch configuration
-   int block_size = 256;  // Common choice
-   int grid_size = (total_elements + block_size - 1) / block_size;
-   
-   // 2D grid for matrix operations
-   dim3 block_2d(16, 16);
-   dim3 grid_2d(
-       (width + block_2d.x - 1) / block_2d.x,
-       (height + block_2d.y - 1) / block_2d.y
-   );
-
-**2. Memory Access Patterns**
-
-Optimize for coalesced memory access:
-
-.. code-block:: cuda
-
-   // Good: Coalesced access
-   __global__ void coalesced_kernel(float* data, int width) {
-       int idx = blockIdx.x * blockDim.x + threadIdx.x;
-       int idy = blockIdx.y * blockDim.y + threadIdx.y;
-       
-       // Adjacent threads access adjacent memory locations
-       data[idy * width + idx] = computation(idx, idy);
-   }
-
-**3. Shared Memory Usage**
-
-Use shared memory for frequently accessed data:
-
-.. code-block:: cuda
-
-   __global__ void shared_memory_kernel(float* input, float* output) {
-       __shared__ float shared_data[256];
-       
-       int tid = threadIdx.x;
-       int gid = blockIdx.x * blockDim.x + threadIdx.x;
-       
-       // Load data into shared memory
-       shared_data[tid] = input[gid];
-       __syncthreads();
-       
-       // Compute using shared memory
-       float result = 0.0f;
-       for (int i = 0; i < blockDim.x; i++) {
-           result += shared_data[i] * shared_data[tid];
-       }
-       
-       output[gid] = result;
-   }
-
 Advanced GPU Features
 ---------------------
 
@@ -375,20 +286,6 @@ Scale to multiple GPUs:
    from torch.nn.parallel import DistributedDataParallel as DDP
    
    model = DDP(model, device_ids=[local_rank])
-
-**3. Dynamic Shapes and Compilation**
-
-Use TorchScript for optimization:
-
-.. code-block:: python
-
-   # JIT compile for better performance
-   @torch.jit.script
-   def optimized_function(x: torch.Tensor, layer: pr.nn.SKLinear) -> torch.Tensor:
-       return layer(x)
-   
-   # Trace the model
-   traced_model = torch.jit.trace(model, example_input)
 
 Troubleshooting Common Issues
 -----------------------------

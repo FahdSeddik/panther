@@ -114,7 +114,7 @@ Examples
        input=A,
        axis=1,                             # sketch along columns
        new_size=300,                       # new column count
-       distribution=pr.sketch.DistributionFamily.Rademacher
+       distribution=pr.sketch.DistributionFamily.Uniform
    )
    print(f"Column sketched: {sketched_cols[0].shape}")  # (1000, 300)
 
@@ -123,17 +123,16 @@ Examples
 .. code-block:: python
 
    # SRHT is very fast for power-of-2 dimensions
-   A = torch.randn(1024, 512)  # dimensions are powers of 2
+   # SRHT operates on 1D tensors, not matrices
+   x = torch.randn(1024)  # dimension must be power of 2
    
-   # Create SRHT sketching matrix
-   S_srht = pr.sketch.srht(
-       m=256,                              # output dimension
-       n=1024                              # input dimension (power of 2)
+   # Apply SRHT to reduce dimensionality
+   x_sketched = pr.sketch.srht(
+       x=x,                                # input 1D tensor
+       m=256                               # output dimension
    )
    
-   # Apply SRHT sketching
-   SA_srht = S_srht @ A
-   print(f"SRHT sketched: {SA_srht.shape}")  # (256, 512)
+   print(f"SRHT sketched: {x_sketched.shape}")  # (256,)
 
 **Scaled Sign Sketching**
 
@@ -141,12 +140,12 @@ Examples
 
    # Generate scaled sign (Rademacher-like) sketching matrix
    sign_matrix = pr.sketch.scaled_sign_sketch(
-       k=64,                               # sketch dimension
-       d=256                               # original dimension
+       m=64,                               # sketch dimension (rows)
+       n=256                               # original dimension (columns)
    )
    
    print(f"Sign matrix: {sign_matrix.shape}")  # (64, 256)
-   print(f"Values are ±1/√k: {sign_matrix[0, :5]}")
+   print(f"Values are ±1/√m: {sign_matrix[0, :5]}")
 
 Sketching for Different Use Cases
 ----------------------------------
@@ -218,16 +217,16 @@ Distribution Families
        100, 500, pr.sketch.DistributionFamily.Gaussian
    )
 
-**Rademacher Sketching**
+**Uniform Sketching**
 
 - **Pros**: Faster to generate, good performance
-- **Cons**: Slightly worse constants than Gaussian
-- **Use when**: Speed is more important than optimal constants
+- **Cons**: Slightly different properties than Gaussian
+- **Use when**: Speed is more important than optimal theoretical constants
 
 .. code-block:: python
 
-   rademacher_sketch = pr.sketch.dense_sketch_operator(
-       100, 500, pr.sketch.DistributionFamily.Rademacher
+   uniform_sketch = pr.sketch.dense_sketch_operator(
+       100, 500, pr.sketch.DistributionFamily.Uniform
    )
 
 **Sparse Sketching**
@@ -245,12 +244,13 @@ Distribution Families
 **SRHT (Subsampled Randomized Hadamard Transform)**
 
 - **Pros**: Extremely fast, good for structured matrices
-- **Cons**: Requires power-of-2 dimensions
+- **Cons**: Requires power-of-2 dimensions, operates on 1D tensors only
 - **Use when**: Input dimension is power of 2
 
 .. code-block:: python
 
-   srht_sketch = pr.sketch.srht(128, 1024)  # 1024 = 2^10
+   x = torch.randn(1024)  # 1024 = 2^10
+   x_srht = pr.sketch.srht(x, 128)
 
 Performance Comparison
 ----------------------
@@ -268,8 +268,8 @@ Sketching matrix generation time (for 1000×5000 matrix):
      - 45.2
      - 19.1
      - Excellent
-   * - Rademacher
-     - 12.8
+   * - Uniform
+     - 15.2
      - 19.1
      - Very Good
    * - Sparse (nnz=3)

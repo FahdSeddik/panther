@@ -350,62 +350,45 @@ Advanced Network Architectures
    
    resnet_model = SketchedResNet(input_dim=784, block_configs=block_configs, num_classes=10)
 
-**Attention Mechanisms with Sketching**
+**Attention Mechanisms with Randomized Features**
 
 .. code-block:: python
 
-   class SketchedMultiHeadAttention(nn.Module):
-       \"\"\"Multi-head attention with sketched projections.\"\"\""
-       
-       def __init__(self, d_model, n_heads, num_terms=6, low_rank=48):
-           super().__init__()
-           
-           self.d_model = d_model
-           self.n_heads = n_heads
-           self.d_k = d_model // n_heads
-           
-           # Sketched query, key, value projections
-           self.query_proj = pr.nn.SKLinear(d_model, d_model, num_terms=num_terms, low_rank=low_rank)
-           self.key_proj = pr.nn.SKLinear(d_model, d_model, num_terms=num_terms, low_rank=low_rank)
-           self.value_proj = pr.nn.SKLinear(d_model, d_model, num_terms=num_terms, low_rank=low_rank)
-           
-           # Output projection
-           self.output_proj = pr.nn.SKLinear(d_model, d_model, num_terms=num_terms, low_rank=low_rank)
-           
-           self.dropout = nn.Dropout(0.1)
-           
-       def forward(self, x, mask=None):
-           batch_size, seq_len, d_model = x.shape
-           
-           # Generate Q, K, V
-           Q = self.query_proj(x).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-           K = self.key_proj(x).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-           V = self.value_proj(x).view(batch_size, seq_len, self.n_heads, self.d_k).transpose(1, 2)
-           
-           # Attention computation
-           scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.d_k ** 0.5)
-           
-           if mask is not None:
-               scores = scores.masked_fill(mask == 0, -1e9)
-           
-           attention_weights = torch.softmax(scores, dim=-1)
-           attention_weights = self.dropout(attention_weights)
-           
-           context = torch.matmul(attention_weights, V)
-           
-           # Concatenate heads and project
-           context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, d_model)
-           output = self.output_proj(context)
-           
-           return output, attention_weights
+   # Panther provides RandMultiHeadAttention for efficient attention computation
+   # using randomized features instead of standard softmax attention
    
-   class SketchedTransformerBlock(nn.Module):
-       \"\"\"Transformer block with sketched layers.\"\"\""
+   from panther.nn import RandMultiHeadAttention
+   
+   # Create randomized multi-head attention layer
+   attention_layer = RandMultiHeadAttention(
+       embed_dim=512,
+       num_heads=8,
+       num_random_features=256,  # Number of random features for approximation
+       dropout=0.1,
+       kernel_fn="softmax",      # Can be "softmax" or "relu"
+       iscausal=False             # Set True for autoregressive tasks
+   )
+   
+   # Forward pass
+   x = torch.randn(32, 100, 512)  # (batch, seq_len, embed_dim)
+   output, _ = attention_layer(x, x, x)
+   print(f"Output shape: {output.shape}")  # (32, 100, 512)
+   
+   # Example: Transformer block with sketched feed-forward
+   class TransformerBlock(nn.Module):
+       \"\"\"Transformer block with RandMultiHeadAttention and sketched feed-forward.\"\"\""
        
-       def __init__(self, d_model, n_heads, d_ff, num_terms=6, low_rank=48):
+       def __init__(self, d_model, n_heads, d_ff, num_random_features=256, num_terms=6, low_rank=48):
            super().__init__()
            
-           self.attention = SketchedMultiHeadAttention(d_model, n_heads, num_terms, low_rank)
+           # Use RandMultiHeadAttention from Panther
+           self.attention = RandMultiHeadAttention(
+               embed_dim=d_model,
+               num_heads=n_heads,
+               num_random_features=num_random_features,
+               dropout=0.1,
+               kernel_fn="softmax"
+           )
            self.norm1 = nn.LayerNorm(d_model)
            
            # Feed-forward with sketched layers
@@ -420,7 +403,7 @@ Advanced Network Architectures
        
        def forward(self, x, mask=None):
            # Self-attention with residual connection
-           attn_out, _ = self.attention(x, mask)
+           attn_out, _ = self.attention(x, x, x, attention_mask=mask)
            x = self.norm1(x + self.dropout(attn_out))
            
            # Feed-forward with residual connection

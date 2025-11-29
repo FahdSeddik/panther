@@ -3,6 +3,25 @@ Quickstart Guide
 
 This guide will get you up and running with Panther in just a few minutes.
 
+Installation
+------------
+
+Install Panther via pip (Windows with CUDA 12.4):
+
+.. code-block:: bash
+
+   pip install panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
+
+Or install from source:
+
+.. code-block:: bash
+
+   git clone https://github.com/FahdSeddik/panther.git
+   cd panther
+   .\install.ps1  # Windows
+   # OR
+   make install   # Linux/macOS
+
 Your First Panther Program
 ---------------------------
 
@@ -16,17 +35,18 @@ Let's start with a simple example that demonstrates Panther's core functionality
    # Create a random matrix
    A = torch.randn(1000, 800, dtype=torch.float32)
    
-   # Perform randomized QR decomposition
-   Q, R, J = pr.linalg.cqrrpt(A)
+   # Perform randomized QR decomposition with column pivoting
+   Q, R, P = pr.linalg.cqrrpt(A, gamma=1.25, F=pr.linalg.DistributionFamily.Gaussian)
    
    print(f"Original matrix: {A.shape}")
    print(f"Q (orthogonal): {Q.shape}")
    print(f"R (upper triangular): {R.shape}")
-   print(f"Permutation indices: {J.shape}")
+   print(f"P (permutation indices): {P.shape}")
    
    # Verify the decomposition
-   A_reconstructed = Q @ R[:, J]
-   error = torch.norm(A - A_reconstructed)
+   A_permuted = A[:, P]
+   A_reconstructed = Q @ R
+   error = torch.norm(A_permuted - A_reconstructed)
    print(f"Reconstruction error: {error.item():.6f}")
 
 Core Concepts
@@ -38,6 +58,7 @@ Replace standard linear layers with memory-efficient sketched versions:
 
 .. code-block:: python
 
+   import torch
    import torch.nn as nn
    import panther as pr
    
@@ -67,6 +88,9 @@ Compute approximate singular value decomposition efficiently:
 
 .. code-block:: python
 
+   import torch
+   import panther as pr
+   
    # Create a large matrix
    A = torch.randn(2000, 1500)
    
@@ -78,26 +102,6 @@ Compute approximate singular value decomposition efficiently:
    # Reconstruct low-rank approximation
    A_approx = U @ torch.diag(S) @ V.T
    print(f"Approximation error: {torch.norm(A - A_approx):.6f}")
-
-**3. Sketching Operations**
-
-Create and apply sketching matrices for dimensionality reduction:
-
-.. code-block:: python
-
-   # Create a Gaussian sketching matrix
-   sketch_matrix = pr.sketch.dense_sketch_operator(
-       m=100,  # output dimension
-       n=500,  # input dimension  
-       distribution=pr.sketch.DistributionFamily.Gaussian
-   )
-   
-   # Apply sketching to a matrix
-   A = torch.randn(500, 1000)
-   sketched_A = sketch_matrix @ A
-   
-   print(f"Original: {A.shape}")
-   print(f"Sketched: {sketched_A.shape}")
 
 Building Your First Neural Network
 -----------------------------------
@@ -174,27 +178,29 @@ Panther automatically uses GPU acceleration when available:
        in_features=1024,
        out_features=512,
        num_terms=16,
-       low_rank=64
-   ).to(device)
+       low_rank=64,
+       device=device
+   )
    
    # Create input on GPU
    x = torch.randn(128, 1024, device=device)
    
    # Forward pass (automatically uses CUDA kernels)
-   with torch.cuda.device(device):
-       output = model(x)
+   output = model(x)
    
    print(f"GPU computation completed. Output shape: {output.shape}")
 
 Tensor Core Optimization
 -------------------------
 
-For maximum performance on modern GPUs, ensure dimensions are multiples of 16:
+For maximum performance on modern GPUs with Tensor Cores, ensure dimensions are multiples of 16:
 
 .. code-block:: python
 
+   from panther.nn import SKLinear
+   
    # Optimized for Tensor Cores (all dimensions are multiples of 16)
-   model = pr.nn.SKLinear(
+   model = SKLinear(
        in_features=1024,    # Multiple of 16 ✓
        out_features=512,    # Multiple of 16 ✓  
        num_terms=8,
@@ -208,21 +214,18 @@ For maximum performance on modern GPUs, ensure dimensions are multiples of 16:
 Working with Different Data Types
 ----------------------------------
 
-Panther supports various PyTorch data types:
+Panther's sketched layers work with standard PyTorch data types. Usage is similar to PyTorch's ``nn.Linear``:
 
 .. code-block:: python
 
-   # Float32 (default, good balance of speed and precision)
-   model_fp32 = pr.nn.SKLinear(512, 256, num_terms=4, low_rank=32, 
-                               dtype=torch.float32)
+   from panther.nn import SKLinear
+   import torch
    
-   # Float16 (faster on modern GPUs, uses less memory)
-   model_fp16 = pr.nn.SKLinear(512, 256, num_terms=4, low_rank=32,
-                               dtype=torch.float16)
-   
-   # Double precision (slower but more accurate)
-   model_fp64 = pr.nn.SKLinear(512, 256, num_terms=4, low_rank=32,
-                               dtype=torch.float64)
+   # Create layer with specific dtype
+   model_fp32 = SKLinear(512, 256, num_terms=4, low_rank=32, 
+                         dtype=torch.float32)
+   model_fp16 = SKLinear(512, 256, num_terms=4, low_rank=32,
+                         dtype=torch.float16)
 
 Common Patterns and Best Practices
 -----------------------------------
@@ -231,6 +234,8 @@ Common Patterns and Best Practices
 
 .. code-block:: python
 
+   from panther.nn import SKLinear
+   
    # Rule of thumb for choosing parameters:
    # - num_terms: Start with 1-3, increase for better accuracy
    # - low_rank: Should be much smaller than min(in_features, out_features)
@@ -239,34 +244,33 @@ Common Patterns and Best Practices
    
    in_features, out_features = 1024, 512
    
-   # Conservative choice (fewer parameters)
-   conservative = pr.nn.SKLinear(in_features, out_features, 
-                                num_terms=4, low_rank=32)
+   # Conservative choice (fewer parameters, faster)
+   conservative = SKLinear(in_features, out_features, 
+                          num_terms=1, low_rank=32)
+   
+   # Balanced choice (good accuracy-speed tradeoff)
+   balanced = SKLinear(in_features, out_features,
+                      num_terms=4, low_rank=64)
    
    # Aggressive choice (more parameters but better approximation)  
-   aggressive = pr.nn.SKLinear(in_features, out_features,
-                              num_terms=8, low_rank=64)
+   aggressive = SKLinear(in_features, out_features,
+                        num_terms=8, low_rank=128)
 
 **2. Memory Monitoring**
+
+Use standard PyTorch memory monitoring:
 
 .. code-block:: python
 
    import torch
+   from panther.nn import SKLinear
    
-   def print_memory_usage():
-       if torch.cuda.is_available():
-           allocated = torch.cuda.memory_allocated() / 1024**3  # GB
-           cached = torch.cuda.memory_reserved() / 1024**3     # GB
-           print(f"GPU Memory - Allocated: {allocated:.2f}GB, Cached: {cached:.2f}GB")
-   
-   # Monitor memory usage
-   print_memory_usage()
-   
-   # Create large model
-   model = pr.nn.SKLinear(4096, 4096, num_terms=16, low_rank=128)
-   model = model.cuda()
-   
-   print_memory_usage()
+   if torch.cuda.is_available():
+       device = torch.device('cuda')
+       model = SKLinear(4096, 4096, num_terms=16, low_rank=128, device=device)
+       
+       allocated = torch.cuda.memory_allocated() / 1024**3
+       print(f"GPU Memory Allocated: {allocated:.2f}GB")
 
 Next Steps
 ----------
@@ -275,13 +279,13 @@ Now that you understand the basics, explore these advanced topics:
 
 * :doc:`tutorials/index` - Detailed tutorials and examples
 * :doc:`api/nn` - Complete neural network API reference  
-* :doc:`examples/resnet_sketching` - Real-world example with ResNet
+* :doc:`examples/real_world_applications` - Real-world application examples
 * :doc:`examples/autotuner_guide` - Automatic hyperparameter tuning
-* :doc:`advanced/cuda_kernels` - Custom CUDA kernel development
+* :doc:`examples/performance_benchmarks` - Comprehensive benchmark results
 
 Need Help?
 ----------
 
-* Check the API documentation: :doc:`api/linalg`, :doc:`api/nn`, :doc:`api/sketch`, :doc:`api/tuner`, :doc:`api/utils`
+* Check the API documentation: :doc:`api/linalg`, :doc:`api/nn`, :doc:`api/sketch`, :doc:`api/tuner`
 * Visit our `GitHub repository <https://github.com/FahdSeddik/panther>`_ for issues and discussions
 * See :doc:`examples/index` for more comprehensive examples

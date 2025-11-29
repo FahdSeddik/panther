@@ -6,62 +6,78 @@ This guide shows how to use Panther's AutoTuner to automatically optimize sketch
 Introduction to AutoTuning
 ---------------------------
 
-Choosing optimal sketching parameters (``num_terms`` and ``low_rank``) can be challenging. The AutoTuner uses Bayesian optimization to automatically find the best parameters for your model and dataset.
+Choosing optimal sketching parameters (``num_terms`` and ``low_rank``) can be challenging. The AutoTuner provides multiple search algorithms including Bayesian optimization, Grid Search, Random Search, and more to automatically find the best parameters for your model and dataset.
 
 **Why AutoTune?**
 
 - **Better Performance**: Find parameters that work best for your specific data
 - **Save Time**: Avoid manual hyperparameter search
-- **Principled Approach**: Uses Bayesian optimization instead of random search
-- **Multi-Objective**: Can optimize for accuracy, speed, and memory usage
+- **Multiple Algorithms**: Choose from Bayesian optimization, Grid Search, Random Search, and advanced methods
+- **Model Visualization**: Visualize your model architecture and identify layers to optimize
 
 Basic AutoTuner Usage
 ----------------------
 
-**Simple Linear Layer Optimization**
+**Importing the AutoTuner Components**
 
 .. code-block:: python
 
    import torch
    import torch.nn as nn
-   import panther as pr
-   from panther.tuner import SkAutoTuner
+   from panther.nn import SKLinear
+   from panther.tuner.SkAutoTuner import (
+       SKAutoTuner,
+       LayerConfig,
+       TuningConfigs,
+       GridSearch,
+       RandomSearch,
+       BayesianOptimization,
+       ModelVisualizer
+   )
    
-   # Define your evaluation function
-   def evaluate_linear_layer(num_terms, low_rank):
-       \"\"\"Evaluate a sketched linear layer configuration.\"\"\""
+   # Setting up device
+   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+   print(f"Using device: {device}")
+
+**Creating a Simple Model**
+
+.. code-block:: python
+
+   # Define a simple model with regular PyTorch layers
+   class SimpleModel(nn.Module):
+       def __init__(self):
+           super().__init__()
+           self.fc1 = nn.Linear(784, 512)
+           self.relu1 = nn.ReLU()
+           self.fc2 = nn.Linear(512, 256)
+           self.relu2 = nn.ReLU()
+           self.fc3 = nn.Linear(256, 10)
        
-       # Create model with given parameters
-       model = nn.Sequential(
-           pr.nn.SKLinear(784, 512, num_terms=int(num_terms), low_rank=int(low_rank)),
-           nn.ReLU(),
-           pr.nn.SKLinear(512, 10, num_terms=max(1, int(num_terms)//2), low_rank=max(8, int(low_rank)//2))
-       )
-       
-       # Simple evaluation (replace with your actual training/validation)
-       criterion = nn.CrossEntropyLoss()
-       optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-       
-       # Quick training
-       for epoch in range(3):
-           for _ in range(50):  # Limited batches for speed
-               x = torch.randn(32, 784)
-               y = torch.randint(0, 10, (32,))
-               
-               optimizer.zero_grad()
-               output = model(x)
-               loss = criterion(output, y)
-               loss.backward()
-               optimizer.step()
-       
-       # Simple validation
+       def forward(self, x):
+           x = x.view(-1, 784)
+           x = self.relu1(self.fc1(x))
+           x = self.relu2(self.fc2(x))
+           x = self.fc3(x)
+           return x
+   
+   model = SimpleModel().to(device)
+
+**Defining Evaluation Function and Tuning Configuration**
+
+.. code-block:: python
+
+   # Define evaluation function - this function assesses the model's performance
+   def accuracy_eval_func(model):
+       \"\"\"Evaluate model accuracy on validation data.\"\"\"
        model.eval()
        correct = 0
        total = 0
+       
        with torch.no_grad():
+           # Create dummy validation data (replace with real data)
            for _ in range(20):
-               x = torch.randn(32, 784)
-               y = torch.randint(0, 10, (32,))
+               x = torch.randn(32, 784, device=device)
+               y = torch.randint(0, 10, (32,), device=device)
                output = model(x)
                _, predicted = torch.max(output.data, 1)
                total += y.size(0)
@@ -70,500 +86,268 @@ Basic AutoTuner Usage
        accuracy = correct / total
        return accuracy
    
-   # Create AutoTuner
-   tuner = SkAutoTuner(
-       parameter_bounds={
-           'num_terms': (2, 16),    # Search between 2 and 16 terms
-           'low_rank': (16, 128)    # Search between 16 and 128 rank
+   # Configure which layers to tune and their parameter ranges
+   config1 = LayerConfig(
+       layer_names=["fc1"],  # Name of layer to tune
+       params={
+           "num_terms": [2, 4, 8],      # Try these num_terms values
+           "low_rank": [32, 64, 128]     # Try these low_rank values
        },
-       objective_function=evaluate_linear_layer,
-       n_initial_points=5,          # Start with 5 random evaluations
-       n_iterations=20              # Then do 20 optimization steps
+       separate=True,         # Tune this layer independently
+       copy_weights=True      # Copy weights from original layer
    )
    
-   # Run optimization
-   best_params, best_score = tuner.optimize()
+   config2 = LayerConfig(
+       layer_names=["fc2"],
+       params={
+           "num_terms": [2, 4],
+           "low_rank": [32, 64]
+       },
+       separate=True,
+       copy_weights=True
+   )
    
-   print(f"Best parameters found:")
-   print(f"  num_terms: {best_params['num_terms']}")
-   print(f"  low_rank: {best_params['low_rank']}")
-   print(f"  Best accuracy: {best_score:.4f}")
+   tuning_configs = TuningConfigs(configs=[config1, config2])
+   
+   # Create the AutoTuner
+   tuner = SKAutoTuner(
+       model=model,
+       configs=tuning_configs,
+       accuracy_eval_func=accuracy_eval_func,
+       search_algorithm=GridSearch(),  # Can also use RandomSearch() or BayesianOptimization()
+       verbose=True
+   )
+   
+   # Run tuning
+   print("Starting AutoTuning...")
+   tuner.tune()
+   
+   # Get best parameters
+   best_params = tuner.get_best_params()
+   print("\\nBest parameters found:")
+   for layer_name, params_info in best_params.items():
+       print(f"Layer: {layer_name}, Params: {params_info['params']}")
+   
+   # Apply best parameters to model
+   optimized_model = tuner.apply_best_params()
+   
+   # Visualize results
+   tuner.visualize_tuning_results(save_path="tuning_results.png", show_plot=False)
 
-Real-World Example: MNIST Classification
------------------------------------------
+Using Different Search Algorithms
+----------------------------------
 
-**Complete MNIST AutoTuning Pipeline**
+The AutoTuner supports multiple search algorithms:
+
+**Grid Search (Default)**
 
 .. code-block:: python
 
-   import torch
-   import torch.nn as nn
-   import torch.optim as optim
-   from torch.utils.data import DataLoader
-   import torchvision
-   import torchvision.transforms as transforms
-   from panther.tuner import SkAutoTuner
-   import panther as pr
+   from panther.tuner.SkAutoTuner import GridSearch
    
-   class SketchedMNISTNet(nn.Module):
-       def __init__(self, layer1_terms, layer1_rank, layer2_terms, layer2_rank):
-           super().__init__()
-           self.flatten = nn.Flatten()
-           self.layer1 = pr.nn.SKLinear(784, 512, 
-                                       num_terms=int(layer1_terms), 
-                                       low_rank=int(layer1_rank))
-           self.relu1 = nn.ReLU()
-           self.dropout1 = nn.Dropout(0.2)
-           
-           self.layer2 = pr.nn.SKLinear(512, 256,
-                                       num_terms=int(layer2_terms),
-                                       low_rank=int(layer2_rank))
-           self.relu2 = nn.ReLU()
-           self.dropout2 = nn.Dropout(0.2)
-           
-           self.layer3 = pr.nn.SKLinear(256, 10,
-                                       num_terms=2, low_rank=16)  # Fixed for output
-       
-       def forward(self, x):
-           x = self.flatten(x)
-           x = self.dropout1(self.relu1(self.layer1(x)))
-           x = self.dropout2(self.relu2(self.layer2(x)))
-           x = self.layer3(x)
-           return x
+   tuner = SKAutoTuner(
+       model=model,
+       configs=tuning_configs,
+       accuracy_eval_func=accuracy_eval_func,
+       search_algorithm=GridSearch(),  # Tries all combinations
+       verbose=True
+   )
    
-   def prepare_mnist_data():
-       \"\"\"Prepare MNIST dataset.\"\"\""
-       transform = transforms.Compose([
-           transforms.ToTensor(),
-           transforms.Normalize((0.1307,), (0.3081,))
-       ])
-       
-       train_dataset = torchvision.datasets.MNIST(
-           root='./data', train=True, download=True, transform=transform
-       )
-       test_dataset = torchvision.datasets.MNIST(
-           root='./data', train=False, download=True, transform=transform
-       )
-       
-       # Use subset for faster tuning
-       train_subset = torch.utils.data.Subset(train_dataset, range(0, 5000))
-       test_subset = torch.utils.data.Subset(test_dataset, range(0, 1000))
-       
-       train_loader = DataLoader(train_subset, batch_size=64, shuffle=True)
-       test_loader = DataLoader(test_subset, batch_size=64, shuffle=False)
-       
-       return train_loader, test_loader
-   
-   def evaluate_mnist_model(layer1_terms, layer1_rank, layer2_terms, layer2_rank):
-       \"\"\"Evaluate MNIST model with given parameters.\"\"\""
-       device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-       
-       # Create model
-       model = SketchedMNISTNet(layer1_terms, layer1_rank, layer2_terms, layer2_rank)
-       model = model.to(device)
-       
-       # Prepare data
-       train_loader, test_loader = prepare_mnist_data()
-       
-       # Training setup
-       criterion = nn.CrossEntropyLoss()
-       optimizer = optim.Adam(model.parameters(), lr=0.001)
-       
-       # Quick training (2 epochs for speed)
-       model.train()
-       for epoch in range(2):
-           for batch_idx, (data, target) in enumerate(train_loader):
-               data, target = data.to(device), target.to(device)
-               
-               optimizer.zero_grad()
-               output = model(data)
-               loss = criterion(output, target)
-               loss.backward()
-               optimizer.step()
-               
-               # Limit batches for speed during tuning
-               if batch_idx > 30:
-                   break
-       
-       # Evaluation
-       model.eval()
-       correct = 0
-       total = 0
-       
-       with torch.no_grad():
-           for data, target in test_loader:
-               data, target = data.to(device), target.to(device)
-               output = model(data)
-               _, predicted = torch.max(output.data, 1)
-               total += target.size(0)
-               correct += (predicted == target).sum().item()
-       
-       accuracy = correct / total
-       
-       # Clean up GPU memory
-       del model
-       if device.type == 'cuda':
-           torch.cuda.empty_cache()
-       
-       return accuracy
-   
-   # Run AutoTuning
-   def tune_mnist_model():
-       \"\"\"Run complete AutoTuning for MNIST.\"\"\""
-       
-       tuner = SkAutoTuner(
-           parameter_bounds={
-               'layer1_terms': (2, 12),
-               'layer1_rank': (16, 96),
-               'layer2_terms': (2, 8),
-               'layer2_rank': (12, 64)
-           },
-           objective_function=evaluate_mnist_model,
-           n_initial_points=8,
-           n_iterations=25
-       )
-       
-       print("Starting AutoTuning for MNIST...")
-       best_params, best_score = tuner.optimize()
-       
-       print(f"\\nAutoTuning completed!")
-       print(f"Best parameters:")
-       for param, value in best_params.items():
-           print(f"  {param}: {value}")
-       print(f"Best accuracy: {best_score:.4f}")
-       
-       return best_params, best_score
-   
-   # Run the tuning
-   if __name__ == "__main__":
-       best_params, best_score = tune_mnist_model()
+   tuner.tune()
 
-Multi-Objective Optimization
------------------------------
-
-**Optimizing for Accuracy and Speed**
+**Random Search**
 
 .. code-block:: python
 
-   import time
+   from panther.tuner.SkAutoTuner import RandomSearch
    
-   def multi_objective_evaluation(num_terms, low_rank):
-       \"\"\"Evaluate model considering both accuracy and inference speed.\"\"\""
-       
-       device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-       
-       # Create model
-       model = nn.Sequential(
-           pr.nn.SKLinear(1024, 512, num_terms=int(num_terms), low_rank=int(low_rank)),
-           nn.ReLU(),
-           pr.nn.SKLinear(512, 10, num_terms=max(1, int(num_terms)//2), low_rank=max(8, int(low_rank)//2))
-       ).to(device)
-       
-       # Measure accuracy (simplified)
-       accuracy = train_and_evaluate_model(model)  # Your training function
-       
-       # Measure inference speed
-       model.eval()
-       dummy_input = torch.randn(64, 1024, device=device)
-       
-       # Warmup
-       with torch.no_grad():
-           for _ in range(10):
-               _ = model(dummy_input)
-       
-       # Time inference
-       if device.type == 'cuda':
-           torch.cuda.synchronize()
-       
-       start_time = time.time()
-       with torch.no_grad():
-           for _ in range(100):
-               _ = model(dummy_input)
-               if device.type == 'cuda':
-                   torch.cuda.synchronize()
-       
-       inference_time = (time.time() - start_time) / 100
-       
-       # Combine objectives (accuracy more important)
-       speed_score = 1.0 / (inference_time + 1e-6)  # Higher is better
-       normalized_speed = min(speed_score / 1000, 1.0)  # Normalize to [0, 1]
-       
-       combined_score = 0.7 * accuracy + 0.3 * normalized_speed
-       
-       return combined_score
-   
-   # AutoTune with multi-objective
-   multi_obj_tuner = SkAutoTuner(
-       parameter_bounds={
-           'num_terms': (1, 20),
-           'low_rank': (8, 256)
-       },
-       objective_function=multi_objective_evaluation,
-       n_initial_points=10,
-       n_iterations=30
+   tuner = SKAutoTuner(
+       model=model,
+       configs=tuning_configs,
+       accuracy_eval_func=accuracy_eval_func,
+       search_algorithm=RandomSearch(n_trials=50),  # Try 50 random combinations
+       verbose=True
    )
    
-   best_params, best_score = multi_obj_tuner.optimize()
+   tuner.tune()
 
-Memory-Constrained Optimization
---------------------------------
-
-**Optimizing Under Memory Limits**
+**Bayesian Optimization**
 
 .. code-block:: python
 
-   import psutil
-   import gc
+   from panther.tuner.SkAutoTuner import BayesianOptimization
    
-   def memory_constrained_evaluation(num_terms, low_rank, max_memory_gb=4.0):
-       \"\"\"Evaluate model with memory constraints.\"\"\""
-       
-       device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-       
-       # Estimate memory usage
-       estimated_params = estimate_parameter_count(int(num_terms), int(low_rank))
-       estimated_memory = estimated_params * 4 / (1024**3)  # 4 bytes per float32
-       
-       # Early rejection if estimated memory too high
-       if estimated_memory > max_memory_gb:
-           return 0.0
-       
-       try:
-           # Monitor initial memory
-           if device.type == 'cuda':
-               torch.cuda.reset_peak_memory_stats()
-               initial_memory = torch.cuda.memory_allocated()
-           else:
-               process = psutil.Process()
-               initial_memory = process.memory_info().rss
-           
-           # Create and train model
-           model = create_model(int(num_terms), int(low_rank))
-           model = model.to(device)
-           
-           accuracy = quick_train_and_evaluate(model)
-           
-           # Check actual memory usage
-           if device.type == 'cuda':
-               peak_memory = torch.cuda.max_memory_allocated()
-               memory_used = (peak_memory - initial_memory) / (1024**3)
-           else:
-               current_memory = process.memory_info().rss
-               memory_used = (current_memory - initial_memory) / (1024**3)
-           
-           # Penalize if memory exceeded
-           if memory_used > max_memory_gb:
-               return 0.0
-           
-           # Reward memory efficiency
-           memory_efficiency = max_memory_gb / (memory_used + 0.1)
-           adjusted_score = accuracy * min(memory_efficiency, 2.0)
-           
-           return adjusted_score
-           
-       except torch.cuda.OutOfMemoryError:
-           return 0.0  # Penalize OOM configurations
-       
-       finally:
-           # Clean up
-           if 'model' in locals():
-               del model
-           if device.type == 'cuda':
-               torch.cuda.empty_cache()
-           gc.collect()
-   
-   def estimate_parameter_count(num_terms, low_rank):
-       \"\"\"Estimate total parameter count for given configuration.\"\"\""
-       # Simplified estimation for a typical model
-       layer_configs = [(1024, 512), (512, 256), (256, 10)]
-       total_params = 0
-       
-       for in_feat, out_feat in layer_configs:
-           sketched_params = 2 * num_terms * low_rank * (in_feat + out_feat)
-           total_params += sketched_params
-       
-       return total_params
-   
-   # Memory-constrained tuning
-   memory_tuner = SkAutoTuner(
-       parameter_bounds={
-           'num_terms': (1, 32),
-           'low_rank': (8, 512)
-       },
-       objective_function=lambda nt, lr: memory_constrained_evaluation(nt, lr, max_memory_gb=2.0),
-       n_initial_points=12,
-       n_iterations=40
+   tuner = SKAutoTuner(
+       model=model,
+       configs=tuning_configs,
+       accuracy_eval_func=accuracy_eval_func,
+       search_algorithm=BayesianOptimization(n_trials=30),
+       verbose=True
    )
+   
+   tuner.tune()
 
-Progressive Tuning Strategy
+Advanced Search Algorithms
 ---------------------------
 
-**Phase 1: Broad Search, Phase 2: Fine-Tuning**
+The AutoTuner also supports additional advanced search algorithms:
+
+* **SimulatedAnnealing** - Optimization using simulated annealing
+* **Hyperband** - Resource-efficient hyperparameter optimization
+* **EvolutionaryAlgorithm** - Genetic algorithm-based search
+* **ParticleSwarmOptimization** - PSO-based optimization
+* **TreeParzenEstimator** - TPE-based Bayesian optimization
+
+Example with Simulated Annealing:
 
 .. code-block:: python
 
-   def progressive_autotuning():
-       \"\"\"Two-phase AutoTuning: broad search then refinement.\"\"\""
-       
-       # Phase 1: Broad exploration
-       print("Phase 1: Broad parameter exploration...")
-       
-       broad_tuner = SkAutoTuner(
-           parameter_bounds={
-               'num_terms': (1, 32),
-               'low_rank': (8, 512)
-           },
-           objective_function=evaluate_model_function,
-           n_initial_points=15,
-           n_iterations=30
-       )
-       
-       broad_best_params, broad_best_score = broad_tuner.optimize()
-       
-       print(f"Phase 1 best: {broad_best_params} (score: {broad_best_score:.4f})")
-       
-       # Phase 2: Refined search around best region
-       print("\\nPhase 2: Refined search...")
-       
-       # Define refined bounds around Phase 1 best
-       margin_terms = 4
-       margin_rank = 32
-       
-       refined_bounds = {
-           'num_terms': (
-               max(1, broad_best_params['num_terms'] - margin_terms),
-               broad_best_params['num_terms'] + margin_terms
-           ),
-           'low_rank': (
-               max(8, broad_best_params['low_rank'] - margin_rank),
-               broad_best_params['low_rank'] + margin_rank
-           )
-       }
-       
-       refined_tuner = SkAutoTuner(
-           parameter_bounds=refined_bounds,
-           objective_function=evaluate_model_function,
-           n_initial_points=8,
-           n_iterations=20
-       )
-       
-       refined_best_params, refined_best_score = refined_tuner.optimize()
-       
-       print(f"Phase 2 best: {refined_best_params} (score: {refined_best_score:.4f})")
-       
-       # Return the better of the two
-       if refined_best_score > broad_best_score:
-           return refined_best_params, refined_best_score
-       else:
-           return broad_best_params, broad_best_score
-
-Integration with Popular Frameworks
-------------------------------------
-
-**PyTorch Lightning Integration**
-
-.. code-block:: python
-
-   import pytorch_lightning as pl
-   from pytorch_lightning.callbacks import EarlyStopping
-   from panther.tuner import SkAutoTuner
+   from panther.tuner.SkAutoTuner import SimulatedAnnealing
    
-   class SketchedLightningModule(pl.LightningModule):
-       def __init__(self, num_terms=8, low_rank=64):
-           super().__init__()
-           self.save_hyperparameters()
-           
-           self.model = nn.Sequential(
-               pr.nn.SKLinear(784, 512, num_terms=num_terms, low_rank=low_rank),
-               nn.ReLU(),
-               nn.Dropout(0.2),
-               pr.nn.SKLinear(512, 10, num_terms=max(1, num_terms//2), low_rank=max(8, low_rank//2))
-           )
-           
-           self.criterion = nn.CrossEntropyLoss()
-           self.train_acc = pl.metrics.Accuracy()
-           self.val_acc = pl.metrics.Accuracy()
-       
-       def forward(self, x):
-           return self.model(x.view(x.size(0), -1))
-       
-       def training_step(self, batch, batch_idx):
-           x, y = batch
-           logits = self(x)
-           loss = self.criterion(logits, y)
-           
-           preds = torch.argmax(logits, dim=1)
-           self.train_acc(preds, y)
-           
-           self.log('train_loss', loss, on_step=True, on_epoch=True)
-           self.log('train_acc', self.train_acc, on_step=True, on_epoch=True)
-           
-           return loss
-       
-       def validation_step(self, batch, batch_idx):
-           x, y = batch
-           logits = self(x)
-           loss = self.criterion(logits, y)
-           
-           preds = torch.argmax(logits, dim=1)
-           self.val_acc(preds, y)
-           
-           self.log('val_loss', loss)
-           self.log('val_acc', self.val_acc)
-           
-           return loss
-       
-       def configure_optimizers(self):
-           optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-           return optimizer
-   
-   def evaluate_lightning_model(num_terms, low_rank):
-       \"\"\"Evaluate model using PyTorch Lightning.\"\"\""
-       
-       # Create model
-       model = SketchedLightningModule(int(num_terms), int(low_rank))
-       
-       # Data module (implement your own)
-       dm = MNISTDataModule(batch_size=64)
-       
-       # Trainer with early stopping
-       trainer = pl.Trainer(
-           max_epochs=5,
-           callbacks=[EarlyStopping(monitor='val_loss', patience=2)],
-           enable_progress_bar=False,
-           enable_model_summary=False,
-           logger=False
-       )
-       
-       # Fit model
-       trainer.fit(model, dm)
-       
-       # Return validation accuracy
-       return trainer.callback_metrics['val_acc'].item()
-   
-   # AutoTune with Lightning
-   lightning_tuner = SkAutoTuner(
-       parameter_bounds={'num_terms': (2, 16), 'low_rank': (16, 128)},
-       objective_function=evaluate_lightning_model,
-       n_initial_points=6,
-       n_iterations=20
+   tuner = SKAutoTuner(
+       model=model,
+       configs=tuning_configs,
+       accuracy_eval_func=accuracy_eval_func,
+       search_algorithm=SimulatedAnnealing(),
+       verbose=True
    )
+   
+   tuner.tune()
+
+Model Visualization
+-------------------
+
+The AutoTuner includes a ModelVisualizer to help you understand your model structure:
+
+.. code-block:: python
+
+   from panther.tuner.SkAutoTuner import ModelVisualizer
+   
+   # Print model structure
+   ModelVisualizer.print_module_tree(model)
+   
+   # This will output something like:
+   # SimpleModel
+   #   ├── fc1: Linear(784, 512)
+   #   ├── relu1: ReLU()
+   #   ├── fc2: Linear(512, 256)
+   #   ├── relu2: ReLU()
+   #   └── fc3: Linear(256, 10)
 
 Best Practices for AutoTuning
 ------------------------------
 
 **1. Start with Quick Evaluations**
 
+Use a subset of your data during tuning to speed up the search process:
+
 .. code-block:: python
 
-   def quick_evaluation_for_tuning(num_terms, low_rank):
-       \"\"\"Fast evaluation suitable for initial tuning phases.\"\"\""
+   def accuracy_eval_func(model):
+       """Fast evaluation for tuning."""
+       model.eval()
+       correct = 0
+       total = 0
        
-       # Use smaller models/datasets during tuning
-       model = create_small_model(int(num_terms), int(low_rank))
+       with torch.no_grad():
+           # Use only a subset of validation data
+           for batch_idx, (data, target) in enumerate(val_loader):
+               if batch_idx >= 20:  # Limit to 20 batches
+                   break
+               
+               data, target = data.to(device), target.to(device)
+               output = model(data)
+               _, predicted = torch.max(output.data, 1)
+               total += target.size(0)
+               correct += (predicted == target).sum().item()
        
-       # Train for fewer epochs
-       quick_train(model, max_epochs=3, max_batches_per_epoch=50)
+       return correct / total if total > 0 else 0.0
+
+**2. Start with Coarse Grid, Then Refine**
+
+Begin with a coarse parameter grid and refine around promising regions:
+
+.. code-block:: python
+
+   # Phase 1: Coarse search
+   coarse_config = LayerConfig(
+       layer_names=["fc1"],
+       params={
+           "num_terms": [2, 8, 16],       # Wide range
+           "low_rank": [32, 128, 256]     # Wide range
+       },
+       separate=True,
+       copy_weights=True
+   )
+   
+   # Phase 2: Fine-tune around best from Phase 1
+   # Suppose best was num_terms=8, low_rank=128
+   fine_config = LayerConfig(
+       layer_names=["fc1"],
+       params={
+           "num_terms": [6, 7, 8, 9, 10],          # Narrow range
+           "low_rank": [96, 112, 128, 144, 160]    # Narrow range
+       },
+       separate=True,
+       copy_weights=True
+   )
+
+**3. Monitor Resource Usage**
+
+Track memory and computation time during tuning:
+
+.. code-block:: python
+
+   import time
+   
+   def accuracy_eval_with_monitoring(model):
+       """Evaluation with resource monitoring."""
+       start_time = time.time()
+       
+       if torch.cuda.is_available():
+           torch.cuda.reset_peak_memory_stats()
+       
+       # Perform evaluation
+       accuracy = evaluate_model(model)
+       
+       elapsed_time = time.time() - start_time
+       
+       if torch.cuda.is_available():
+           peak_memory = torch.cuda.max_memory_allocated() / 1024**3  # GB
+           print(f"Evaluation time: {elapsed_time:.2f}s, "
+                 f"Peak memory: {peak_memory:.2f} GB")
+       
+       return accuracy
+
+**4. Save and Resume Tuning**
+
+For long tuning sessions, save progress:
+
+.. code-block:: python
+
+   # After tuning
+   tuner.tune()
+   best_params = tuner.get_best_params()
+   
+   # Save results
+   import pickle
+   with open('tuning_results.pkl', 'wb') as f:
+       pickle.dump(best_params, f)
+   
+   # Load later
+   with open('tuning_results.pkl', 'rb') as f:
+       loaded_params = pickle.load(f)
+
+Tips for Better Results
+------------------------
+
+1. **Use consistent evaluation**: Always evaluate on the same validation set
+2. **Set random seeds**: Ensure reproducible results across runs
+3. **Consider parameter constraints**: Ensure total parameters < original model
+4. **Balance speed vs. accuracy**: Choose search algorithm based on your time budget
+5. **Visualize results**: Use the built-in visualization to understand parameter effects
+
+This guide covers the essential aspects of using Panther's AutoTuner effectively.
        
        # Evaluate on smaller validation set
        accuracy = quick_evaluate(model, validation_subset_size=500)

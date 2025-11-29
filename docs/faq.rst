@@ -27,7 +27,7 @@ Installation and Setup
 
 **What are the system requirements?**
 
-- Python 3.8 or later
+- Python 3.12 or later
 - PyTorch 2.6.0 or later
 - CUDA 12.4 or later (for GPU acceleration)
 - C++17 compatible compiler
@@ -69,18 +69,25 @@ Usage Questions
    
    # After
    import panther as pr
-   layer = pr.nn.SKLinear(1024, 512, sketch_size=256)
+   layer = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64)
 
-**What sketch size should I use?**
+**What num_terms and low_rank should I use?**
 
-A good starting point is 50-70% of the input dimension. You can use the AutoTuner to find optimal sketch sizes:
+A good starting point is num_terms=4 and low_rank to be 10-20% of min(in_features, out_features). You can use the AutoTuner to find optimal parameters:
 
 .. code-block:: python
 
-   from panther.tuner import SkAutoTuner
+   from panther.tuner import SKAutoTuner, LayerConfig, TuningConfigs
    
-   tuner = SkAutoTuner()
-   best_params = tuner.tune(model, dataset, metric='accuracy')
+   config = LayerConfig(
+       layer_names=["layer1", "layer2"],
+       params={
+           "num_terms": [1, 2, 4, 8],
+           "low_rank": [32, 64, 128]
+       }
+   )
+   tuner = SKAutoTuner(model, TuningConfigs([config]), accuracy_eval_func)
+   best_params = tuner.tune()
 
 **Can I use Panther with existing pre-trained models?**
 
@@ -176,15 +183,17 @@ No, sketch matrices are initialized once and remain fixed during training. This 
 
 **Can I inspect or modify the sketch matrices?**
 
-Yes, you can access sketch matrices:
+Yes, you can access sketch parameters:
 
 .. code-block:: python
 
-   layer = pr.nn.SKLinear(1024, 512, 256)
-   sketch_matrix = layer.sketch_matrix
+   layer = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64)
    
-   # Modify if needed (advanced usage)
-   layer.sketch_matrix = custom_sketch_matrix
+   # Access sketch parameters (S1s and S2s)
+   print(f"S1s shape: {layer.S1s.shape}")
+   print(f"S2s shape: {layer.S2s.shape}")
+   print(f"U1s shape: {layer.U1s.shape}")
+   print(f"U2s shape: {layer.U2s.shape}")
 
 Troubleshooting
 ---------------
@@ -241,18 +250,13 @@ Yes! See our :doc:`advanced/custom_sketching` guide for detailed instructions on
 
 **How do I contribute to Panther?**
 
-We welcome contributions! See our :doc:`contributing` guide for:
-- Code contribution guidelines
-- Bug report procedures
-- Feature request process
-- Development setup instructions
+Contributions are welcome! To contribute:
+- Fork the repository on GitHub
+- Create a feature branch with your changes
+- Add tests for new functionality
+- Submit a pull request
 
-**Is there commercial support available?**
-
-Panther is open-source with community support. For commercial support or consulting:
-- Contact the development team through GitHub
-- Join our community Discord for faster responses
-- Consider sponsoring development for priority support
+Check the repository for detailed development setup instructions.
 
 **How do I cite Panther in academic work?**
 
@@ -263,7 +267,7 @@ Panther is open-source with community support. For commercial support or consult
      author={Panther Development Team},
      year={2025},
      url={https://github.com/FahdSeddik/panther},
-     version={0.1.0}
+     version={0.1.2}
    }
 
 Still Have Questions?
@@ -271,16 +275,13 @@ Still Have Questions?
 
 If your question isn't answered here:
 
-1. **Search GitHub Issues**: Someone might have asked the same question
-2. **Join our Discord**: Real-time community support
-3. **Open a GitHub Discussion**: For design questions and feature requests
-4. **File a Bug Report**: If you've found a potential issue
+1. **Search GitHub Issues**: Check if someone has asked the same question
+2. **Open a GitHub Issue**: Report bugs or request features
+3. **Check the Documentation**: Browse the full documentation for detailed information
 
 **Community Resources**
 
-- GitHub: https://github.com/FahdSeddik/panther
-- Documentation: https://panther.readthedocs.io
-- Discord: https://discord.gg/panther-ml
-- Twitter: @PantherML
+- GitHub Repository: https://github.com/FahdSeddik/panther
+- GitHub Issues: For bug reports and feature requests
 
-We're always happy to help and improve Panther based on community feedback!
+We appreciate feedback and contributions from the community!

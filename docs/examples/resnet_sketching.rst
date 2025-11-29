@@ -1,14 +1,12 @@
 ResNet with Sketched Layers
 ===========================
 
-This example demonstrates how to replace standard layers in ResNet with Panther's sketched layers for memory efficiency.
+This example demonstrates how to use Panther's sketched layers in ResNet-style architectures.
 
-Standard ResNet vs Sketched ResNet
+Basic ResNet Block with Sketching
 -----------------------------------
 
-We'll modify a ResNet-50 architecture to use sketched linear and convolution layers, comparing memory usage and performance.
-
-**Basic ResNet Block with Sketching**
+Here's how to build ResNet-style blocks using Panther's sketched layers:
 
 .. code-block:: python
 
@@ -16,279 +14,175 @@ We'll modify a ResNet-50 architecture to use sketched linear and convolution lay
    import torch.nn as nn
    import panther as pr
    
-   class StandardBasicBlock(nn.Module):
-       """Standard ResNet basic block."""
-       expansion = 1
+   class SketchedResidualBlock(nn.Module):
+       """Residual block with sketched linear transformations."""
        
-       def __init__(self, in_channels, out_channels, stride=1):
+       def __init__(self, in_features, out_features, num_terms=4, low_rank=32):
            super().__init__()
            
-           self.conv1 = nn.Conv2d(in_channels, out_channels, 
-                                 kernel_size=3, stride=stride, padding=1, bias=False)
-           self.bn1 = nn.BatchNorm2d(out_channels)
-           
-           self.conv2 = nn.Conv2d(out_channels, out_channels,
-                                 kernel_size=3, stride=1, padding=1, bias=False)
-           self.bn2 = nn.BatchNorm2d(out_channels)
-           
-           self.relu = nn.ReLU(inplace=True)
+           # Main path with sketched layers
+           self.main_path = nn.Sequential(
+               pr.nn.SKLinear(in_features, out_features, num_terms=num_terms, low_rank=low_rank),
+               nn.BatchNorm1d(out_features),
+               nn.ReLU(),
+               pr.nn.SKLinear(out_features, out_features, num_terms=num_terms, low_rank=low_rank),
+               nn.BatchNorm1d(out_features)
+           )
            
            # Shortcut connection
-           self.shortcut = nn.Sequential()
-           if stride != 1 or in_channels != out_channels:
-               self.shortcut = nn.Sequential(
-                   nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
-                   nn.BatchNorm2d(out_channels)
-               )
+           if in_features != out_features:
+               self.shortcut = pr.nn.SKLinear(in_features, out_features, num_terms=2, low_rank=16)
+           else:
+               self.shortcut = nn.Identity()
+           
+           self.relu = nn.ReLU()
        
        def forward(self, x):
-           residual = self.shortcut(x)
-           
-           out = self.relu(self.bn1(self.conv1(x)))
-           out = self.bn2(self.conv2(out))
-           
-           out += residual
-           out = self.relu(out)
-           
-           return out
+           main_out = self.main_path(x)
+           shortcut_out = self.shortcut(x)
+           return self.relu(main_out + shortcut_out)
    
-   class SketchedBasicBlock(nn.Module):
-       """ResNet basic block with sketched convolutions."""
-       expansion = 1
-       
-       def __init__(self, in_channels, out_channels, stride=1, sketch_params=None):
+   # Example: Build a ResNet-style model
+   class SketchedResNetStyle(nn.Module):
+       def __init__(self, input_dim, block_configs, num_classes):
            super().__init__()
            
-           if sketch_params is None:
-               sketch_params = {'num_terms': 4, 'low_rank': 16}
-           
-           # Use sketched convolutions
-           self.conv1 = pr.nn.SKConv2d(
-               in_channels, out_channels,
-               kernel_size=3, stride=stride, padding=1, bias=False,
-               **sketch_params
+           # Input layer
+           self.input_layer = nn.Sequential(
+               pr.nn.SKLinear(input_dim, block_configs[0]['features'], num_terms=8, low_rank=64),
+               nn.BatchNorm1d(block_configs[0]['features']),
+               nn.ReLU()
            )
-           self.bn1 = nn.BatchNorm2d(out_channels)
            
-           self.conv2 = pr.nn.SKConv2d(
-               out_channels, out_channels,
-               kernel_size=3, stride=1, padding=1, bias=False,
-               **sketch_params
-           )
-           self.bn2 = nn.BatchNorm2d(out_channels)
+           # Residual blocks
+           self.blocks = nn.ModuleList()
+           current_features = block_configs[0]['features']
            
-           self.relu = nn.ReLU(inplace=True)
-           
-           # Shortcut connection (can also be sketched)
-           self.shortcut = nn.Sequential()
-           if stride != 1 or in_channels != out_channels:
-               self.shortcut = nn.Sequential(
-                   pr.nn.SKConv2d(in_channels, out_channels, 
-                                 kernel_size=1, stride=stride, bias=False,
-                                 num_terms=2, low_rank=8),  # Smaller sketch for 1x1
-                   nn.BatchNorm2d(out_channels)
+           for config in block_configs:
+               block = SketchedResidualBlock(
+                   current_features, 
+                   config['features'],
+                   num_terms=config.get('num_terms', 4),
+                   low_rank=config.get('low_rank', 32)
                )
-       
+               self.blocks.append(block)
+               current_features = config['features']
+           
+           # Output layer
+           self.output_layer = pr.nn.SKLinear(current_features, num_classes, num_terms=2, low_rank=16)
+           
        def forward(self, x):
-           residual = self.shortcut(x)
+           x = self.input_layer(x)
            
-           out = self.relu(self.bn1(self.conv1(x)))
-           out = self.bn2(self.conv2(out))
+           for block in self.blocks:
+               x = block(x)
            
-           out += residual
-           out = self.relu(out)
-           
-           return out
-
-**Complete ResNet Architecture**
-
-.. code-block:: python
-
-   class SketchedResNet(nn.Module):
-       """ResNet with sketched layers for memory efficiency."""
-       
-       def __init__(self, block, layers, num_classes=1000, sketch_config=None):
-           super().__init__()
-           
-           if sketch_config is None:
-               sketch_config = {
-                   'conv_sketch': {'num_terms': 4, 'low_rank': 16},
-                   'fc_sketch': {'num_terms': 8, 'low_rank': 64}
-               }
-           
-           self.in_channels = 64
-           self.sketch_config = sketch_config
-           
-           # Initial convolution (keep standard for first layer)
-           self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
-           self.bn1 = nn.BatchNorm2d(64)
-           self.relu = nn.ReLU(inplace=True)
-           self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-           
-           # ResNet layers with progressive sketching
-           self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
-           self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-           self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-           self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-           
-           self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-           
-           # Sketched fully connected layer
-           self.fc = pr.nn.SKLinear(
-               512 * block.expansion, num_classes,
-               **sketch_config['fc_sketch']
-           )
-           
-           self._initialize_weights()
-       
-       def _make_layer(self, block, out_channels, blocks, stride=1):
-           layers = []
-           
-           # First block (might have stride > 1)
-           layers.append(block(
-               self.in_channels, out_channels, stride,
-               sketch_params=self.sketch_config['conv_sketch']
-           ))
-           
-           self.in_channels = out_channels * block.expansion
-           
-           # Remaining blocks
-           for _ in range(1, blocks):
-               layers.append(block(
-                   self.in_channels, out_channels,
-                   sketch_params=self.sketch_config['conv_sketch']
-               ))
-           
-           return nn.Sequential(*layers)
-       
-       def _initialize_weights(self):
-           for m in self.modules():
-               if isinstance(m, (nn.Conv2d, pr.nn.SKConv2d)):
-                   nn.init.kaiming_normal_(m.weight if hasattr(m, 'weight') else m.S1s,
-                                          mode='fan_out', nonlinearity='relu')
-               elif isinstance(m, nn.BatchNorm2d):
-                   nn.init.constant_(m.weight, 1)
-                   nn.init.constant_(m.bias, 0)
-       
-       def forward(self, x):
-           x = self.conv1(x)
-           x = self.bn1(x)
-           x = self.relu(x)
-           x = self.maxpool(x)
-           
-           x = self.layer1(x)
-           x = self.layer2(x)
-           x = self.layer3(x)
-           x = self.layer4(x)
-           
-           x = self.avgpool(x)
-           x = torch.flatten(x, 1)
-           x = self.fc(x)
-           
+           x = self.output_layer(x)
            return x
    
-   def sketched_resnet50(num_classes=1000, **kwargs):
-       """ResNet-50 with sketched layers."""
-       sketch_config = {
-           'conv_sketch': {'num_terms': 6, 'low_rank': 24},
-           'fc_sketch': {'num_terms': 12, 'low_rank': 128}
-       }
-       return SketchedResNet(SketchedBasicBlock, [3, 4, 6, 3], 
-                            num_classes, sketch_config, **kwargs)
+   # Create model
+   block_configs = [
+       {'features': 256, 'num_terms': 6, 'low_rank': 48},
+       {'features': 256, 'num_terms': 6, 'low_rank': 48},
+       {'features': 512, 'num_terms': 8, 'low_rank': 64},
+       {'features': 512, 'num_terms': 8, 'low_rank': 64},
+   ]
+   
+   model = SketchedResNetStyle(input_dim=784, block_configs=block_configs, num_classes=10)
+   
+   # Test forward pass
+   x = torch.randn(32, 784)
+   output = model(x)
+   print(f"Output shape: {output.shape}")  # (32, 10)
 
-Memory Comparison and Benchmarking
------------------------------------
+Converting Conv2D Layers
+-------------------------
 
-**Memory Usage Analysis**
+Panther provides ``SKConv2d.fromTorch()`` to convert existing Conv2d layers:
 
 .. code-block:: python
 
    import torch
-   import torchvision.models as models
-   import psutil
-   import os
+   import torch.nn as nn
+   from panther.nn import SKConv2d
    
-   def measure_model_memory(model, input_size=(3, 224, 224), batch_size=32):
-       """Measure model memory usage."""
-       device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-       model = model.to(device)
-       
-       # Reset memory stats
-       if device.type == 'cuda':
-           torch.cuda.reset_peak_memory_stats(device)
-           torch.cuda.empty_cache()
-       
-       # Measure parameter memory
-       param_memory = sum(p.numel() * p.element_size() for p in model.parameters())
-       
-       # Create dummy input
-       dummy_input = torch.randn(batch_size, *input_size, device=device)
-       
-       # Forward pass
-       with torch.no_grad():
-           output = model(dummy_input)
-       
-       if device.type == 'cuda':
-           peak_memory = torch.cuda.max_memory_allocated(device)
-           current_memory = torch.cuda.memory_allocated(device)
-       else:
-           process = psutil.Process(os.getpid())
-           peak_memory = process.memory_info().rss
-           current_memory = peak_memory
-       
-       return {
-           'parameters_mb': param_memory / (1024**2),
-           'peak_memory_mb': peak_memory / (1024**2),
-           'current_memory_mb': current_memory / (1024**2)
-       }
+   # Original Conv2d layer
+   original_conv = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
    
-   # Compare standard vs sketched ResNet
-   print("Creating models...")
+   # Convert to sketched version
+   sketched_conv = SKConv2d.fromTorch(
+       layer=original_conv,
+       num_terms=4,
+       low_rank=16
+   )
    
-   # Standard ResNet-50
-   standard_resnet = models.resnet50(pretrained=False)
-   
-   # Sketched ResNet-50
-   sketched_resnet = sketched_resnet50()
-   
-   print("\\nMeasuring memory usage...")
-   
-   # Measure memory
-   standard_memory = measure_model_memory(standard_resnet)
-   sketched_memory = measure_model_memory(sketched_resnet)
-   
-   print("\\n" + "="*60)
-   print("MEMORY COMPARISON")
-   print("="*60)
-   print(f"Standard ResNet-50:")
-   print(f"  Parameters: {standard_memory['parameters_mb']:.1f} MB")
-   print(f"  Peak Memory: {standard_memory['peak_memory_mb']:.1f} MB")
-   
-   print(f"\\nSketched ResNet-50:")
-   print(f"  Parameters: {sketched_memory['parameters_mb']:.1f} MB")
-   print(f"  Peak Memory: {sketched_memory['peak_memory_mb']:.1f} MB")
-   
-   param_reduction = (1 - sketched_memory['parameters_mb'] / standard_memory['parameters_mb']) * 100
-   memory_reduction = (1 - sketched_memory['peak_memory_mb'] / standard_memory['peak_memory_mb']) * 100
-   
-   print(f"\\nReductions:")
-   print(f"  Parameter reduction: {param_reduction:.1f}%")
-   print(f"  Memory reduction: {memory_reduction:.1f}%")
+   # Test forward pass
+   x = torch.randn(8, 64, 32, 32)
+   output = sketched_conv(x)
+   print(f"Output shape: {output.shape}")  # (8, 128, 32, 32)
+   # Test forward pass
+   x = torch.randn(8, 64, 32, 32)
+   output = sketched_conv(x)
+   print(f"Output shape: {output.shape}")  # (8, 128, 32, 32)
 
-**Performance Benchmarking**
+Parameter Selection Guidelines
+------------------------------
+
+**Choosing Sketch Parameters**
+
+When selecting ``num_terms`` and ``low_rank`` for ResNet-style sketching:
+
+* Start with conservative values and increase if needed for accuracy
+* Use smaller sketches for shortcut connections  
+* Use larger sketches for main transformation layers
+* Monitor memory usage and adjust accordingly
 
 .. code-block:: python
 
-   import time
-   import torch.nn.functional as F
+   # Example parameter choices for different layers
    
-   def benchmark_model(model, input_size=(3, 224, 224), batch_size=32, num_runs=100):
-       """Benchmark model inference speed."""
-       device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-       model = model.to(device).eval()
-       
-       # Create dummy input
-       dummy_input = torch.randn(batch_size, *input_size, device=device)
+   # For main residual blocks
+   residual_params = {'num_terms': 4, 'low_rank': 32}
+   
+   # For shortcut connections
+   shortcut_params = {'num_terms': 2, 'low_rank': 16}
+   
+   # For final fully connected layer
+   fc_params = {'num_terms': 2, 'low_rank': 16}
+
+Memory Comparison
+-----------------
+
+Compare parameter counts between standard and sketched models:
+
+.. code-block:: python
+
+   import torch.nn as nn
+   import panther as pr
+   
+   # Standard residual block
+   standard_block = nn.Sequential(
+       nn.Linear(512, 512),
+       nn.ReLU(),
+       nn.Linear(512, 512)
+   )
+   
+   # Sketched residual block
+   sketched_block = nn.Sequential(
+       pr.nn.SKLinear(512, 512, num_terms=4, low_rank=32),
+       nn.ReLU(),
+       pr.nn.SKLinear(512, 512, num_terms=4, low_rank=32)
+   )
+   
+   standard_params = sum(p.numel() for p in standard_block.parameters())
+   sketched_params = sum(p.numel() for p in sketched_block.parameters())
+   
+   print(f"Standard parameters: {standard_params:,}")
+   print(f"Sketched parameters: {sketched_params:,}")
+   print(f"Reduction: {(1 - sketched_params/standard_params)*100:.1f}%")
+
+This example demonstrates how to effectively use Panther's sketched layers in ResNet-style architectures.
+
        
        # Warmup
        with torch.no_grad():
@@ -470,94 +364,30 @@ Training on CIFAR-10
    if __name__ == "__main__":
        trained_model = train_sketched_resnet()
 
-AutoTuning Sketching Parameters
--------------------------------
+Parameter Selection Guidelines
+------------------------------
 
-**Automatic Parameter Optimization**
+**Choosing Sketch Parameters**
+
+When selecting ``num_terms`` and ``low_rank`` for ResNet sketching:
+
+* Start with conservative values and increase if accuracy drops
+* Use smaller sketches for 1x1 convolutions  
+* Use larger sketches for the final fully connected layer
+* Monitor memory usage and adjust accordingly
 
 .. code-block:: python
 
-   from panther.tuner import SkAutoTuner
-   import torch.nn.functional as F
+   # Example parameter choices for different ResNet layers
    
-   def create_tuned_resnet():
-       """Create ResNet with auto-tuned sketching parameters."""
-       
-       def evaluate_resnet_config(conv_terms, conv_rank, fc_terms, fc_rank):
-           \"\"\"Evaluate ResNet configuration on validation set.\"\"\""
-           
-           # Create model with given parameters
-           sketch_config = {
-               'conv_sketch': {'num_terms': int(conv_terms), 'low_rank': int(conv_rank)},
-               'fc_sketch': {'num_terms': int(fc_terms), 'low_rank': int(fc_rank)}
-           }
-           
-           model = SketchedResNet(SketchedBasicBlock, [1, 1, 1, 1], 10, sketch_config)
-           device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-           model = model.to(device)
-           
-           # Quick training (just a few batches for tuning)
-           optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-           criterion = nn.CrossEntropyLoss()
-           
-           model.train()
-           total_loss = 0
-           num_batches = 0
-           
-           # Simulate training on a few batches
-           for _ in range(10):  # Limited batches for speed
-               inputs = torch.randn(32, 3, 32, 32, device=device)
-               targets = torch.randint(0, 10, (32,), device=device)
-               
-               optimizer.zero_grad()
-               outputs = model(inputs)
-               loss = criterion(outputs, targets)
-               loss.backward()
-               optimizer.step()
-               
-               total_loss += loss.item()
-               num_batches += 1
-           
-           avg_loss = total_loss / num_batches
-           
-           # Return negative loss (tuner maximizes)
-           return -avg_loss
-       
-       # Set up AutoTuner
-       tuner = SkAutoTuner(
-           parameter_bounds={
-               'conv_terms': (2, 8),
-               'conv_rank': (8, 32),
-               'fc_terms': (4, 16),
-               'fc_rank': (16, 128)
-           },
-           objective_function=evaluate_resnet_config,
-           n_initial_points=8,
-           n_iterations=20
-       )
-       
-       # Find optimal parameters
-       best_params, best_score = tuner.optimize()
-       
-       print(f"Best parameters: {best_params}")
-       print(f"Best score: {best_score}")
-       
-       # Create final model with best parameters
-       best_sketch_config = {
-           'conv_sketch': {
-               'num_terms': int(best_params['conv_terms']),
-               'low_rank': int(best_params['conv_rank'])
-           },
-           'fc_sketch': {
-               'num_terms': int(best_params['fc_terms']),
-               'low_rank': int(best_params['fc_rank'])
-           }
-       }
-       
-       return SketchedResNet(SketchedBasicBlock, [3, 4, 6, 3], 1000, best_sketch_config)
+   # For residual blocks (3x3 convolutions)
+   residual_params = {'num_terms': 4, 'low_rank': 16}
    
-   # Create optimized model
-   optimized_model = create_tuned_resnet()
+   # For 1x1 shortcut convolutions
+   shortcut_params = {'num_terms': 2, 'low_rank': 8}
+   
+   # For final fully connected layer
+   fc_params = {'num_terms': 8, 'low_rank': 64}
 
 Production Deployment Tips
 --------------------------

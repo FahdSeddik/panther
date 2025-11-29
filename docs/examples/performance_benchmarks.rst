@@ -25,20 +25,20 @@ Benchmarking Framework
            self.dtype = dtype
            self.results = defaultdict(list)
            
-       def benchmark_sklinear(self, sizes, sketch_ratios, num_trials=10):
+       def benchmark_sklinear(self, sizes, num_terms_list, low_rank_list, num_trials=10):
            """Benchmark SKLinear vs standard Linear layers."""
            
            results = []
            
            for in_size, out_size in sizes:
-               for sketch_ratio in sketch_ratios:
-                   sketch_size = int(in_size * sketch_ratio)
-                   
-                   print(f"Testing {in_size}→{out_size}, sketch_ratio={sketch_ratio}")
-                   
-                   # Create layers
-                   standard_layer = torch.nn.Linear(in_size, out_size).to(self.device, self.dtype)
-                   sketched_layer = pr.nn.SKLinear(in_size, out_size, sketch_size).to(self.device, self.dtype)
+               for num_terms in num_terms_list:
+                   for low_rank in low_rank_list:
+                       
+                       print(f"Testing {in_size}→{out_size}, num_terms={num_terms}, low_rank={low_rank}")
+                       
+                       # Create layers
+                       standard_layer = torch.nn.Linear(in_size, out_size).to(self.device, self.dtype)
+                       sketched_layer = pr.nn.SKLinear(in_size, out_size, num_terms, low_rank).to(self.device, self.dtype)
                    
                    # Test data
                    batch_size = 128
@@ -61,8 +61,8 @@ Benchmarking Framework
                    results.append({
                        'input_size': in_size,
                        'output_size': out_size,
-                       'sketch_ratio': sketch_ratio,
-                       'sketch_size': sketch_size,
+                       'num_terms': num_terms,
+                       'low_rank': low_rank,
                        'standard_time': torch.tensor(standard_times).mean().item(),
                        'sketched_time': torch.tensor(sketched_times).mean().item(),
                        'speedup': torch.tensor(standard_times).mean() / torch.tensor(sketched_times).mean(),
@@ -179,9 +179,10 @@ Performance Results
        (4096, 2048), (8192, 4096)
    ]
    
-   sketch_ratios = [0.25, 0.5, 0.75]
+   num_terms_list = [2, 4, 8]
+   low_rank_list = [16, 32, 64]
    
-   sklinear_results = benchmark.benchmark_sklinear(layer_sizes, sketch_ratios)
+   sklinear_results = benchmark.benchmark_sklinear(layer_sizes, num_terms_list, low_rank_list)
    
    # Visualize results
    import matplotlib.pyplot as plt
@@ -338,9 +339,12 @@ Real-World Model Benchmarks
        # Replace final linear layer with SKLinear
        in_features = sketched_resnet.fc.in_features
        out_features = sketched_resnet.fc.out_features
-       sketch_size = in_features // 2  # 50% compression
        
-       sketched_resnet.fc = pr.nn.SKLinear(in_features, out_features, sketch_size)
+       sketched_resnet.fc = pr.nn.SKLinear(
+           in_features, out_features,
+           num_terms=4,
+           low_rank=64
+       )
        sketched_resnet = sketched_resnet.cuda()
        
        # Test input
