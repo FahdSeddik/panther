@@ -26,8 +26,16 @@ from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT
     sketched_linear_forward,
     sparse_sketch_operator,
     srht,
-    test_tensor_accessor,
 )
+
+# Conditionally import CUDA-only functions
+try:
+    from .pawX import test_tensor_accessor
+
+    _HAS_CUDA_FEATURES = True
+except ImportError:
+    _HAS_CUDA_FEATURES = False
+    test_tensor_accessor = None  # type: ignore
 
 __all__ = [
     "scaled_sign_sketch",
@@ -46,7 +54,6 @@ __all__ = [
     "causal_numerator_backward",
     "causal_denominator_forward",
     "causal_denominator_backward",
-    "test_tensor_accessor",
     "sparse_sketch_operator",
     "Axis",
     "gaussian_skop",
@@ -55,3 +62,7 @@ __all__ = [
     "srht",
     "sinSRPE",
 ]
+
+# Only add CUDA-specific functions to __all__ if they're available
+if _HAS_CUDA_FEATURES:
+    __all__.append("test_tensor_accessor")

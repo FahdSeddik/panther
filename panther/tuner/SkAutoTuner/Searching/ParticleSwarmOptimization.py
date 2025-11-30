@@ -64,9 +64,8 @@ class ParticleSwarmOptimization(SearchAlgorithm):
 
         self.param_space = param_space
         self.param_names = list(param_space.keys())
-        self.min_values = {key: val[0] for key, val in param_space.items()}
-        self.max_values = {key: val[1] for key, val in param_space.items()}
 
+        # Validate parameter space format before accessing values
         for param_name in self.param_names:
             if not (
                 isinstance(self.param_space[param_name], list)
@@ -77,6 +76,12 @@ class ParticleSwarmOptimization(SearchAlgorithm):
                 raise ValueError(
                     f"Parameter '{param_name}' in param_space must be a list of two numbers [min, max]."
                 )
+
+        # Now safe to access values
+        self.min_values = {key: val[0] for key, val in param_space.items()}
+        self.max_values = {key: val[1] for key, val in param_space.items()}
+
+        for param_name in self.param_names:
             if self.min_values[param_name] >= self.max_values[param_name]:
                 raise ValueError(
                     f"Min value must be less than max value for parameter '{param_name}'."

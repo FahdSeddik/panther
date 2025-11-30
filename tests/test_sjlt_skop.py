@@ -49,9 +49,12 @@ FULL_PARAMS = [
     for dtype in DTYPE_PARAMS
     for device in DEVICE_PARAMS
 ]
+# Ensure we have enough param combinations for extensive testing
+# Note: CPU-only builds have fewer combinations than CUDA builds
+MIN_EXPECTED_PARAMS = 200 if torch.cuda.is_available() else 100
 assert (
-    len(FULL_PARAMS) >= 200
-), "Expected at least 200 parameter combinations for thorough testing."
+    len(FULL_PARAMS) >= MIN_EXPECTED_PARAMS
+), f"Expected at least {MIN_EXPECTED_PARAMS} parameter combinations for thorough testing, got {len(FULL_PARAMS)}."
 
 # =============================================================================
 # Test: shape, dtype, device

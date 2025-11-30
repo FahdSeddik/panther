@@ -1,5 +1,6 @@
+import copy
 import pickle
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import torch
 
@@ -17,15 +18,15 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
 
     def __init__(
         self,
-        population_size=5,
-        n_generations=10,
-        mutation_rate=0.5,
-        crossover_rate=0.5,
-        tournament_size=5,
-        elitism_count=1,
-        selection_type="roulette_wheel_selection",
-        crossover_type="uniform_crossover",
-    ):
+        population_size: int = 5,
+        n_generations: int = 10,
+        mutation_rate: float = 0.5,
+        crossover_rate: float = 0.5,
+        tournament_size: int = 5,
+        elitism_count: int = 1,
+        selection_type: str = "roulette_wheel_selection",
+        crossover_type: str = "uniform_crossover",
+    ) -> None:
         """
         Initializes the EvolutionaryAlgorithm.
 
@@ -47,10 +48,24 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         self.elitism_count = elitism_count
         self.selection_type = selection_type
         self.crossover_type = crossover_type
+
+        # Initialize state variables with type annotations
+        # Note: self.population is now a property, so we don't set it directly
+        # Instead, we set the underlying storage in reset()
+        self.param_space: Optional[Dict[str, List[Any]]] = {}
+        self.current_individual_index: int = 0
+        self.best_params: Dict[str, Any] = {}
+        self.best_score: float = -float("inf")
+        self.history: List[Dict[str, Any]] = []
+        self.curr_generation: int = 0
+        self.indexed_param_space: List[Dict[str, Any]] = []
+        self.population_to_eval: List[Dict[str, Any]] = []
+        self.evaluated_population: List[Dict[str, Any]] = []
+
         self.__checks()
         self.reset()
 
-    def __checks(self):
+    def __checks(self) -> None:
         """
         Validates the initialization parameters.
 
@@ -69,6 +84,10 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
             raise ValueError("tournament_size must be greater than 0")
         if self.elitism_count < 0:
             raise ValueError("elitism_count must be greater than or equal to 0")
+        if self.elitism_count > self.population_size:
+            raise ValueError(
+                "elitism_count must be less than or equal to population_size"
+            )
         if self.selection_type not in [
             "roulette_wheel_selection",
             "tournament_selection",
@@ -86,7 +105,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 f"crossover_type must be one of ['uniform_crossover', 'single_point_crossover', 'two_point_crossover'], got {self.crossover_type}"
             )
 
-    def initialize(self, param_space: Dict[str, List]):
+    def initialize(self, param_space: Dict[str, List]) -> None:
         """
         Initialize the search algorithm with the parameter space.
         This method sets up the initial population for the evolutionary process.
@@ -102,16 +121,21 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         i = 0
         # Create the initial population by randomly selecting from the indexed parameter space
         while i < self.population_size:
-            choice = torch.random.randint(
-                low=0, high=len(self.indexed_param_space), size=1, dtype=torch.int32
-            )[0]
+            choice: int = int(
+                torch.randint(
+                    low=0,
+                    high=len(self.indexed_param_space),
+                    size=(1,),
+                    dtype=torch.int32,
+                ).item()
+            )
 
             params = self.indexed_param_space[choice]
             self.indexed_param_space.pop(choice)
             self.population_to_eval[i] = params
             i = i + 1
 
-    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple]:
+    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple[Any, ...]]:
         """
         Computes the Cartesian product of a list of lists.
         Example: _my_product([[1, 2], ['a', 'b']]) -> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
@@ -127,7 +151,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
 
         # Initialize with a list containing an empty tuple.
         # Each item from the subsequent lists will be appended to these tuples.
-        product_tuples = [()]
+        product_tuples: List[tuple[Any, ...]] = [()]
 
         for current_list_values in value_lists:
             if not current_list_values:
@@ -143,7 +167,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
 
         return product_tuples
 
-    def _generate_indexed_param_space(self):
+    def _generate_indexed_param_space(self) -> List[Dict[str, Any]]:
         """
         Generates an indexed parameter space from the provided param_space.
         The indexed parameter space is a list of dictionaries, where each dictionary
@@ -163,7 +187,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         value_lists = list(self.param_space.values())
 
         values_combined = self._my_product(value_lists)
-        indexed_param_space = [{} for _ in range(len(values_combined))]
+        indexed_param_space: List[Dict[str, Any]] = [
+            {} for _ in range(len(values_combined))
+        ]
 
         i = 0
         for value_combination in values_combined:
@@ -177,29 +203,29 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
 
         return indexed_param_space
 
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the next set of parameters to try.
 
         Returns:
-            Dictionary of parameter names and values to try, or None if the search is finished.
+            Dictionary of parameter names and values to try, or None if finished
         """
         if self.is_finished():
             return None
 
         if len(self.population_to_eval) > 0:
             # If there are individuals in the current population to evaluate
-            param = self.population_to_eval[self.current_individual_index]
-            self.population_to_eval.pop(self.current_individual_index)
+            param = self.population_to_eval[0]
+            self.population_to_eval.pop(0)
             self.current_individual_index = self.current_individual_index + 1
             return param
         else:
             # If the current population has been evaluated, evolve to the next generation
             self._evolve()
             # Recursively call get_next_params to get an individual from the new population
-            self.get_next_params()
+            return self.get_next_params()
 
-    def update(self, params: Dict[str, Any], score: float):
+    def update(self, params: Dict[str, Any], score: float) -> None:
         """
         Update the search algorithm with the results of the latest trial.
         This involves recording the score of the evaluated parameters and
@@ -216,7 +242,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
             self.best_score = score
             self.best_params = params
 
-    def _evolve(self):
+    def _evolve(self) -> None:
         """
         Evolves the population to the next generation.
         This method implements the core evolutionary loop:
@@ -225,15 +251,19 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         3. Performs selection, crossover, and mutation to generate the new population.
         """
         self.curr_generation = self.curr_generation + 1
-        new_population = []
+        new_population: List[Dict[str, Any]] = []
 
         # Normalize scores for selection (e.g., roulette wheel)
         scores = torch.tensor([indv["score"] for indv in self.evaluated_population])
-        min_score = scores.min()
-        max_score = scores.max()
+        min_score = float(scores.min())
+        max_score = float(scores.max())
+        score_range = max_score - min_score
+        # Add a small epsilon to avoid division by zero if all scores are the same
+        if score_range < 1e-10:
+            score_range = 1.0
+
         for indv in self.evaluated_population:
-            # Add a small epsilon to avoid division by zero if all scores are the same
-            indv["score"] = indv["score"] - min_score / ((max_score - min_score) + 1e-4)
+            indv["score"] = float((indv["score"] - min_score) / score_range)
 
         population_sorted_normalized = sorted(
             self.evaluated_population, key=lambda indv: -indv["score"]
@@ -256,7 +286,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
             if (
                 parent1 is not None
                 and parent2 is not None
-                and self.crossover_rate > torch.rand().item()
+                and self.crossover_rate > torch.rand(1).item()
             ):
                 child1, child2 = self._cross_over(parent1, parent2)
             else:
@@ -267,14 +297,16 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 elif (
                     len(new_population) < self.population_size
                 ):  # Ensure we don't exceed population size
-                    choice = torch.random.randint(
-                        low=0,
-                        high=len(
-                            self.indexed_param_space
-                        ),  # Ensure index is within bounds
-                        size=1,
-                        dtype=torch.int32,
-                    )[0]
+                    choice: int = int(
+                        torch.randint(
+                            low=0,
+                            high=len(
+                                self.indexed_param_space
+                            ),  # Ensure index is within bounds
+                            size=(1,),
+                            dtype=torch.int32,
+                        ).item()
+                    )
 
                     params = self.indexed_param_space[choice]
                     self.indexed_param_space.pop(
@@ -287,18 +319,20 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 elif (
                     len(new_population) < self.population_size
                 ):  # Ensure we don't exceed population size
-                    choice = torch.random.randint(
-                        low=0,
-                        high=len(
-                            self.indexed_param_space
-                        ),  # Ensure index is within bounds
-                        size=1,
-                        dtype=torch.int32,
-                    )[0]
+                    choice2: int = int(
+                        torch.randint(
+                            low=0,
+                            high=len(
+                                self.indexed_param_space
+                            ),  # Ensure index is within bounds
+                            size=(1,),
+                            dtype=torch.int32,
+                        ).item()
+                    )
 
-                    params = self.indexed_param_space[choice]
+                    params = self.indexed_param_space[choice2]
                     self.indexed_param_space.pop(
-                        choice
+                        choice2
                     )  # Avoid re-selecting the same random individual
                     child2 = params
 
@@ -321,7 +355,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         self.evaluated_population = []
         self.current_individual_index = 0
 
-    def _roulette_wheel_selection(self, population_sorted_normalized):
+    def _roulette_wheel_selection(
+        self, population_sorted_normalized: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Performs roulette wheel selection.
         Individuals are selected based on their fitness (score), where higher
@@ -334,16 +370,29 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         Returns:
             The selected individual.
         """
+        if not population_sorted_normalized:
+            return None
+
         scores = torch.tensor([indv["score"] for indv in population_sorted_normalized])
+        # Ensure all scores are non-negative for multinomial sampling
+        min_score = scores.min()
+        if min_score < 0:
+            scores = scores - min_score
+
+        # Add small epsilon to avoid all-zero scores
+        scores = scores + 1e-10
+
         probabilities = scores / scores.sum()
-        selected_index = torch.multinomial(probabilities, 1).item()
+        selected_index: int = int(torch.multinomial(probabilities, 1).item())
         indv = population_sorted_normalized[selected_index]
         population_sorted_normalized.pop(
             selected_index
         )  # Remove selected individual to avoid re-selection in the same step
         return indv
 
-    def _tournament_selection(self, population_sorted_normalized):
+    def _tournament_selection(
+        self, population_sorted_normalized: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Performs tournament selection.
         A subset of individuals (tournament) is randomly selected from the population,
@@ -396,7 +445,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
 
         return winner
 
-    def _random_selection(self, population_sorted_normalized):
+    def _random_selection(
+        self, population_sorted_normalized: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Performs random selection.
         An individual is chosen randomly from the population.
@@ -409,12 +460,14 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         """
         if not population_sorted_normalized:
             return None
-        choice = torch.random.randint(
-            low=0,
-            high=len(population_sorted_normalized),  # Ensure index is within bounds
-            size=1,
-            dtype=torch.int32,
-        )[0]
+        choice: int = int(
+            torch.randint(
+                low=0,
+                high=len(population_sorted_normalized),  # Ensure index is within bounds
+                size=(1,),
+                dtype=torch.int32,
+            ).item()
+        )
 
         indv = population_sorted_normalized[choice]
         population_sorted_normalized.pop(choice)
@@ -448,7 +501,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 )
             )
 
-    def _cross_over(self, parent1, parent2):
+    def _cross_over(
+        self, parent1: Dict[str, Any], parent2: Dict[str, Any]
+    ) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Performs crossover between two parents to create two children.
         The type of crossover is determined by `self.crossover_type`.
@@ -471,7 +526,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 f"Crossover type {self.crossover_type} is not implemented."
             )
 
-    def _uniform_crossover(self, parent1, parent2):
+    def _uniform_crossover(
+        self, parent1: Dict[str, Any], parent2: Dict[str, Any]
+    ) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Performs uniform crossover between two parents to create two children.
         For each parameter, the value is randomly chosen from one of the parents.
@@ -489,7 +546,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         for param in parent1.keys():
             if param == "score":
                 continue
-            if torch.rand().item() < 0.5:
+            if torch.rand(1).item() < 0.5:
                 child1[param] = parent1[param]
                 child2[param] = parent2[param]
             else:
@@ -498,7 +555,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
 
         return child1, child2
 
-    def _single_point_crossover(self, parent1, parent2):
+    def _single_point_crossover(
+        self, parent1: Dict[str, Any], parent2: Dict[str, Any]
+    ) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Performs single-point crossover between two parents.
         A single crossover point is selected, and parameters are swapped
@@ -528,11 +587,13 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 child2[key] = parent1[key]
         return child1, child2
 
-    def _two_point_crossover(self, parent1, parent2):
+    def _two_point_crossover(
+        self, parent1: Dict[str, Any], parent2: Dict[str, Any]
+    ) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Performs two-point crossover between two parents.
-        Two crossover points are selected, and parameters between these
-        points are swapped between parents.
+        Two crossover points are selected, and parameters between these points
+        are swapped between parents to create two children.
 
         Args:
             parent1: The first parent individual.
@@ -564,7 +625,7 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
                 child2[key] = parent2[key]
         return child1, child2
 
-    def _mutate(self, indv):
+    def _mutate(self, indv: Dict[str, Any]) -> Dict[str, Any]:
         """
         Performs mutation on an individual.
         For each parameter in the individual, there is a `mutation_rate` chance
@@ -579,22 +640,27 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         """
         new_indv = indv.copy()
 
+        if self.param_space is None:
+            return new_indv
+
         for param in indv.keys():
             if param == "score":
                 continue
 
             values = self.param_space[param]
 
-            choice = torch.random.randint(
-                low=0, high=len(values), size=1, dtype=torch.int32
-            )[0]
+            choice: int = int(
+                torch.randint(
+                    low=0, high=len(values), size=(1,), dtype=torch.int32
+                ).item()
+            )
 
-            if torch.rand().item() < self.mutation_rate:
+            if torch.rand(1).item() < self.mutation_rate:
                 new_indv[param] = values[choice]
 
         return new_indv
 
-    def save_state(self, filepath: str):
+    def save_state(self, filepath: str) -> None:
         """
         Save the current state of the search algorithm to a file.
 
@@ -618,18 +684,26 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
             "evaluated_population": self.evaluated_population,
             "current_individual_index": self.current_individual_index,
         }
-        with open(filepath, "wb") as f:
-            pickle.dump(state, f)
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(state, f)
+        except (IOError, OSError) as e:
+            raise RuntimeError(f"Failed to save state to {filepath}: {e}")
 
-    def load_state(self, filepath: str):
+    def load_state(self, filepath: str) -> None:
         """
-        Load the state of the search algorithm from a file.
+        Load a previously saved state of the search algorithm from a file.
 
         Args:
             filepath: The path to the file from which the state should be loaded.
         """
-        with open(filepath, "rb") as f:
-            state = pickle.load(f)
+        try:
+            with open(filepath, "rb") as f:
+                state = pickle.load(f)
+        except (IOError, OSError, FileNotFoundError) as e:
+            raise RuntimeError(f"Failed to load state from {filepath}: {e}")
+        except pickle.UnpicklingError as e:
+            raise RuntimeError(f"Failed to unpickle state from {filepath}: {e}")
 
         self.population_size = state["population_size"]
         self.n_generations = state["n_generations"]
@@ -654,7 +728,9 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         Returns:
             Dictionary of the best parameter names and values.
         """
-        return self.best_params
+        if self.best_params is None:
+            return {}
+        return copy.deepcopy(self.best_params)
 
     def get_best_score(self) -> float:
         """
@@ -665,14 +741,30 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         """
         return self.best_score
 
-    def reset(self):
+    @property
+    def population(self) -> List[Dict[str, Any]]:
+        """Alias for combined population (evaluated + to_eval) for backward compatibility."""
+        # Only include non-empty individuals
+        non_empty_to_eval = [p for p in self.population_to_eval if p]
+        return self.evaluated_population + non_empty_to_eval
+
+    @property
+    def current_generation(self) -> int:
+        """Alias for curr_generation for backward compatibility."""
+        return self.curr_generation
+
+    @current_generation.setter
+    def current_generation(self, value: int) -> None:
+        self.curr_generation = value
+
+    def reset(self) -> None:
         """
         Reset the search algorithm to its initial state.
         """
         self.param_space = None
         self.curr_generation = 0
         self.indexed_param_space = []
-        self.best_params = None
+        self.best_params = {}
         self.best_score = -float("inf")
         self.population_to_eval = [
             {} for _ in range(self.population_size)
@@ -687,4 +779,4 @@ class EvolutionaryAlgorithm(SearchAlgorithm):
         Returns:
             True if the search is finished, False otherwise.
         """
-        return self.curr_generation == self.n_generations
+        return self.curr_generation >= self.n_generations

@@ -19,6 +19,7 @@ torch::Tensor sketched_linear_forward_cpu(
     const torch::Tensor& U2s,
     c10::optional<torch::Tensor> bias = c10::nullopt);
 
+#ifdef WITH_CUDA
 torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& input,
     const torch::Tensor& S1s,
@@ -26,6 +27,7 @@ torch::Tensor sketched_linear_forward_cuda(
     const torch::Tensor& U1s,
     const torch::Tensor& U2s,
     c10::optional<torch::Tensor> bias = c10::nullopt);
+#endif
 
 std::vector<torch::Tensor> sketched_linear_backward(
     const torch::Tensor& grad_output,
@@ -46,6 +48,7 @@ std::vector<torch::Tensor> sketched_linear_backward_cpu(
     const torch::Tensor& U2s,
     const bool has_bias = false);
 
+#ifdef WITH_CUDA
 std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const torch::Tensor& grad_output,
     const torch::Tensor& input,
@@ -56,3 +59,4 @@ std::vector<torch::Tensor> sketched_linear_backward_cuda(
     const bool has_bias = false);
 
 void test_tensor_accessor(const torch::Tensor& tensor);
+#endif

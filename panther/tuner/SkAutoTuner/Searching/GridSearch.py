@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .SearchAlgorithm import SearchAlgorithm
 
@@ -31,7 +31,31 @@ class GridSearch(SearchAlgorithm):
             max_iterations: The maximum number of iterations to run.
         """
         self.max_iterations = max_iterations
+        self.param_space: Dict[str, List] = {}
+        self.curr_iteration: int = 0
+        self.indexed_param_space: List[Dict[str, Any]] = []
+        self.history: List[Dict[str, Any]] = []
+        self.best_params: Optional[Dict[str, Any]] = None
+        self.best_score: float = -float("inf")
         self.reset()
+
+    @property
+    def current_idx(self):
+        """Alias for curr_iteration for backward compatibility."""
+        return self.curr_iteration
+
+    @current_idx.setter
+    def current_idx(self, value):
+        self.curr_iteration = value
+
+    @property
+    def param_combinations(self):
+        """Alias for indexed_param_space for backward compatibility."""
+        return self.indexed_param_space
+
+    @param_combinations.setter
+    def param_combinations(self, value):
+        self.indexed_param_space = value
 
     def initialize(self, param_space: Dict[str, List]):
         """
@@ -45,7 +69,7 @@ class GridSearch(SearchAlgorithm):
         self.indexed_param_space = self._generate_indexed_param_space()
         self.max_iterations = min(self.max_iterations, len(self.indexed_param_space))
 
-    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple]:
+    def _my_product(self, value_lists: List[List[Any]]) -> List[tuple[Any, ...]]:
         """
         Computes the Cartesian product of a list of lists.
         Example: _my_product([[1, 2], ['a', 'b']]) -> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
@@ -53,7 +77,7 @@ class GridSearch(SearchAlgorithm):
         if not value_lists:
             return [()]
 
-        product_tuples = [()]
+        product_tuples: List[tuple[Any, ...]] = [()]
 
         for current_list_values in value_lists:
             if not current_list_values:
@@ -100,12 +124,12 @@ class GridSearch(SearchAlgorithm):
 
         return indexed_param_space
 
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the next set of parameters to try.
 
         Returns:
-            Dictionary of parameter names and values to try
+            Dictionary of parameter names and values to try, or None if finished
         """
         if self.is_finished():
             return None
@@ -122,6 +146,7 @@ class GridSearch(SearchAlgorithm):
             params: Dictionary of parameter names and values that were tried
             score: The evaluation score for the parameters
         """
+        self.history.append({"params": params, "score": score})
         if self.best_score < score:
             self.best_score = score
             self.best_params = params
@@ -137,6 +162,7 @@ class GridSearch(SearchAlgorithm):
             "param_space": self.param_space,
             "curr_iteration": self.curr_iteration,
             "indexed_param_space": self.indexed_param_space,
+            "history": self.history,
             "best_params": self.best_params,
             "best_score": self.best_score,
         }
@@ -157,36 +183,48 @@ class GridSearch(SearchAlgorithm):
         self.param_space = state["param_space"]
         self.curr_iteration = state["curr_iteration"]
         self.indexed_param_space = state["indexed_param_space"]
+        self.history = state.get("history", [])
         self.best_params = state["best_params"]
         self.best_score = state["best_score"]
 
-    def get_best_params(self) -> Dict[str, Any]:
+    def get_best_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the best set of parameters found so far.
 
         Returns:
-            Dictionary of the best parameter names and values.
+            Dictionary of the best parameter names and values, or None if no params yet.
         """
         return self.best_params
 
-    def get_best_score(self) -> float:
+    def get_best_score(self) -> Optional[float]:
         """
         Get the best score achieved so far.
 
         Returns:
-            The best score.
+            The best score, or None if no score yet.
         """
         return self.best_score
 
     def reset(self):
         """
-        Reset the search algorithm to its initial state.
+        Reset the search algorithm to its initial state while preserving param_space.
+        If param_space is set, it regenerates the combinations.
         """
-        self.param_space = None
+        # Preserve param_space if it exists
+        preserved_param_space = getattr(self, "param_space", {})
+
+        # Reset all state
+        self.param_space = {}
         self.curr_iteration = 0
         self.indexed_param_space = []
+        self.history = []
         self.best_params = None
         self.best_score = -float("inf")
+
+        # Restore and regenerate if param_space was set
+        if preserved_param_space:
+            self.param_space = preserved_param_space
+            self.indexed_param_space = self._generate_indexed_param_space()
 
     def is_finished(self) -> bool:
         """

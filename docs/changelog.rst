@@ -19,8 +19,9 @@ Current Version (0.1.2)
 
 **Platform Support**
 
-- Windows and Linux support
-- CUDA 12.4+ for GPU acceleration
+- Windows and Linux support (CPU and GPU)
+- CPU-only operation fully supported (requires building from source)
+- CUDA 12.4+ for optional GPU acceleration
 - Python 3.12+
 
 Current Limitations
@@ -28,7 +29,8 @@ Current Limitations
 
 **CUDA Support**
 
-- Requires CUDA 12.4+ for GPU operations
+- CUDA 12.4+ required for GPU operations (optional)
+- All core features available in CPU-only mode
 - Tensor Core optimizations work best with dimensions that are multiples of 16
 - Some operations may fall back to CPU on older GPUs
 
@@ -39,7 +41,7 @@ Current Limitations
 
 **Platform Support**
 
-- macOS support is experimental (CPU only)
+- macOS support is experimental (CPU-only mode)
 - ARM64 support not yet available
 
 **Performance**

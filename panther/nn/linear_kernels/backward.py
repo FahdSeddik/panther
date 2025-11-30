@@ -7,8 +7,8 @@ The kernels are optimized for GPU acceleration using Triton.
 """
 
 import torch
-import triton
-import triton.language as tl
+import triton  # type: ignore
+import triton.language as tl  # type: ignore
 
 
 @triton.autotune(

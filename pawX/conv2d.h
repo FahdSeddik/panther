@@ -19,6 +19,7 @@ torch::autograd::tensor_list sketched_conv2d_backward(const torch::Tensor &x_win
                                                       const std::vector<int64_t> &in_shape,
                                                       const torch::Tensor &grad_out);
 
+#ifdef WITH_CUDA
 torch::Tensor sketched_conv_cuda(
     const torch::Tensor& x,
     const torch::Tensor& S1s,
@@ -26,3 +27,4 @@ torch::Tensor sketched_conv_cuda(
     const std::vector<int64_t> &padding,
     const std::vector<int64_t> &kernel_size
     );
+#endif

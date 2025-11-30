@@ -106,8 +106,10 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
             py::arg("padding"), py::arg("kernel_size"), py::arg("in_shape"),
             py::arg("grad_out"));
 
+#ifdef WITH_CUDA
       m.def("test_tensor_accessor", &test_tensor_accessor,
             py::arg("tensor"));
+#endif
 
       m.def("gaussian_skop", &gaussian_skop,
             py::arg("m"), py::arg("d"),

@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import psutil
 import torch
-from scipy.linalg import qr as scipy_qr  # for pivoted and unpivoted QR
+from scipy.linalg import qr as scipy_qr  # type: ignore  # for pivoted and unpivoted QR
 
 from panther.linalg import cqrrpt
 
@@ -329,6 +329,9 @@ def run_benchmark():
 
                     # Factorization error (relative)
                     if is_pivoted:
+                        assert (
+                            best_J is not None
+                        ), "best_J should not be None for pivoted QR"
                         fac_err = factorization_error_pivoted(M, best_Q, best_R, best_J)
                     else:
                         fac_err = factorization_error_unpivoted(M, best_Q, best_R)
@@ -336,6 +339,9 @@ def run_benchmark():
                     # Reconstruction error (absolute Frobenius norm)
                     if is_pivoted:
                         # M[:, J] − Q R
+                        assert (
+                            best_J is not None
+                        ), "best_J should not be None for pivoted QR"
                         M_perm = M.index_select(dim=1, index=best_J)
                         recon_err = (M_perm - best_Q.mm(best_R)).norm(p="fro").item()
                     else:
@@ -356,12 +362,16 @@ def run_benchmark():
                 )
 
                 # Print a summary line including reconstruction error
+                fac_err_str = f"{fac_err:.2e}" if fac_err is not None else "N/A"
+                ortho_err_str = f"{ortho_err:.2e}" if ortho_err is not None else "N/A"
+                recon_err_str = f"{recon_err:.2e}" if recon_err is not None else "N/A"
+                best_mem_mb = best_mem / 1e6 if best_mem is not None else 0.0
                 print(
                     f"    {name:10s}  →  time: {best_time:.4f}s,  "
-                    f"mem: {best_mem/1e6:.2f} MB,  "
-                    f"fact_err: {fac_err:.2e},  "
-                    f"orth_err: {ortho_err:.2e},  "
-                    f"recon_err: {recon_err:.2e}"
+                    f"mem: {best_mem_mb:.2f} MB,  "
+                    f"fact_err: {fac_err_str},  "
+                    f"orth_err: {ortho_err_str},  "
+                    f"recon_err: {recon_err_str}"
                 )
 
             # (A) CQRRPT (pivoted, random)

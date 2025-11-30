@@ -165,7 +165,7 @@ class TuningConfigs:
         Returns:
             Dictionary mapping parameter names to their frequency of use
         """
-        param_counts = defaultdict(int)
+        param_counts: Dict[str, int] = defaultdict(int)
 
         for config in self.configs:
             for param_name in config.params:

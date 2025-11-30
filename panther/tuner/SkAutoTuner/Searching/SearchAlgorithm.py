@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class SearchAlgorithm(ABC):
@@ -18,12 +18,12 @@ class SearchAlgorithm(ABC):
         pass
 
     @abstractmethod
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the next set of parameters to try.
 
         Returns:
-            Dictionary of parameter names and values to try
+            Dictionary of parameter names and values to try, or None if finished
         """
         pass
 
@@ -59,22 +59,22 @@ class SearchAlgorithm(ABC):
         pass
 
     @abstractmethod
-    def get_best_params(self) -> Dict[str, Any]:
+    def get_best_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the best set of parameters found so far.
 
         Returns:
-            Dictionary of the best parameter names and values.
+            Dictionary of the best parameter names and values, or None if no params yet.
         """
         pass
 
     @abstractmethod
-    def get_best_score(self) -> float:
+    def get_best_score(self) -> Optional[float]:
         """
         Get the best score achieved so far.
 
         Returns:
-            The best score.
+            The best score, or None if no score yet.
         """
         pass
 

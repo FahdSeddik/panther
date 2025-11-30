@@ -7,6 +7,6 @@ try:
 
     from .linear_tr import SKLinear_triton
 except ImportError:
-    SKLinear_triton = None  # Or handle as appropriate
+    SKLinear_triton = None  # type: ignore
 
 __all__ = ["SKLinear", "RandMultiHeadAttention", "SKConv2d", "SKLinear_triton"]

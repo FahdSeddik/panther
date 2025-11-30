@@ -144,13 +144,26 @@ class RandMultiHeadAttention(nn.Module):
         else:
             self.bq = self.bk = self.bv = self.b0 = None
         self.srpe = SRPE
+        # Ensure num_random_features is an int for type checking
+        assert isinstance(
+            num_random_features, int
+        ), "num_random_features must be an int"
+
+        # Calculate the second dimension for projection matrix
+        if self.srpe is None:
+            second_dim = embed_dim // num_heads
+        else:
+            # SRPE.num_realizations is an int from __init__ signature
+            # We need to access it and ensure mypy understands it's an int
+            num_realizations = self.srpe.num_realizations
+            assert isinstance(num_realizations, int), "num_realizations must be int"
+            second_dim = num_realizations
+
         self.register_buffer(
             "projection_matrix",
             create_projection_matrix(
                 num_random_features,
-                embed_dim // num_heads
-                if self.srpe is None
-                else self.srpe.num_realizations,
+                second_dim,
                 **factory_kwargs,
             ),
         )
@@ -260,7 +273,7 @@ if __name__ == "__main__":
     import os
     import time
 
-    import psutil
+    import psutil  # type: ignore
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -25,11 +25,15 @@ torch::Tensor sketched_linear_forward(
     const torch::Tensor& U2s,
     c10::optional<torch::Tensor> bias,
     const bool use_gpu) {
+#ifdef WITH_CUDA
     if (input.device().is_cuda() && use_gpu) {
         return sketched_linear_forward_cuda(input, S1s, S2s, U1s, U2s, bias);
     } else {
         return sketched_linear_forward_cpu(input, S1s, S2s, U1s, U2s, bias);
     }
+#else
+    return sketched_linear_forward_cpu(input, S1s, S2s, U1s, U2s, bias);
+#endif
 }
 
 /**
@@ -95,11 +99,15 @@ std::vector<torch::Tensor> sketched_linear_backward(
     const torch::Tensor& U2s,
     const bool has_bias,
     bool use_gpu) {
+#ifdef WITH_CUDA
     if (input.device().is_cuda() && use_gpu) {
         return sketched_linear_backward_cuda(grad_output, input, S1s, S2s, U1s, U2s, has_bias);
     } else {
         return sketched_linear_backward_cpu(grad_output, input, S1s, S2s, U1s, U2s, has_bias);
     }
+#else
+    return sketched_linear_backward_cpu(grad_output, input, S1s, S2s, U1s, U2s, has_bias);
+#endif
 }
 
 /**

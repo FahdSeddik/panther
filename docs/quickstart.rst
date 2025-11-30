@@ -6,19 +6,24 @@ This guide will get you up and running with Panther in just a few minutes.
 Installation
 ------------
 
-Install Panther via pip (Windows with CUDA 12.4):
+Install Panther via pip (Windows with CUDA 12.4 GPU only):
 
 .. code-block:: bash
 
    pip install panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
 
-Or install from source:
+.. note::
+   **CPU-only support requires building from source.** Panther fully supports CPU-only systems, 
+   but the PyPI package currently includes CUDA dependencies. Use the source installation below 
+   to automatically build a CPU-only version.
+
+Build from source (for CPU-only systems or custom builds):
 
 .. code-block:: bash
 
    git clone https://github.com/FahdSeddik/panther.git
    cd panther
-   .\install.ps1  # Windows
+   .\\install.ps1  # Windows
    # OR
    make install   # Linux/macOS
 

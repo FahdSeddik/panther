@@ -558,9 +558,9 @@ class SKAutoTuner:
                     )
                     new_layers.append(new_layer)
 
-                accuracy_score = None
-                speed_score = None
-                score = None
+                accuracy_score: Optional[float] = None
+                speed_score: Optional[float] = None
+                score: float = float("-inf")
 
                 # send resouce if its not none else it will be ignored
                 if resource is None:
@@ -585,8 +585,10 @@ class SKAutoTuner:
                 # Check if this run is the best for the current parameter set
                 if score > best_score_across_param_runs:
                     best_score_across_param_runs = score
-                    best_accuracy_score_across_param_runs = accuracy_score
-                    best_speed_score_across_param_runs = speed_score
+                    if accuracy_score is not None:
+                        best_accuracy_score_across_param_runs = accuracy_score
+                    if speed_score is not None:
+                        best_speed_score_across_param_runs = speed_score
                     best_layers_across_param_runs = copy.deepcopy(new_layers)
 
                 if self.verbose:

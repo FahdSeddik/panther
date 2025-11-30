@@ -5,7 +5,9 @@ import random
 import torch
 import torch.nn as nn
 
-from panther.utils import *
+from panther.tuner.SkAutoTuner.Configs.LayerConfig import LayerConfig
+from panther.tuner.SkAutoTuner.Configs.TuningConfigs import TuningConfigs
+from panther.tuner.SkAutoTuner.SKAutoTuner import SKAutoTuner
 
 # For reproducibility
 torch.manual_seed(0)
@@ -52,9 +54,15 @@ def dummy_accuracy_eval_func(model: nn.Module) -> float:
             num_sketched += 1
             # Example: Favor specific sketch parameters for variety in results
             if hasattr(module, "num_terms") and hasattr(module, "low_rank"):
-                if module.num_terms > 15:  # Arbitrary condition for demo
+                num_terms = getattr(module, "num_terms", 0)
+                low_rank = getattr(module, "low_rank", 0)
+                if (
+                    isinstance(num_terms, int) and num_terms > 15
+                ):  # Arbitrary condition for demo
                     sketched_bonus += 0.02
-                if module.low_rank < 10:  # Arbitrary condition for demo
+                if (
+                    isinstance(low_rank, int) and low_rank < 10
+                ):  # Arbitrary condition for demo
                     sketched_bonus += 0.01
 
     # Simulate some noise or dependency on parameters
@@ -94,7 +102,7 @@ if __name__ == "__main__":
     print("\n--- Original Model Summary ---")
     # To use print_model_summary, we need a tuner instance with the model
     temp_tuner_orig = SKAutoTuner(original_model, TuningConfigs([]), lambda m: 0.0)
-    temp_tuner_orig.print_model_summary()
+    temp_tuner_orig.print_model_summary()  # type: ignore[attr-defined]
 
     # --- Configuration for Tuning ---
     # Define which layers to tune and with what parameters
@@ -155,7 +163,7 @@ if __name__ == "__main__":
     # tuner.model is modified in-place by apply_best_params()
     tuned_model_explicit_return = tuner.apply_best_params()
     print("Best parameters applied. Model summary after tuning:")
-    tuner.print_model_summary()  # Shows the state of tuner.model
+    tuner.print_model_summary()  # type: ignore[attr-defined]  # Shows the state of tuner.model
 
     # --- 5. Visualize Tuning Results ---
     print("\n--- Visualizing Tuning Results (visualize_tuning_results) ---")
@@ -184,7 +192,7 @@ if __name__ == "__main__":
     print("\n--- Explicit call to get_model_summary (on tuned model) ---")
     # tuner.print_model_summary() was already called after apply_best_params,
     # this shows how to get the raw dictionary.
-    model_summary_dict = tuner.get_model_summary()
+    model_summary_dict = tuner.get_model_summary()  # type: ignore[attr-defined]
     print(f"Total parameters in tuned model: {model_summary_dict['total_params']}")
     print(f"Number of sketched layers: {model_summary_dict['sketched_layers']}")
     # print(f"Full summary dict: {model_summary_dict}") # Uncomment to see full structure
@@ -250,7 +258,7 @@ if __name__ == "__main__":
     if not os.path.exists(model_export_dir):
         os.makedirs(model_export_dir)
     tuned_model_path = os.path.join(model_export_dir, "tuned_simple_model.pth")
-    tuner.export_model(tuned_model_path)  # Exports tuner.model.state_dict()
+    tuner.export_model(tuned_model_path)  # type: ignore[attr-defined]  # Exports tuner.model.state_dict()
     print(f"Tuned model state_dict exported to {tuned_model_path}")
 
     # --- 11. Visualize Parameter Distribution of Tuned Model ---
@@ -260,7 +268,7 @@ if __name__ == "__main__":
     # This uses the model currently in the 'tuner' instance (which is the tuned one)
     param_dist_path = os.path.join(viz_dir, "tuned_model_parameter_distribution.png")
     try:
-        tuner.visualize_parameter_distribution(
+        tuner.visualize_parameter_distribution(  # type: ignore[attr-defined]
             save_path=param_dist_path, show_plot=False
         )
         print(f"Parameter distribution visualization saved to {param_dist_path}")
@@ -285,7 +293,7 @@ if __name__ == "__main__":
     )
     original_benchmark_results = None  # Initialize for robust access later
     try:
-        original_benchmark_results = tuner_for_original_bench.get_inference_benchmark(
+        original_benchmark_results = tuner_for_original_bench.get_inference_benchmark(  # type: ignore[attr-defined]
             benchmark_input, num_runs=50, warm_up=5
         )
         print(
@@ -298,7 +306,7 @@ if __name__ == "__main__":
     tuned_benchmark_results = None  # Initialize for robust access later
     try:
         # tuner.model is already the tuned one
-        tuned_benchmark_results = tuner.get_inference_benchmark(
+        tuned_benchmark_results = tuner.get_inference_benchmark(  # type: ignore[attr-defined]
             benchmark_input, num_runs=50, warm_up=5
         )
         print(
@@ -334,7 +342,7 @@ if __name__ == "__main__":
         lambda m: 0.0,
         # ^ This tuner is just for print_model_summary, uses empty configs
     )
-    temp_tuner_replace_before.print_model_summary()
+    temp_tuner_replace_before.print_model_summary()  # type: ignore[attr-defined]
 
     # Re-initialize tuner with the fresh model and original configs
     # No need for eval funcs or accuracy_threshold for replace_without_tuning
@@ -350,7 +358,7 @@ if __name__ == "__main__":
         tuner_for_replace.replace_without_tuning()
     )  # This calls the method on tuner_for_replace
     print("\nModel summary after replace_without_tuning:")
-    tuner_for_replace.print_model_summary()  # Shows the state of tuner_for_replace.model
+    tuner_for_replace.print_model_summary()  # type: ignore[attr-defined]  # Shows the state of tuner_for_replace.model
 
     print("\n--- Additional SKAutoTuner features demonstrated ---")
     # print_comparison_summary was already called, it uses compare_models internally.
@@ -359,13 +367,13 @@ if __name__ == "__main__":
         "\n- Model Comparison (print_comparison_summary - uses compare_models internally):"
     )
     # Ensure original_model is pristine.
-    tuner.print_comparison_summary(original_model=original_model)
+    tuner.print_comparison_summary(original_model=original_model)  # type: ignore[attr-defined]
 
     print("\n- Explicit call to compare_models to get the raw dictionary:")
     try:
         # The 'tuner' instance holds the tuned model.
         # 'original_model' is the one from the beginning of the script.
-        comparison_dict = tuner.compare_models(original_model=original_model)
+        comparison_dict = tuner.compare_models(original_model=original_model)  # type: ignore[attr-defined]
         print(
             f"  Parameter reduction from compare_models dict: {comparison_dict.get('param_reduction_percent', 0):.2f}%"
         )

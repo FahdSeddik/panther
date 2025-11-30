@@ -5,7 +5,7 @@ import sys
 
 from setuptools import setup
 from torch.cuda import get_device_capability, is_available
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension
 
 
 def check_linux_dependencies():
@@ -22,14 +22,14 @@ def check_linux_dependencies():
         sys.exit(1)
 
 
-def get_platform_config():
+def get_platform_config(cuda_available=True):
     system = platform.system().lower()
     print(f"Detected system: {system}")
     if system == "windows":
         openblas_path = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "OpenBLAS")
         )
-        return {
+        config = {
             "include_dirs": [os.path.join(openblas_path, "include")],
             "library_dirs": [os.path.join(openblas_path, "lib")],
             "libraries": ["libopenblas"],
@@ -47,9 +47,12 @@ def get_platform_config():
             },
             "extra_link_args": ["/NODEFAULTLIB:LIBCMT"],
         }
+        if cuda_available:
+            config["extra_compile_args"]["cxx"].append("/DWITH_CUDA")
+        return config
     elif system == "linux":
         check_linux_dependencies()
-        return {
+        config = {
             "include_dirs": ["/usr/include/x86_64-linux-gnu"],
             "library_dirs": [],
             "libraries": ["openblas"],
@@ -67,11 +70,17 @@ def get_platform_config():
             },
             "extra_link_args": ["-llapacke", "-lopenblas"],
         }
+        if cuda_available:
+            config["extra_compile_args"]["cxx"].append("-DWITH_CUDA")
+        return config
     else:
         raise RuntimeError(f"Unsupported platform: {system}")
 
 
-config = get_platform_config()
+# Check for CUDA availability first
+cuda_available = is_available()
+
+config = get_platform_config(cuda_available)
 
 
 def has_tensor_core_support():
@@ -101,33 +110,53 @@ cuda_tensor_core = [
 
 # Dynamically choose the appropriate CUDA file
 use_tensor_core = has_tensor_core_support()
-cuda_file = cuda_tensor_core if use_tensor_core else cuda_no_tensor_core
-print(f"\033[94m[INFO] Using CUDA source file: {cuda_file}\033[0m")
+
+if cuda_available:
+    cuda_file = cuda_tensor_core if use_tensor_core else cuda_no_tensor_core
+    print(f"\033[94m[INFO] Using CUDA source file: {cuda_file}\033[0m")
+else:
+    cuda_file = []
+    print(f"\033[93m[WARNING] Building CPU-only version (no CUDA sources)\033[0m")
+
+
+# CPU-only source files (exclude .cu files)
+cpp_sources = [
+    "skops.cpp",
+    "bindings.cpp",
+    "linear.cpp",
+    "cqrrpt.cpp",
+    "rsvd.cpp",
+    "attention.cpp",
+    "conv2d.cpp",
+    "spre.cpp",
+]
+
+# CUDA-specific source files
+cuda_sources = [
+    "timing.cu",
+    "conv_cuda.cu",
+    "cuda_tensor_accessor.cu",
+]
 
 
 setup(
     name="pawX",
     ext_modules=[
-        CUDAExtension(
+        (CUDAExtension if cuda_available else CppExtension)(
             name="pawX",
-            sources=[
-                "skops.cpp",
-                "bindings.cpp",
-                "linear.cpp",
-                "cqrrpt.cpp",
-                "rsvd.cpp",
-                "attention.cpp",
-                "conv2d.cpp",
-                "timing.cu",
-                "spre.cpp",
-                "conv_cuda.cu",
-                "cuda_tensor_accessor.cu",
-                *cuda_file,
-            ],
+            sources=(
+                cpp_sources + cuda_sources + cuda_file
+                if cuda_available
+                else cpp_sources
+            ),
             include_dirs=config["include_dirs"],
             library_dirs=config["library_dirs"],
             libraries=config["libraries"],
-            extra_compile_args=config["extra_compile_args"],
+            extra_compile_args=(
+                config["extra_compile_args"]
+                if cuda_available
+                else {"cxx": config["extra_compile_args"]["cxx"]}
+            ),
             extra_link_args=config["extra_link_args"],
         )
     ],

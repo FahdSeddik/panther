@@ -150,10 +150,11 @@ class TreeParzenEstimator(SearchAlgorithm):
         )
         return prob
 
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the next set of parameters to try.
         Uses random search for initial points, then TPE.
+        Returns None if max trials reached.
         """
         if not self.param_space:
             raise RuntimeError(

@@ -22,8 +22,8 @@ Current Status (v0.1.2)
 
 - Single-node training only
 - Limited to implemented layer types
-- CUDA 12.4+ required for GPU acceleration
-- Windows and Linux only (macOS experimental)
+- CUDA 12.4+ required for GPU acceleration (CPU-only mode fully supported)
+- Windows and Linux fully supported (macOS experimental, CPU-only)
 
 Potential Future Directions
 ---------------------------

@@ -4,7 +4,7 @@ import os
 import re
 import tempfile
 import webbrowser
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -252,16 +252,18 @@ class ModelVisualizer:
                         else getattr(module, "d_model", "N/A"),
                         "nhead": module.self_attn.num_heads
                         if hasattr(module, "self_attn")
-                        else getattr(module, "nhead", "N/A"),
+                        else str(getattr(module, "nhead", "N/A")),
                         "dim_feedforward": module.linear1.out_features
                         if hasattr(module, "linear1")
-                        else getattr(module, "dim_feedforward", "N/A"),
+                        else str(getattr(module, "dim_feedforward", "N/A")),
                         "dropout": module.dropout.p
                         if hasattr(module, "dropout")
-                        else getattr(module, "dropout", "N/A"),
+                        else float(getattr(module, "dropout", 0.0))
+                        if isinstance(getattr(module, "dropout", 0.0), (int, float))
+                        else 0.0,
                         "activation": type(module.activation).__name__
                         if hasattr(module, "activation")
-                        else getattr(module, "activation", "N/A"),
+                        else str(getattr(module, "activation", "N/A")),
                     }
                 )
                 if isinstance(module, nn.TransformerDecoderLayer):
@@ -1086,7 +1088,7 @@ class ModelVisualizer:
 
     @staticmethod
     def get_model_summary_data(
-        model: nn.Module, is_sketched_func: Optional[callable] = None
+        model: nn.Module, is_sketched_func: Optional[Callable[[nn.Module], bool]] = None
     ) -> Dict[str, Any]:
         """
         Get a summary of the model architecture, including sketched layers if a check function is provided.
@@ -1133,7 +1135,7 @@ class ModelVisualizer:
 
     @staticmethod
     def print_model_summary_text(
-        model: nn.Module, is_sketched_func: Optional[callable] = None
+        model: nn.Module, is_sketched_func: Optional[Callable[[nn.Module], bool]] = None
     ) -> None:
         """
         Print a summary of the model architecture, highlighting sketched layers.
@@ -1173,8 +1175,8 @@ class ModelVisualizer:
         model2: nn.Module,
         model1_name: str = "Model 1",
         model2_name: str = "Model 2",
-        is_sketched_func_model1: Optional[callable] = None,
-        is_sketched_func_model2: Optional[callable] = None,
+        is_sketched_func_model1: Optional[Callable[[nn.Module], bool]] = None,
+        is_sketched_func_model2: Optional[Callable[[nn.Module], bool]] = None,
     ) -> Dict[str, Any]:
         """
         Compare two models and return detailed comparison data.
@@ -1285,8 +1287,8 @@ class ModelVisualizer:
         model2: nn.Module,
         model1_name: str = "Original Model",
         model2_name: str = "Tuned Model",
-        is_sketched_func_model1: Optional[callable] = None,
-        is_sketched_func_model2: Optional[callable] = None,
+        is_sketched_func_model1: Optional[Callable[[nn.Module], bool]] = None,
+        is_sketched_func_model2: Optional[Callable[[nn.Module], bool]] = None,
     ) -> None:
         """
         Print a summary comparing two models.
@@ -1392,7 +1394,7 @@ class ModelVisualizer:
     @staticmethod
     def visualize_parameter_distribution(
         model: nn.Module,
-        is_sketched_func: Optional[callable] = None,
+        is_sketched_func: Optional[Callable[[nn.Module], bool]] = None,
         save_path: Optional[str] = None,
         show_plot: bool = True,
     ) -> None:

@@ -86,7 +86,7 @@ class ConfigVisualizer(ModelVisualizer):
         # This is a mapping from layer type to parameter options
         # In a real implementation, this would be more complete and based on the capabilities
         # of the SkAutoTuner's supported sketching parameters
-        config_options = {
+        config_options: Dict[str, Dict[str, List[Any]]] = {
             "Linear": {
                 "sketch": ["qr", "svd", "srd"],
                 "sketch_ratio": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],

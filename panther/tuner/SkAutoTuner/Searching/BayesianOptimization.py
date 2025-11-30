@@ -2,8 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
-from botorch.acquisition import (
-    ExpectedImprovement,
+from botorch.acquisition import (  # type: ignore
     LogExpectedImprovement,
     PosteriorMean,
     PosteriorStandardDeviation,
@@ -11,10 +10,10 @@ from botorch.acquisition import (
     UpperConfidenceBound,
     qLowerBoundMaxValueEntropy,
 )
-from botorch.fit import fit_gpytorch_mll
-from botorch.models import SingleTaskGP
-from botorch.optim import optimize_acqf
-from gpytorch.mlls import ExactMarginalLogLikelihood
+from botorch.fit import fit_gpytorch_mll  # type: ignore
+from botorch.models import SingleTaskGP  # type: ignore
+from botorch.optim import optimize_acqf  # type: ignore
+from gpytorch.mlls import ExactMarginalLogLikelihood  # type: ignore
 
 from .SearchAlgorithm import SearchAlgorithm
 
@@ -45,7 +44,7 @@ class BayesianOptimization(SearchAlgorithm):
             noise_level: Assumed noise level in observations
             seed: Random seed for reproducibility
         """
-        self.param_space = {}
+        self.param_space: Dict[str, List[Any]] = {}
         self.max_trials = max_trials
         self.random_trials = random_trials
         self.exploration_weight = exploration_weight
@@ -53,20 +52,22 @@ class BayesianOptimization(SearchAlgorithm):
         self.current_trial = 0
 
         # Parameter mapping
-        self._param_mapping = {}  # Maps parameter names to indices
-        self._param_inv_mapping = {}  # Maps indices to parameter names
+        self._param_mapping: Dict[str, int] = {}  # Maps parameter names to indices
+        self._param_inv_mapping: Dict[int, str] = {}  # Maps indices to parameter names
         # Observation history
-        self.train_x = None  # Normalized tensor of parameter values
-        self.train_y = None  # Tensor of observed scores
-        self.train_y_raw = []  # Raw observation values for reporting
+        self.train_x: Optional[torch.Tensor] = (
+            None  # Normalized tensor of parameter values
+        )
+        self.train_y: Optional[torch.Tensor] = None  # Tensor of observed scores
+        self.train_y_raw: List[float] = []  # Raw observation values for reporting
 
         # Best observed value and parameters
-        self.best_value = None
-        self.best_params = None
+        self.best_value: Optional[float] = None
+        self.best_params: Optional[Dict[str, Any]] = None
 
         # GP model
         self.model = None
-        self.bounds = None
+        self.bounds: Optional[torch.Tensor] = None
 
     def initialize(self, param_space: Dict[str, List]):
         """
@@ -145,9 +146,9 @@ class BayesianOptimization(SearchAlgorithm):
         if point.ndim > 1:
             point = point.squeeze(0)
 
-        point = point.detach().numpy()
+        point_np = point.detach().numpy()
         params = {}
-        for i, norm_value in enumerate(point):
+        for i, norm_value in enumerate(point_np):
             param = self._param_inv_mapping[i]
             options = self.param_space[param]
 
@@ -203,12 +204,10 @@ class BayesianOptimization(SearchAlgorithm):
                 model=self.model,
                 beta=self.exploration_weight,
             )
-        elif self.acquisition_type == "logei":
+        elif self.acquisition_type in ["logei", "ei"]:
+            # Use LogExpectedImprovement for both "ei" and "logei" as it has better numerical stability
+            # than ExpectedImprovement (which is deprecated)
             return LogExpectedImprovement(
-                model=self.model, best_f=self.best_value, maximize=True
-            )
-        elif self.acquisition_type == "ei":
-            return ExpectedImprovement(
                 model=self.model, best_f=self.best_value, maximize=True
             )
         elif self.acquisition_type == "pi":
@@ -235,12 +234,12 @@ class BayesianOptimization(SearchAlgorithm):
                 f"Unknown acquisition function type: {self.acquisition_type}"
             )
 
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the next set of parameters to try using Bayesian Optimization.
 
         Returns:
-            Dictionary of parameter names and values to try
+            Dictionary of parameter names and values to try, or None if finished
         """
         if self.current_trial >= self.max_trials:
             return None  # All trials completed
@@ -248,7 +247,7 @@ class BayesianOptimization(SearchAlgorithm):
         self.current_trial += 1
 
         # Use random search for the first few trials
-        if len(self.train_y) < self.random_trials:
+        if self.train_y is None or len(self.train_y) < self.random_trials:
             random_params = {}
             for param, values in self.param_space.items():
                 # Always select directly from available options
@@ -294,15 +293,22 @@ class BayesianOptimization(SearchAlgorithm):
 
         # Update the best observed value and parameters
         if self.best_value is None or score > self.best_value:
-            self.best_value = torch.tensor(score, dtype=torch.float64)
+            self.best_value = score
             self.best_params = params.copy()
 
         # Add to observations
         score_tensor = torch.tensor([[score]], dtype=torch.float64)
 
         # Update training data
-        self.train_x = torch.cat([self.train_x, point], dim=0)
-        self.train_y = torch.cat([self.train_y, score_tensor], dim=0)
+        if self.train_x is None:
+            self.train_x = point
+        else:
+            self.train_x = torch.cat([self.train_x, point], dim=0)
+
+        if self.train_y is None:
+            self.train_y = score_tensor
+        else:
+            self.train_y = torch.cat([self.train_y, score_tensor], dim=0)
 
     def save_state(self, filepath: str):
         """
@@ -337,7 +343,7 @@ class BayesianOptimization(SearchAlgorithm):
         Args:
             filepath: The path to the file from which the state should be loaded.
         """
-        state = torch.load(filepath)
+        state = torch.load(filepath, weights_only=False)
         self.param_space = state["param_space"]
         self.max_trials = state["max_trials"]
         self.random_trials = state["random_trials"]
@@ -357,21 +363,21 @@ class BayesianOptimization(SearchAlgorithm):
         if self.train_x is not None and len(self.train_x) > 0:
             self._update_model()
 
-    def get_best_params(self) -> Dict[str, Any]:
+    def get_best_params(self) -> Optional[Dict[str, Any]]:
         """
         Get the best set of parameters found so far.
 
         Returns:
-            Dictionary of the best parameter names and values.
+            Dictionary of the best parameter names and values, or None if no trials yet.
         """
         return self.best_params
 
-    def get_best_score(self) -> float:
+    def get_best_score(self) -> Optional[float]:
         """
         Get the best score achieved so far.
 
         Returns:
-            The best score.
+            The best score, or None if no trials yet.
         """
         if self.best_value is None:
             return None

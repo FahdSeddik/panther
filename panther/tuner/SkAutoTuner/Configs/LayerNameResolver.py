@@ -56,7 +56,10 @@ class LayerNameResolver:
             if not all(isinstance(v, int) for v in range_val):
                 raise ValueError("All 'range' values must be integers")
 
-            start, end, *step = range_val
+            # Type narrowing: we know all elements are int now
+            start: int = range_val[0]  # type: ignore
+            end: int = range_val[1]  # type: ignore
+
             if start < 0:
                 raise ValueError("'range' start value must be non-negative")
             if end <= start:
@@ -71,7 +74,11 @@ class LayerNameResolver:
             elif isinstance(indices, list):
                 if not all(isinstance(idx, int) for idx in indices):
                     raise ValueError("All 'indices' must be integers")
-                if any(idx < 0 for idx in indices):
+                # Type narrowing: all elements are int now
+                int_indices: List[int] = [
+                    idx for idx in indices if isinstance(idx, int)
+                ]
+                if any(idx < 0 for idx in int_indices):
                     raise ValueError("All 'indices' must be non-negative")
             else:
                 raise ValueError("'indices' must be an integer or list of integers")
@@ -121,9 +128,13 @@ class LayerNameResolver:
 
             # Filter by pattern
             if "pattern" in selectors:
-                patterns = selectors["pattern"]
-                if isinstance(patterns, str):
-                    patterns = [patterns]
+                patterns_val = selectors["pattern"]
+                patterns: List[str] = []
+                if isinstance(patterns_val, str):
+                    patterns = [patterns_val]
+                elif isinstance(patterns_val, list):
+                    # Filter to only string elements
+                    patterns = [p for p in patterns_val if isinstance(p, str)]
 
                 pattern_matches = set()
                 for pattern in patterns:
@@ -133,18 +144,24 @@ class LayerNameResolver:
 
             # Filter by containing string
             if "contains" in selectors:
-                contains = selectors["contains"]
-                if isinstance(contains, str):
-                    contains = [contains]
+                contains_val = selectors["contains"]
+                contains: List[str] = []
+                if isinstance(contains_val, str):
+                    contains = [contains_val]
+                elif isinstance(contains_val, list):
+                    contains = [c for c in contains_val if isinstance(c, str)]
                 matched_layers = {
                     name for name in matched_layers if any(c in name for c in contains)
                 }
 
-            # Filter by type - optimized to only check already matched layers
+            # Filter by type
             if "type" in selectors:
-                types = selectors["type"]
-                if isinstance(types, str):
-                    types = [types]
+                types_val = selectors["type"]
+                types: List[str] = []
+                if isinstance(types_val, str):
+                    types = [types_val]
+                elif isinstance(types_val, list):
+                    types = [t for t in types_val if isinstance(t, str)]
 
                 type_matches = set()
                 for layer_name in matched_layers:
@@ -163,12 +180,16 @@ class LayerNameResolver:
 
             # Apply indices filter
             if "indices" in selectors:
-                indices = selectors["indices"]
-                if isinstance(indices, int):
-                    indices = [indices]
+                indices_val = selectors["indices"]
+                if isinstance(indices_val, int):
+                    indices = [indices_val]
+                elif isinstance(indices_val, list):
+                    indices = [i for i in indices_val if isinstance(i, int)]
+                else:
+                    indices = []
 
                 # Validate indices are within bounds
-                if max(indices) >= len(matched_list):
+                if indices and max(indices) >= len(matched_list):
                     raise ValueError(
                         f"Index {max(indices)} is out of bounds for {len(matched_list)} matched layers"
                     )
@@ -178,17 +199,30 @@ class LayerNameResolver:
 
             # Apply range filter
             if "range" in selectors:
-                start, end, *step = selectors["range"]
-                step = step[0] if step else 1
+                range_val = selectors["range"]
+                if isinstance(range_val, list) and len(range_val) >= 2:
+                    start_val = range_val[0]
+                    end_val = range_val[1]
+                    step_val = range_val[2] if len(range_val) > 2 else 1
 
-                # Validate end is within bounds
-                if end > len(matched_list):
-                    raise ValueError(
-                        f"Range end {end} exceeds the number of matched layers ({len(matched_list)})"
-                    )
+                    if not isinstance(start_val, int) or not isinstance(end_val, int):
+                        raise ValueError("Range start and end must be integers")
+                    if not isinstance(step_val, int):
+                        raise ValueError("Range step must be an integer")
 
-                selected_layers = matched_list[start:end:step]
-                return selected_layers
+                    # Type narrowed now
+                    start: int = start_val
+                    end: int = end_val
+                    step: int = step_val
+
+                    # Validate end is within bounds
+                    if end > len(matched_list):
+                        raise ValueError(
+                            f"Range end {end} exceeds the number of matched layers ({len(matched_list)})"
+                        )
+
+                    selected_layers = matched_list[start:end:step]
+                    return selected_layers
 
             if len(matched_list) == 0:
                 raise ValueError("No layers matched the provided selectors")
@@ -240,7 +274,7 @@ class LayerNameResolver:
             Dictionary where keys are layer types (e.g., 'Linear', 'Conv2d')
             and values are lists of layer names of that type
         """
-        type_map = {}
+        type_map: Dict[str, List[str]] = {}
         for name, layer in self.layer_map.items():
             layer_type = type(layer).__name__
             if layer_type not in type_map:

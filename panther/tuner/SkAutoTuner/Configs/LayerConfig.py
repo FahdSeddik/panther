@@ -53,13 +53,17 @@ class LayerConfig:
             A new LayerConfig instance with the same properties
         """
         # Deep copy layer_names based on its type
+        layer_names_copy: Union[
+            str, List[str], Dict[str, Union[str, List[str], int, List[int]]]
+        ]
         if isinstance(self.layer_names, dict):
-            layer_names_copy = {}
+            layer_names_copy_dict: Dict[str, Union[str, List[str], int, List[int]]] = {}
             for key, value in self.layer_names.items():
                 if isinstance(value, list):
-                    layer_names_copy[key] = value.copy()
+                    layer_names_copy_dict[key] = value.copy()
                 else:
-                    layer_names_copy[key] = value
+                    layer_names_copy_dict[key] = value
+            layer_names_copy = layer_names_copy_dict
         elif isinstance(self.layer_names, list):
             layer_names_copy = self.layer_names.copy()
         else:
@@ -95,40 +99,64 @@ class LayerConfig:
         Raises:
             TypeError: If layer_names are not compatible for merging
         """
+        merged_layer_names: Union[
+            str, List[str], Dict[str, Union[str, List[str], int, List[int]]]
+        ]
+
         # Handle layer_names merging based on type
         if isinstance(self.layer_names, list) and isinstance(other.layer_names, list):
             merged_layer_names = self.layer_names + other.layer_names
         elif isinstance(self.layer_names, str) and isinstance(other.layer_names, str):
             merged_layer_names = [self.layer_names, other.layer_names]
         elif isinstance(self.layer_names, dict) and isinstance(other.layer_names, dict):
-            merged_layer_names = self.layer_names.copy()
+            merged_layer_names_dict: Dict[
+                str, Union[str, List[str], int, List[int]]
+            ] = {}
+            for key, value in self.layer_names.items():
+                merged_layer_names_dict[key] = value
+
             for key, value in other.layer_names.items():
-                if key in merged_layer_names:
-                    if isinstance(merged_layer_names[key], list) and isinstance(
-                        value, list
-                    ):
-                        merged_layer_names[key].extend(value)
-                    elif isinstance(merged_layer_names[key], list):
-                        merged_layer_names[key].append(value)
+                if key in merged_layer_names_dict:
+                    existing = merged_layer_names_dict[key]
+                    if isinstance(existing, list) and isinstance(value, list):
+                        # Properly handle list types
+                        if isinstance(
+                            existing[0] if existing else None, str
+                        ) and isinstance(value[0] if value else None, str):
+                            result: List[str] = existing + value  # type: ignore
+                            merged_layer_names_dict[key] = result
+                        else:
+                            result_int: List[int] = existing + value  # type: ignore
+                            merged_layer_names_dict[key] = result_int
+                    elif isinstance(existing, list):
+                        if isinstance(value, (str, int)):
+                            existing.append(value)  # type: ignore
                     elif isinstance(value, list):
-                        merged_layer_names[key] = [merged_layer_names[key]] + value
+                        merged_layer_names_dict[key] = [existing] + value  # type: ignore
                     else:
-                        merged_layer_names[key] = [merged_layer_names[key], value]
+                        merged_layer_names_dict[key] = [existing, value]  # type: ignore
                 else:
-                    merged_layer_names[key] = value
+                    merged_layer_names_dict[key] = value
+            merged_layer_names = merged_layer_names_dict
         else:
             # If types are different, convert to list and combine
+            first_list: List[
+                Union[str, Dict[str, Union[str, List[str], int, List[int]]]]
+            ]
             if isinstance(self.layer_names, (str, dict)):
-                first = [self.layer_names]
+                first_list = [self.layer_names]  # type: ignore
             else:
-                first = self.layer_names
+                first_list = self.layer_names  # type: ignore
 
+            second_list: List[
+                Union[str, Dict[str, Union[str, List[str], int, List[int]]]]
+            ]
             if isinstance(other.layer_names, (str, dict)):
-                second = [other.layer_names]
+                second_list = [other.layer_names]  # type: ignore
             else:
-                second = other.layer_names
+                second_list = other.layer_names  # type: ignore
 
-            merged_layer_names = first + second
+            merged_layer_names = first_list + second_list  # type: ignore
 
         # Merge params
         merged_params = self.params.copy()

@@ -1,7 +1,7 @@
 import math
 import pickle
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .SearchAlgorithm import SearchAlgorithm
 
@@ -25,8 +25,8 @@ class Hyperband(SearchAlgorithm):
             self.s_max + 1
         ) * self.max_resource  # Total budget for one Hyperband iteration
 
-        self.param_space: Dict[str, List] = None
-        self.best_config: Dict[str, Any] = None
+        self.param_space: Optional[Dict[str, List]] = None
+        self.best_config: Optional[Dict[str, Any]] = None
         self.best_score: float = float("-inf")
 
         # State for current Hyperband iteration
@@ -110,7 +110,7 @@ class Hyperband(SearchAlgorithm):
         # For now, we just need to queue up the initial configs for the first round of SH
         # get_next_params() will pop from self.configs_to_evaluate
 
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         if self.is_finished():
             return None
 
@@ -205,7 +205,23 @@ class Hyperband(SearchAlgorithm):
             self.best_config = params
 
         # Store the result of the evaluated config
-        self.evaluated_configs_in_round.append((params, score))
+        # Check if this exact config is already in the evaluated list for this round
+        # to avoid duplicates (which can occur if the same config is sampled twice)
+        config_exists = any(
+            existing_config == params
+            for existing_config, _ in self.evaluated_configs_in_round
+        )
+
+        if not config_exists:
+            self.evaluated_configs_in_round.append((params, score))
+        else:
+            # Update the score if this config already exists and the new score is better
+            for i, (existing_config, existing_score) in enumerate(
+                self.evaluated_configs_in_round
+            ):
+                if existing_config == params and score > existing_score:
+                    self.evaluated_configs_in_round[i] = (params, score)
+                    break
 
         # Note: The actual processing of these results to select top k for the next round
         # happens in get_next_params() when it realizes it needs more configs to dispatch.
@@ -256,12 +272,12 @@ class Hyperband(SearchAlgorithm):
         self.total_iterations_done = state["total_iterations_done"]
         self.max_total_iterations = state["max_total_iterations"]
 
-    def get_best_params(self) -> Dict[str, Any]:
+    def get_best_params(self) -> Optional[Dict[str, Any]]:
         if self.best_config is None and self.param_space:
             return self._get_random_config()  # Fallback if no evaluations yet
         return self.best_config
 
-    def get_best_score(self) -> float:
+    def get_best_score(self) -> Optional[float]:
         return self.best_score
 
     def reset(self):

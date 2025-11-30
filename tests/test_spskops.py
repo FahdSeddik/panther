@@ -36,7 +36,10 @@ def unique_per_index(sparse_tensor, dim, size):
     return [len(u) for u in uniq]
 
 
-@pytest.fixture(params=[torch.device("cpu"), torch.device("cuda")])
+@pytest.fixture(
+    params=[torch.device("cpu")]
+    + ([torch.device("cuda")] if torch.cuda.is_available() else [])
+)
 def device(request):
     return request.param
 

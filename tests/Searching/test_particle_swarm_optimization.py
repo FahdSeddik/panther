@@ -62,8 +62,6 @@ class TestParticleSwarmOptimization:
         pso = ParticleSwarmOptimization(
             num_particles=5,
             max_iterations=3,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
             seed=42,
         )
         pso.initialize(self.param_space_continuous)
@@ -87,17 +85,11 @@ class TestParticleSwarmOptimization:
             assert "y" in particle["velocity"]
 
     def test_initialization_with_categorical_param_space(self):
+        # PSO doesn't support categorical parameters - they must be [min, max] ranges
+        # This test should verify that non-continuous params raise an error
         pso = ParticleSwarmOptimization(num_particles=3, max_iterations=2, seed=123)
-        pso.initialize(self.param_space_categorical)
-        assert pso._initialized
-        assert len(pso.particles) == 3
-        for particle in pso.particles:
-            assert "cat1" in particle["position"]
-            assert particle["position"]["cat1"] in self.param_space_categorical["cat1"]
-            assert "cat2" in particle["position"]
-            assert particle["position"]["cat2"] in self.param_space_categorical["cat2"]
-            assert particle["velocity"]["cat1"] == 0.0
-            assert particle["velocity"]["cat2"] == 0.0
+        with pytest.raises(ValueError, match="must be a list of two numbers"):
+            pso.initialize(self.param_space_categorical)
 
     def test_initialization_empty_param_space(self):
         pso = ParticleSwarmOptimization()
@@ -118,8 +110,6 @@ class TestParticleSwarmOptimization:
         pso = ParticleSwarmOptimization(
             num_particles=2,
             max_iterations=1,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
             seed=42,
         )
         pso.initialize(self.param_space_continuous)
@@ -148,8 +138,6 @@ class TestParticleSwarmOptimization:
         pso = ParticleSwarmOptimization(
             num_particles=3,
             max_iterations=2,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
             seed=42,
         )
         pso.initialize(self.param_space_continuous)
@@ -203,7 +191,8 @@ class TestParticleSwarmOptimization:
 
     def test_is_finished(self):
         pso = ParticleSwarmOptimization(num_particles=1, max_iterations=1, seed=1)
-        pso.initialize(self.param_space_categorical)
+        # PSO requires continuous parameters, so we use continuous param_space
+        pso.initialize(self.param_space_continuous)
         assert not pso.is_finished()
 
         params = pso.get_next_params()
@@ -217,8 +206,6 @@ class TestParticleSwarmOptimization:
         pso = ParticleSwarmOptimization(
             num_particles=2,
             max_iterations=1,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
             seed=42,
         )
         pso.initialize(self.param_space_continuous)
@@ -241,8 +228,6 @@ class TestParticleSwarmOptimization:
         pso1 = ParticleSwarmOptimization(
             num_particles=3,
             max_iterations=2,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
             seed=10,
         )
         pso1.initialize(self.param_space_continuous)
@@ -284,62 +269,22 @@ class TestParticleSwarmOptimization:
         assert pso2.current_particle_idx == pso1.current_particle_idx
 
     def test_save_and_load_state_categorical(self):
+        # PSO doesn't support categorical params - test should verify this raises error
         filepath = self.test_dir / "pso_state_categorical.json"
         pso1 = ParticleSwarmOptimization(num_particles=2, max_iterations=1, seed=20)
-        pso1.initialize(self.param_space_categorical)
-
-        params_p0 = pso1.get_next_params()
-        pso1.update(params_p0, 5)
-        params_p1 = pso1.get_next_params()
-        pso1.update(params_p1, 10)
-
-        pso1.save_state(str(filepath))
-        assert filepath.exists()
-
-        pso2 = ParticleSwarmOptimization(seed=1)
-        pso2.load_state(str(filepath))
-
-        assert pso2._initialized
-        assert pso2.gbest_score == pso1.gbest_score
-        assert pso2.gbest_position == pso1.gbest_position
-        assert pso2.param_space == pso1.param_space
-        assert len(pso2.particles) == len(pso1.particles)
-        if pso2.particles:
-            first_particle_pos = pso2.particles[0]["position"]
-            for k_cat in self.param_space_categorical.keys():
-                assert isinstance(first_particle_pos[k_cat], str)
+        with pytest.raises(ValueError, match="must be a list of two numbers"):
+            pso1.initialize(self.param_space_categorical)
 
     def test_save_and_load_state_mixed(self):
+        # PSO requires pure continuous parameters - mixed categorical will fail
         filepath = self.test_dir / "pso_state_mixed.json"
         pso1 = ParticleSwarmOptimization(
             num_particles=2,
             max_iterations=1,
-            min_values=self.min_values_mixed,
-            max_values=self.max_values_mixed,
             seed=30,
         )
-        pso1.initialize(self.param_space_mixed)
-
-        params_p0 = pso1.get_next_params()
-        pso1.update(params_p0, dummy_evaluation_function(params_p0))
-        params_p1 = pso1.get_next_params()
-        pso1.update(params_p1, dummy_evaluation_function(params_p1))
-
-        pso1.save_state(str(filepath))
-        assert filepath.exists()
-
-        pso2 = ParticleSwarmOptimization(seed=1)
-        pso2.load_state(str(filepath))
-
-        assert pso2._initialized
-        assert pso2.gbest_score == pso1.gbest_score
-        assert pso2.gbest_position == pso1.gbest_position
-        assert pso2.param_space == pso1.param_space
-        assert pso2.min_values == pso1.min_values
-        assert pso2.max_values == pso1.max_values
-        if pso2.gbest_position:
-            assert isinstance(pso2.gbest_position["x"], (int, float))
-            assert isinstance(pso2.gbest_position["cat1"], str)
+        with pytest.raises(ValueError, match="must be a list of two numbers"):
+            pso1.initialize(self.param_space_mixed)
 
     def test_get_best_params_score_initial_state(self):
         pso = ParticleSwarmOptimization(num_particles=5, max_iterations=3, seed=42)
@@ -357,41 +302,34 @@ class TestParticleSwarmOptimization:
 
     def test_invalid_param_space_format_values_not_list(self):
         pso = ParticleSwarmOptimization()
-        with pytest.raises(
-            ValueError, match="Parameter 'x' is not well-defined for initialization."
-        ):
+        # PSO expects lists with [min, max], tuples should fail validation
+        with pytest.raises(ValueError, match="must be a list of two numbers"):
             pso.initialize({"x": (0, 10)})
 
     def test_invalid_param_space_format_continuous_wrong_length(self):
         pso = ParticleSwarmOptimization()
         params_x_single = {"x": [0]}
-        pso.initialize(params_x_single)
-        assert pso.param_space == params_x_single
+        # PSO requires exactly 2 values [min, max]
+        with pytest.raises(ValueError, match="must be a list of two numbers"):
+            pso.initialize(params_x_single)
 
         params_y_triple = {"y": [0, 1, 2]}
         pso = ParticleSwarmOptimization()
-        pso.initialize(params_y_triple)
-        assert pso.param_space == params_y_triple
+        with pytest.raises(ValueError, match="must be a list of two numbers"):
+            pso.initialize(params_y_triple)
 
     def test_missing_min_max_for_continuous_param(self):
         pso = ParticleSwarmOptimization()
         pso.initialize({"x": [0, 10]})
         assert pso.param_space == {"x": [0, 10]}
-
-        pso_with_min_max = ParticleSwarmOptimization(
-            min_values={"x": 0}, max_values={"x": 10}
-        )
-        pso_with_min_max.initialize({"x": [0, 10]})
-        assert pso_with_min_max.param_space == {"x": [0, 10]}
-        assert pso_with_min_max.min_values == {"x": 0}
-        assert pso_with_min_max.max_values == {"x": 10}
+        # PSO derives min/max from param_space during initialize
+        assert pso.min_values == {"x": 0}
+        assert pso.max_values == {"x": 10}
 
     def test_edge_case_one_particle_one_iteration(self):
         pso = ParticleSwarmOptimization(
             num_particles=1,
             max_iterations=1,
-            min_values=self.min_values_continuous,
-            max_values=self.max_values_continuous,
             seed=77,
         )
         pso.initialize(self.param_space_continuous)

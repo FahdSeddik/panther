@@ -6,8 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from memory_profiler import memory_usage
-from sklearn.utils.extmath import randomized_svd as sklearn_randomized_svd
+from memory_profiler import memory_usage  # type: ignore
+from sklearn.utils.extmath import (  # type: ignore[import-untyped]
+    randomized_svd as sklearn_randomized_svd,
+)
 from torch.linalg import svd as torch_svd
 
 # Import your custom RSVD implementation
@@ -184,7 +186,7 @@ def plot_metric(df, metric_column, ylabel, output_file):
 # -------------------------
 if __name__ == "__main__":
     if os.path.exists(str(CONFIG["results_csv"])):
-        df = pd.read_csv(CONFIG["results_csv"])
+        df = pd.read_csv(str(CONFIG["results_csv"]))
         print(f"Loaded existing results from {CONFIG['results_csv']}")
     else:
         df = run_benchmarks(CONFIG)

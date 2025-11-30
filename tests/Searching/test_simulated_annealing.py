@@ -298,11 +298,9 @@ class TestSimulatedAnnealing:
     def test_get_next_params_after_finish(self):
         self.sa.iterations = self.sa.max_iterations
         assert self.sa.is_finished()
-        # The implementation actually returns a solution even when finished
+        # When finished, get_next_params returns None
         params = self.sa.get_next_params()
-        assert params is not None
-        assert isinstance(params, dict)
-        assert all(p in self.param_space for p in params.keys())
+        assert params is None
 
     def test_get_best_params_uninitialized_param_space_after_reset(self):
         sa_reset_test = SimulatedAnnealing()

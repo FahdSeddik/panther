@@ -10,14 +10,16 @@ This guide explains how to build and run the Panther codebase, including the nat
 - **Python 3.12+**: Panther is compatible with Python 3.12 and later.
 - **Poetry** for dependency management
 - **C++ Compiler**: GCC on Linux, MSVC on Windows
-- **CUDA Toolkit**: For GPU acceleration, ensure you have the CUDA toolkit installed to compile .cu files requiring NVIDIA C Compiler (nvcc).
+- **CUDA Toolkit** (Optional): For GPU acceleration, ensure you have the CUDA toolkit installed. **Panther fully supports CPU-only machines** - it will automatically build and run in CPU-only mode on systems without CUDA, providing the same functionality without GPU acceleration.
 
 ## Quick Start (Install & Use)
 
 You can quickly install Panther using the powershell and Makefile scripts provided. This will set up the Python package and build the native backend.
 Note: This sets up a venv environment, installs poetry, install dependencies, and builds the native backend.
 
-OR, if you have CUDA 12.4 installed, and you're on a Windows machine, simply install using pip:
+**Note:** Panther works on both CPU-only and GPU-enabled machines. GPU users can use pip, while CPU-only users need to build from source using the installation scripts below.
+
+If you have CUDA 12.4 installed and you're on a Windows machine with GPU, install using pip:
 
 ```bash
 pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
@@ -80,6 +82,11 @@ This will set up a virtual environment and install all required packages.
    ```
 
 2. Confirm that `pawX.*.pyd` appears in `pawX\` directory.
+
+**Note:** The build process automatically detects whether CUDA is available on your system:
+- If CUDA is available, it will build with GPU acceleration support
+- If CUDA is not available, it will build a CPU-only version that works without CUDA installed
+- The CPU-only build excludes CUDA-dependent features like `test_tensor_accessor` but maintains full functionality for core features
 
 ---
 

@@ -1,7 +1,7 @@
 import math
 import pickle
 import random
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .SearchAlgorithm import SearchAlgorithm
 
@@ -74,7 +74,7 @@ class SimulatedAnnealing(SearchAlgorithm):
         neighbor[param_to_change] = new_value
         return neighbor
 
-    def get_next_params(self) -> Dict[str, Any]:
+    def get_next_params(self) -> Optional[Dict[str, Any]]:
         if self.is_finished():
             return None
 

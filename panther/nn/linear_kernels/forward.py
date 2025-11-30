@@ -10,8 +10,8 @@ Second pass: Combines these intermediate values to produce the final output.
 """
 
 import torch
-import triton
-import triton.language as tl
+import triton  # type: ignore
+import triton.language as tl  # type: ignore
 
 # Configuration generation function (currently commented out)
 # def getConfigs(names, ranges, num_stages_range, num_warps_range):

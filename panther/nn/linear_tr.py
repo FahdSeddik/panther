@@ -3,7 +3,7 @@ from typing import Any, List, Tuple
 
 import torch
 import torch.nn as nn
-import triton
+import triton  # type: ignore
 from torch.autograd import Function
 from torch.library import triton_op, wrap_triton
 from torch.nn import init
@@ -119,10 +119,11 @@ def forward_op(
     stride_out_bsize, stride_out_d1 = out.stride(0), out.stride(1)
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
-        triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
-        * triton.cdiv(d1, META["BLOCK_SIZE_D1"]),
-    )
+    def grid(META):  # type: ignore
+        return (
+            triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
+            * triton.cdiv(d1, META["BLOCK_SIZE_D1"]),
+        )
 
     # Launch the second pass kernel to compute the final output
     wrap_triton(second_pass_kernel)[grid](
@@ -267,10 +268,11 @@ def backward_op(
     stride_out_bsize, stride_out_d2 = grad.stride(0), grad.stride(1)
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
-        triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
-        * triton.cdiv(d2, META["BLOCK_SIZE_d2"]),
-    )
+    def grid(META):  # type: ignore
+        return (
+            triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
+            * triton.cdiv(d2, META["BLOCK_SIZE_d2"]),
+        )
 
     # Launch the kernel to compute input gradients
     wrap_triton(second_pass_gUS11_22_kernel)[grid](

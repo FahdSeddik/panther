@@ -10,30 +10,39 @@ System Requirements
 
 **Hardware Requirements**:
 
-* **CPU**: Any modern x86-64 processor
+* **CPU**: Any modern x86-64 processor (CPU-only operation fully supported)
 * **GPU**: NVIDIA GPU with CUDA 12.4+ (optional, for GPU acceleration)
 * **Memory**: Minimum 8GB RAM recommended
 
 **Dependencies**:
 
-* PyTorch 2.6.0+ with CUDA support
-* CUDA Toolkit 12.4+ (for GPU features)
+* PyTorch 2.6.0+ (CPU or CUDA version)
+* CUDA Toolkit 12.4+ (optional, only for GPU acceleration)
 * C++ compiler (GCC on Linux, MSVC on Windows)
+
+.. note::
+   **Panther works on CPU-only machines!** All core features are available without CUDA. 
+   The build system automatically detects your hardware and builds the appropriate version.
 
 Quick Installation
 ------------------
 
-**Option 1: Install from PyPI (Recommended)**
+**Option 1: Install from PyPI (GPU Only)**
 
-If you have CUDA 12.4 installed and you're on a Windows machine:
+For GPU-accelerated systems with CUDA 12.4 on Windows:
 
 .. code-block:: bash
 
    pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
 
-**Option 2: Automated Setup Scripts**
+.. note::
+   **CPU-only systems must build from source.** The PyPI package currently includes CUDA dependencies.
+   Use the automated setup scripts below (Option 2) which will automatically build the appropriate 
+   CPU-only version for your system.
 
-For a complete setup with all dependencies:
+**Option 2: Build from Source (CPU & GPU)**
+
+For CPU-only systems or custom builds (works on both CPU-only and GPU systems):
 
 **Windows:**
 
@@ -97,6 +106,13 @@ Then build the native backend:
 
    cd pawX
    .\build.ps1
+
+.. note::
+   **Automatic CPU/GPU Detection**: The build process automatically detects your system:
+   
+   * **With CUDA**: Builds with GPU acceleration support
+   * **Without CUDA**: Builds CPU-only version with full core functionality
+   * CPU-only builds exclude CUDA-dependent features but maintain all essential operations
 
 **Step 5: Verify Installation**
 
