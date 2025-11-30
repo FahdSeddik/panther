@@ -118,7 +118,7 @@ Ensure the sketched layer uses fewer parameters than the standard layer:
 .. code-block:: python
 
    def check_parameter_efficiency(in_features, out_features, num_terms, low_rank):
-       \"\"\"Check if sketched layer uses fewer parameters.\"\"\""
+       """Check if sketched layer uses fewer parameters.""""
        standard_params = in_features * out_features
        sketched_params = 2 * num_terms * low_rank * (in_features + out_features)
        
@@ -311,7 +311,7 @@ Advanced Usage Patterns
 .. code-block:: python
 
    class ProgressiveSketchedLayer(nn.Module):
-       \"\"\"Layer that increases complexity during training.\"\"\""
+       """Layer that increases complexity during training.""""
        
        def __init__(self, in_features, out_features, 
                     initial_terms=2, max_terms=16, 
@@ -331,7 +331,7 @@ Advanced Usage Patterns
            )
            
        def increase_complexity(self):
-           \"\"\"Double the number of terms and rank (up to maximum).\"\"\""
+           """Double the number of terms and rank (up to maximum).""""
            current_terms = self.current_layer.num_terms
            current_rank = self.current_layer.low_rank
            
@@ -363,7 +363,7 @@ Advanced Usage Patterns
 .. code-block:: python
 
    class ConditionalSketchedLayer(nn.Module):
-       \"\"\"Use sketching only for large inputs.\"\"\""
+       """Use sketching only for large inputs.""""
        
        def __init__(self, in_features, out_features, 
                     sketch_threshold=1000):

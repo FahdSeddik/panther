@@ -159,11 +159,12 @@ Technical Questions
 
 **What algorithms does Panther implement?**
 
-- **CQRRPT**: Communication-avoiding QR with randomized pivoting
+- **CQRRPT**: CholeskyQR with Randomized column Pivoting for tall matrices
 - **RSVD**: Randomized singular value decomposition
 - **Gaussian sketching**: Random Gaussian projection matrices
 - **SRHT**: Subsampled randomized Hadamard transform
 - **CountSketch**: Sparse sketching with random hashing
+- **SJLT**: Sparse Johnson-Lindenstrauss Transform
 
 **How does the sketching work mathematically?**
 

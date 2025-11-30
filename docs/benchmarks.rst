@@ -359,7 +359,7 @@ Use Panther's benchmark utilities to evaluate performance on your hardware:
    import time
 
    def benchmark_linear_layer(in_features, out_features, num_terms, low_rank, num_runs=100):
-       \"\"\"Benchmark SKLinear layer.\"\"\"
+       """Benchmark SKLinear layer."""
        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
        
        # Create layers

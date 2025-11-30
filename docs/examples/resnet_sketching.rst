@@ -181,8 +181,21 @@ Compare parameter counts between standard and sketched models:
    print(f"Sketched parameters: {sketched_params:,}")
    print(f"Reduction: {(1 - sketched_params/standard_params)*100:.1f}%")
 
-This example demonstrates how to effectively use Panther's sketched layers in ResNet-style architectures.
+Performance Benchmarking
+------------------------
 
+Benchmark the performance of standard vs sketched ResNet models:
+
+.. code-block:: python
+
+   import time
+   import torch.nn.functional as F
+   
+   def benchmark_model(model, batch_size=32, num_runs=100):
+       """Benchmark model inference and training speed."""
+       model.eval()
+       device = next(model.parameters()).device
+       dummy_input = torch.randn(batch_size, 3, 224, 224, device=device)
        
        # Warmup
        with torch.no_grad():

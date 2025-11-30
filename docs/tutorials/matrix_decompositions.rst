@@ -61,11 +61,11 @@ Traditional matrix decompositions like QR and SVD have :math:`O(n^3)` complexity
 
 Panther provides two main randomized decompositions:
 
-* **CQRRPT**: Communication-avoiding QR with Randomized Pivoting and Tournament
+* **CQRRPT**: CholeskyQR with Randomized column Pivoting for tall matrices
 * **RSVD**: Randomized Singular Value Decomposition
 
-Communication-Avoiding QR (CQRRPT)
------------------------------------
+CholeskyQR with Randomized Pivoting (CQRRPT)
+----------------------------------------------
 
 **Mathematical Background**
 
@@ -157,7 +157,7 @@ CQRRPT's implementation follows this detailed process:
    import time
    
    def compare_qr_methods(matrix_sizes):
-       \"\"\"Compare CQRRPT with standard QR.\"\"\""
+       """Compare CQRRPT with standard QR.""""
        
        results = {}
        
@@ -204,7 +204,7 @@ CQRRPT's implementation follows this detailed process:
 .. code-block:: python
 
    def solve_least_squares_cqrrpt(A, b):
-       \"\"\"Solve least squares problem using CQRRPT.\"\"\""
+       """Solve least squares problem using CQRRPT.""""
        
        # Compute CQRRPT decomposition
        Q, R, P = pr.linalg.cqrrpt(A)
@@ -316,7 +316,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def adaptive_rsvd(A, energy_threshold=0.99, max_rank=None):
-       \"\"\"Automatically determine rank based on energy threshold.\"\"\""
+       """Automatically determine rank based on energy threshold.""""
        
        max_rank = max_rank or min(A.shape) // 2
        
@@ -351,7 +351,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def rsvd_pca(X, n_components, center_data=True):
-       \"\"\"Perform PCA using randomized SVD.\"\"\""
+       """Perform PCA using randomized SVD.""""
        
        # Center the data
        if center_data:
@@ -405,7 +405,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def matrix_completion_rsvd(A_observed, mask, rank, n_iterations=10):
-       \"\"\"Simple matrix completion using iterative RSVD.\"\"\""
+       """Simple matrix completion using iterative RSVD.""""
        
        # Initialize missing entries with column means
        A_filled = A_observed.clone()
@@ -493,7 +493,7 @@ GPU Acceleration
 .. code-block:: python
 
    def chunked_rsvd(A, rank, chunk_size=1000):
-       \"\"\"Process very large matrices in chunks.\"\"\""
+       """Process very large matrices in chunks.""""
        
        m, n = A.shape
        
@@ -539,7 +539,7 @@ Practical Applications
 .. code-block:: python
 
    def compress_image_rsvd(image_tensor, compression_ratio=0.1):
-       \"\"\"Compress image using RSVD.\"\"\""
+       """Compress image using RSVD.""""
        
        # image_tensor should be (height, width, channels)
        h, w, c = image_tensor.shape
@@ -590,7 +590,7 @@ Practical Applications
 .. code-block:: python
 
    class RSVDDimensionalityReducer:
-       \"\"\"Complete dimensionality reduction pipeline using RSVD.\"\"\""
+       """Complete dimensionality reduction pipeline using RSVD.""""
        
        def __init__(self, n_components, whiten=False):
            self.n_components = n_components
@@ -600,7 +600,7 @@ Practical Applications
            self.singular_values_ = None
            
        def fit(self, X):
-           \"\"\"Fit the model with X.\"\"\""
+           """Fit the model with X.""""
            # Center data
            self.mean_ = torch.mean(X, dim=0)
            X_centered = X - self.mean_
@@ -614,7 +614,7 @@ Practical Applications
            return self
        
        def transform(self, X):
-           \"\"\"Apply dimensionality reduction to X.\"\"\""
+           """Apply dimensionality reduction to X.""""
            X_centered = X - self.mean_
            X_transformed = X_centered @ self.components_
            
@@ -694,7 +694,7 @@ Where:
    
    - **Exact decomposition** with column pivoting for numerical stability
    - **Adaptive rank detection** using Cholesky-based condition monitoring
-   - **Communication-avoiding** design minimizes data movement
+   - **Randomized sketching** design reduces computational complexity
    - **Best for**: Full-rank problems, least squares, when exact QR is needed
 
 2. **RSVD Features**:
