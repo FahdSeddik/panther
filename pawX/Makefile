@@ -1,4 +1,19 @@
-.PHONY: install dev-install all clean
+.PHONY: install dev-install all clean check-deps
+
+# Check for required system libraries on Linux
+check-deps:
+	@echo "[pawX] Checking system dependencies..."
+	@if [ "$$(uname)" = "Linux" ]; then \
+		if ! dpkg -l | grep -q liblapacke-dev; then \
+			echo "[WARNING] liblapacke-dev not found. Install with: sudo apt-get install liblapacke-dev"; \
+		fi; \
+		if ! dpkg -l | grep -q libopenblas; then \
+			echo "[WARNING] libopenblas-dev not found. Install with: sudo apt-get install libopenblas-dev"; \
+			echo "[ERROR] OpenBLAS is required for building. Please install it first."; \
+			exit 1; \
+		fi; \
+		echo "[OK] All system dependencies found."; \
+	fi
 
 # Attempt to find poetry binary in common locations
 POETRY := $(shell \
@@ -15,7 +30,7 @@ ifeq ($(POETRY),MISSING)
 $(error Poetry not found in expected paths. Please install Poetry or set POETRY_HOME.)
 endif
 
-install:
+install: check-deps
 	@echo "[pawX] Running standard install..."
 	@$(POETRY) run python setup.py install
 

@@ -35,7 +35,7 @@ pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://downlo
 1. **Open Terminal** and run the following command:
 
     ```bash
-    make install
+    make setup
     ```
 ---
 
@@ -60,7 +60,7 @@ This will set up a virtual environment and install all required packages.
 
     ```sh
     sudo apt-get update
-    sudo apt-get install liblapacke-dev
+    sudo apt-get install liblapacke-dev libopenblas-dev
     ```
 
 2. **Build and Install `pawX`**
@@ -68,9 +68,16 @@ This will set up a virtual environment and install all required packages.
     ```sh
     cd pawX
     make all
+    cd ..
     ```
 
-3. Confirm that `pawX.*.so` appears in the `pawX/` directory.
+3. **Install Panther Package**
+
+    ```sh
+    pip install -e .
+    ```
+
+4. Confirm that `pawX.*.so` appears in the `pawX/` directory and panther is importable.
 
 #### On Windows
 
@@ -104,9 +111,11 @@ print(Q.shape, R.shape, J.shape)
 
 ## Running Tests
 
-Ensure your native backend is built and your Python environment is active. Then run:
+Ensure your native backend is built, panther package is installed, and your Python environment is active. Then run:
 
 ```bash
+pytest tests/
+# or with poetry:
 poetry run pytest tests/
 ```
 

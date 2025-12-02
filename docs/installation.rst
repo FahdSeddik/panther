@@ -56,7 +56,7 @@ For CPU-only systems or custom builds (works on both CPU-only and GPU systems):
 .. code-block:: bash
 
    # Make sure you have build-essential installed
-   make install
+   make setup
 
 Manual Installation
 -------------------
@@ -91,7 +91,7 @@ First, install required system libraries:
 .. code-block:: bash
 
    sudo apt-get update
-   sudo apt-get install liblapacke-dev
+   sudo apt-get install liblapacke-dev libopenblas-dev
 
 Then build the native backend:
 
@@ -99,6 +99,7 @@ Then build the native backend:
 
    cd pawX
    make all
+   cd ..
 
 **On Windows:**
 
@@ -114,7 +115,15 @@ Then build the native backend:
    * **Without CUDA**: Builds CPU-only version with full core functionality
    * CPU-only builds exclude CUDA-dependent features but maintain all essential operations
 
-**Step 5: Verify Installation**
+**Step 5: Install Panther Package**
+
+Install the panther package in editable mode:
+
+.. code-block:: bash
+
+   pip install -e .
+
+**Step 6: Verify Installation**
 
 .. code-block:: python
 
@@ -183,18 +192,30 @@ Make sure CUDA Toolkit is properly installed and in your PATH:
 
 Ensure you have Visual Studio Build Tools installed with C++ support.
 
-**Issue: Import errors**
+**Issue: Import errors ("No module named 'panther'")**
 
-Check that the native backend was compiled successfully:
+Make sure you've installed the package in editable mode:
+
+.. code-block:: bash
+
+   pip install -e .
+
+If you still see import errors, check that the native backend was compiled successfully:
 
 .. code-block:: bash
 
    ls pawX/pawX.*.pyd  # Windows
    ls pawX/pawX.*.so   # Linux
 
-**Issue: OpenBLAS not found**
+**Issue: OpenBLAS not found (Linux)**
 
-The installation scripts should handle OpenBLAS automatically. If you encounter issues, OpenBLAS binaries are bundled with the package.
+If you see linker errors about missing ``-lopenblas``, install the OpenBLAS development package:
+
+.. code-block:: bash
+
+   sudo apt-get install libopenblas-dev
+
+The installation scripts should handle this automatically, but manual installation may be needed in some cases. On Windows, OpenBLAS binaries are bundled with the package.
 
 Verifying GPU Support
 ----------------------

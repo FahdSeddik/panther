@@ -9,6 +9,9 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtensio
 
 
 def check_linux_dependencies():
+    missing_deps = []
+
+    # Check for liblapacke-dev
     try:
         subprocess.run(
             ["dpkg", "-s", "liblapacke-dev"],
@@ -17,8 +20,40 @@ def check_linux_dependencies():
             stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
-        print("Error: 'liblapacke-dev' is not installed. Please install it using:")
-        print(" sudo apt-get install liblapacke-dev")
+        missing_deps.append("liblapacke-dev")
+
+    # Check for libopenblas-dev
+    try:
+        subprocess.run(
+            ["dpkg", "-l"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        result = subprocess.run(
+            ["dpkg", "-l"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        if "libopenblas" not in result.stdout:
+            missing_deps.append("libopenblas-dev")
+    except subprocess.CalledProcessError:
+        missing_deps.append("libopenblas-dev")
+
+    if missing_deps:
+        print("\n" + "=" * 60)
+        print("ERROR: Missing required system libraries")
+        print("=" * 60)
+        print("\nThe following packages are not installed:")
+        for dep in missing_deps:
+            print(f"  - {dep}")
+        print("\nPlease install them using:")
+        print("  sudo apt-get update")
+        print(f"  sudo apt-get install {' '.join(missing_deps)}")
+        print("\n" + "=" * 60 + "\n")
         sys.exit(1)
 
 
@@ -116,7 +151,7 @@ if cuda_available:
     print(f"\033[94m[INFO] Using CUDA source file: {cuda_file}\033[0m")
 else:
     cuda_file = []
-    print(f"\033[93m[WARNING] Building CPU-only version (no CUDA sources)\033[0m")
+    print("\033[93m[WARNING] Building CPU-only version (no CUDA sources)\033[0m")
 
 
 # CPU-only source files (exclude .cu files)
