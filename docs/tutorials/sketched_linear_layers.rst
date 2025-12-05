@@ -12,13 +12,13 @@ Traditional linear layers in neural networks compute:
 
    y = Wx + b
 
-where :math:`W` is a :math:`d_{out} \\times d_{in}` weight matrix.
+:math:`W` is a :math:`d_{out} \times d_{in}` weight matrix.
 
 Sketched linear layers approximate this computation using a sum of low-rank terms:
 
 .. math::
 
-   y \\approx \\frac{1}{2L} \\sum_{i=1}^{L} \\left( U_{1,i}^T S_{1,i} x + S_{2,i} U_{2,i} x \\right) + b
+   y \approx \frac{1}{2L} \sum_{i=1}^{L} \left( U_{1,i}^T S_{1,i} x + S_{2,i} U_{2,i} x \right) + b
 
 where:
 
@@ -32,9 +32,9 @@ Why Use Sketched Layers?
 
 **Memory Efficiency**
 
-Standard linear layer parameters: :math:`d_{out} \\times d_{in} + d_{out}`
+Standard linear layer parameters: :math:`d_{out} \times d_{in} + d_{out}`
 
-Sketched layer parameters: :math:`2L \\times k \\times (d_{out} + d_{in}) + d_{out}`
+Sketched layer parameters: :math:`2L \times k \times (d_{out} + d_{in}) + d_{out}`
 
 For large layers, this can be a significant reduction.
 
@@ -57,7 +57,7 @@ For large layers, this can be a significant reduction.
    sketched_layer = pr.nn.SKLinear(
        in_features=in_features,
        out_features=out_features,
-       num_terms=8,
+       num_terms=4,
        low_rank=128
    )
    sketched_params = sum(p.numel() for p in sketched_layer.parameters())
@@ -84,10 +84,10 @@ The number of low-rank terms in the approximation.
 .. code-block:: python
 
    # Conservative: Fast but less accurate
-   conservative = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=64)
+   conservative = pr.nn.SKLinear(1024, 512, num_terms=2, low_rank=32)
    
    # Aggressive: Slower but more accurate  
-   aggressive = pr.nn.SKLinear(1024, 512, num_terms=16, low_rank=64)
+   aggressive = pr.nn.SKLinear(1024, 512, num_terms=4, low_rank=32)
 
 **low_rank (k)**
 
@@ -99,10 +99,10 @@ The rank of each low-rank term.
 .. code-block:: python
 
    # Low rank: High compression
-   high_compression = pr.nn.SKLinear(1024, 512, num_terms=8, low_rank=32)
+   high_compression = pr.nn.SKLinear(1024, 512, num_terms=2, low_rank=32)
    
    # High rank: Better approximation
-   better_approx = pr.nn.SKLinear(1024, 512, num_terms=8, low_rank=128)
+   better_approx = pr.nn.SKLinear(1024, 512, num_terms=2, low_rank=64)
 
 Parameter Selection Guidelines
 ------------------------------
@@ -113,12 +113,12 @@ Ensure the sketched layer uses fewer parameters than the standard layer:
 
 .. math::
 
-   2 \\times L \\times k \\times (d_{in} + d_{out}) < d_{in} \\times d_{out}
+   2 \times L \times k \times (d_{in} + d_{out}) < d_{in} \times d_{out}
 
 .. code-block:: python
 
    def check_parameter_efficiency(in_features, out_features, num_terms, low_rank):
-       """Check if sketched layer uses fewer parameters.""""
+       """Check if sketched layer uses fewer parameters."""
        standard_params = in_features * out_features
        sketched_params = 2 * num_terms * low_rank * (in_features + out_features)
        
@@ -129,9 +129,8 @@ Ensure the sketched layer uses fewer parameters than the standard layer:
    
    # Test different configurations
    configs = [
-       (1024, 512, 4, 32),   # Conservative
-       (1024, 512, 8, 64),   # Balanced
-       (1024, 512, 16, 128), # Aggressive
+       (1024, 512, 2, 32),   # Conservative
+       (1024, 512, 2, 64),   # Balanced
    ]
    
    for in_feat, out_feat, terms, rank in configs:
@@ -189,9 +188,9 @@ Building Your First Sketched Network
    class SketchedNet(nn.Module):
        def __init__(self):
            super().__init__()
-           self.fc1 = pr.nn.SKLinear(784, 512, num_terms=8, low_rank=64)
-           self.fc2 = pr.nn.SKLinear(512, 256, num_terms=6, low_rank=32)
-           self.fc3 = pr.nn.SKLinear(256, 10, num_terms=4, low_rank=16)
+           self.fc1 = pr.nn.SKLinear(784, 512, num_terms=2, low_rank=64)
+           self.fc2 = pr.nn.SKLinear(512, 256, num_terms=2, low_rank=32)
+           self.fc3 = pr.nn.SKLinear(256, 10, num_terms=1, low_rank=4)
            
        def forward(self, x):
            x = torch.relu(self.fc1(x))
@@ -290,13 +289,13 @@ Advanced Usage Patterns
            super().__init__()
            
            # First layer: More terms for better approximation
-           self.fc1 = pr.nn.SKLinear(784, 1024, num_terms=12, low_rank=64)
+           self.fc1 = pr.nn.SKLinear(784, 1024, num_terms=3, low_rank=64)
            
            # Middle layer: Balanced approach
-           self.fc2 = pr.nn.SKLinear(1024, 512, num_terms=8, low_rank=48)
+           self.fc2 = pr.nn.SKLinear(1024, 512, num_terms=3, low_rank=48)
            
            # Output layer: Fewer parameters, higher precision
-           self.fc3 = pr.nn.SKLinear(512, 10, num_terms=4, low_rank=24)
+           self.fc3 = pr.nn.SKLinear(512, 10, num_terms=1, low_rank=4)
            
        def forward(self, x):
            x = torch.relu(self.fc1(x))
@@ -311,7 +310,7 @@ Advanced Usage Patterns
 .. code-block:: python
 
    class ProgressiveSketchedLayer(nn.Module):
-       """Layer that increases complexity during training.""""
+       """Layer that increases complexity during training."""
        
        def __init__(self, in_features, out_features, 
                     initial_terms=2, max_terms=16, 
@@ -331,7 +330,7 @@ Advanced Usage Patterns
            )
            
        def increase_complexity(self):
-           """Double the number of terms and rank (up to maximum).""""
+           """Double the number of terms and rank (up to maximum)."""
            current_terms = self.current_layer.num_terms
            current_rank = self.current_layer.low_rank
            
@@ -363,7 +362,7 @@ Advanced Usage Patterns
 .. code-block:: python
 
    class ConditionalSketchedLayer(nn.Module):
-       """Use sketching only for large inputs.""""
+       """Use sketching only for large inputs."""
        
        def __init__(self, in_features, out_features, 
                     sketch_threshold=1000):
@@ -395,7 +394,7 @@ Debugging and Optimization
 .. code-block:: python
 
    def analyze_sketched_layer(layer):
-       \"\"\"Analyze sketched layer parameters and statistics.\"\"\""
+       """Analyze sketched layer parameters and statistics."""
        print(f"Layer: {layer.in_features} → {layer.out_features}")
        print(f"num_terms: {layer.num_terms}, low_rank: {layer.low_rank}")
        
@@ -424,7 +423,7 @@ Debugging and Optimization
            print(f"S2s: mean={s2_mean:.4f}, std={s2_std:.4f}")
    
    # Example usage
-   layer = pr.nn.SKLinear(1024, 512, num_terms=8, low_rank=64)
+   layer = pr.nn.SKLinear(1024, 512, num_terms=3, low_rank=48)
    analyze_sketched_layer(layer)
 
 **2. Approximation Quality**
@@ -433,7 +432,7 @@ Debugging and Optimization
 
    def test_approximation_quality(in_features, out_features, 
                                   num_terms, low_rank, num_tests=100):
-       \"\"\"Test how well sketched layer approximates standard layer.\"\"\""
+       """Test how well sketched layer approximates standard layer."""
        
        # Create layers
        standard = nn.Linear(in_features, out_features)
@@ -467,9 +466,8 @@ Debugging and Optimization
    
    # Test different configurations
    configs = [
-       (512, 256, 4, 32),
-       (512, 256, 8, 64),
-       (512, 256, 16, 128),
+       (512, 256, 2, 16),
+       (512, 256, 2, 32),
    ]
    
    for in_feat, out_feat, terms, rank in configs:

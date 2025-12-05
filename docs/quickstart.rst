@@ -74,8 +74,8 @@ Replace standard linear layers with memory-efficient sketched versions:
    sketched_layer = pr.nn.SKLinear(
        in_features=512,
        out_features=256,
-       num_terms=4,      # Number of sketching terms
-       low_rank=64       # Rank of each sketch
+       num_terms=2,      # Number of sketching terms
+       low_rank=32       # Rank of each sketch
    )
    
    # Both layers work identically
@@ -127,22 +127,22 @@ Here's how to build a simple neural network using Panther's sketched layers:
            self.layer1 = pr.nn.SKLinear(
                in_features=input_dim,
                out_features=hidden_dim,
-               num_terms=8,
+               num_terms=4,
                low_rank=32
            )
            
            self.layer2 = pr.nn.SKLinear(
                in_features=hidden_dim,
                out_features=hidden_dim,
-               num_terms=8,
+               num_terms=4,
                low_rank=32
            )
            
            self.layer3 = pr.nn.SKLinear(
                in_features=hidden_dim,
                out_features=output_dim,
-               num_terms=4,
-               low_rank=16
+               num_terms=2,
+               low_rank=2
            )
            
            self.relu = nn.ReLU()
@@ -182,7 +182,7 @@ Panther automatically uses GPU acceleration when available:
    model = pr.nn.SKLinear(
        in_features=1024,
        out_features=512,
-       num_terms=16,
+       num_terms=2,
        low_rank=64,
        device=device
    )
@@ -207,8 +207,8 @@ For maximum performance on modern GPUs with Tensor Cores, ensure dimensions are 
    # Optimized for Tensor Cores (all dimensions are multiples of 16)
    model = SKLinear(
        in_features=1024,    # Multiple of 16 ✓
-       out_features=512,    # Multiple of 16 ✓  
-       num_terms=8,
+       out_features=1024,    # Multiple of 16 ✓  
+       num_terms=3,
        low_rank=64          # Multiple of 16 ✓
    )
    
@@ -227,9 +227,9 @@ Panther's sketched layers work with standard PyTorch data types. Usage is simila
    import torch
    
    # Create layer with specific dtype
-   model_fp32 = SKLinear(512, 256, num_terms=4, low_rank=32, 
+   model_fp32 = SKLinear(512, 256, num_terms=2, low_rank=32, 
                          dtype=torch.float32)
-   model_fp16 = SKLinear(512, 256, num_terms=4, low_rank=32,
+   model_fp16 = SKLinear(512, 256, num_terms=2, low_rank=32,
                          dtype=torch.float16)
 
 Common Patterns and Best Practices
@@ -247,7 +247,7 @@ Common Patterns and Best Practices
    # - Total parameters: 2 * num_terms * low_rank * (in_features + out_features)
    #   should be less than in_features * out_features
    
-   in_features, out_features = 1024, 512
+   in_features, out_features = 1024, 1024
    
    # Conservative choice (fewer parameters, faster)
    conservative = SKLinear(in_features, out_features, 
@@ -255,11 +255,11 @@ Common Patterns and Best Practices
    
    # Balanced choice (good accuracy-speed tradeoff)
    balanced = SKLinear(in_features, out_features,
-                      num_terms=4, low_rank=64)
+                      num_terms=2, low_rank=64)
    
    # Aggressive choice (more parameters but better approximation)  
    aggressive = SKLinear(in_features, out_features,
-                        num_terms=8, low_rank=128)
+                        num_terms=2, low_rank=128)
 
 **2. Memory Monitoring**
 
@@ -272,7 +272,7 @@ Use standard PyTorch memory monitoring:
    
    if torch.cuda.is_available():
        device = torch.device('cuda')
-       model = SKLinear(4096, 4096, num_terms=16, low_rank=128, device=device)
+       model = SKLinear(4096, 4096, num_terms=8, low_rank=128, device=device)
        
        allocated = torch.cuda.memory_allocated() / 1024**3
        print(f"GPU Memory Allocated: {allocated:.2f}GB")

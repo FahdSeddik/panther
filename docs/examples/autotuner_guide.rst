@@ -68,7 +68,7 @@ Basic AutoTuner Usage
 
    # Define evaluation function - this function assesses the model's performance
    def accuracy_eval_func(model):
-       \"\"\"Evaluate model accuracy on validation data.\"\"\"
+       """Evaluate model accuracy on validation data."""
        model.eval()
        correct = 0
        total = 0
@@ -359,7 +359,7 @@ This guide covers the essential aspects of using Panther's AutoTuner effectively
 .. code-block:: python
 
    def evaluation_with_early_stopping(num_terms, low_rank):
-       \"\"\"Evaluation with early stopping to save time.\"\"\""
+       """Evaluation with early stopping to save time."""
        
        model = create_model(int(num_terms), int(low_rank))
        
@@ -390,7 +390,7 @@ This guide covers the essential aspects of using Panther's AutoTuner effectively
    
    @lru_cache(maxsize=128)
    def cached_evaluation(num_terms, low_rank):
-       \"\"\"Cache results to avoid re-evaluating same parameters.\"\"\""
+       """Cache results to avoid re-evaluating same parameters."""
        return expensive_evaluation_function(num_terms, low_rank)
 
 **4. Parallel Evaluation (Advanced)**
@@ -400,7 +400,7 @@ This guide covers the essential aspects of using Panther's AutoTuner effectively
    from joblib import Parallel, delayed
    
    def parallel_autotuning():
-       \"\"\"Use parallel evaluation for faster tuning.\"\"\""
+       """Use parallel evaluation for faster tuning."""
        
        def parallel_objective_wrapper(params_dict):
            return evaluate_model_function(**params_dict)
@@ -430,7 +430,7 @@ Interpreting AutoTuning Results
 .. code-block:: python
 
    def analyze_tuning_results(tuner):
-       \"\"\"Analyze which parameters are most important.\"\"\""
+       """Analyze which parameters are most important."""
        
        # Get all evaluated points (if tuner stores them)
        evaluations = tuner.get_evaluation_history()  # Hypothetical method

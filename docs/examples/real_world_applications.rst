@@ -306,7 +306,7 @@ Scientific Computing Applications
        
        # Preconditioned iterative solver (simplified)
        def pcg_solve(A, b, Q_prec, R_prec, P_prec, max_iter=1000, tol=1e-6):
-           \"\"\"Preconditioned conjugate gradient with sketched preconditioner.\"\"\""
+           """Preconditioned conjugate gradient with sketched preconditioner."""
            
            x = torch.zeros_like(b)
            r = b - A @ x
@@ -376,7 +376,7 @@ Scientific Computing Applications
                self.n_samples_ = 0
                
            def partial_fit(self, X_batch):
-               \"\"\"Update PCA with new batch of data.\"\"\""
+               """Update PCA with new batch of data."""
                batch_size = X_batch.shape[0]
                
                # Update mean
@@ -410,7 +410,7 @@ Scientific Computing Applications
                self.n_samples_ = total_samples
            
            def fit_final(self):
-               \"\"\"Compute final PCA components from sketched covariance.\"\"\""
+               """Compute final PCA components from sketched covariance."""
                
                # Eigendecomposition of sketched covariance
                eigenvals, eigenvecs = torch.linalg.eigh(self.sketched_cov_)
@@ -431,7 +431,7 @@ Scientific Computing Applications
                self.components_ = torch.nn.functional.normalize(self.components_, dim=1)
                
            def transform(self, X):
-               \"\"\"Transform data to PCA space.\"\"\""
+               """Transform data to PCA space."""
                X_centered = X - self.mean_
                return X_centered @ self.components_.T
        
@@ -498,7 +498,7 @@ Financial Modeling Applications
        
        # Sketched covariance estimation using RSVD
        def sketched_covariance(returns, rank=50):
-           \"\"\"Estimate covariance using low-rank sketching.\"\"\""
+           """Estimate covariance using low-rank sketching."""
            
            # Center returns
            returns_centered = returns - returns.mean(dim=0)
@@ -527,7 +527,7 @@ Financial Modeling Applications
        
        # Portfolio optimization (Markowitz mean-variance)
        def optimize_portfolio(mean_returns, cov_matrix, risk_aversion=1.0):
-           \"\"\"Solve portfolio optimization using sketched covariance.\"\"\""
+           """Solve portfolio optimization using sketched covariance."""
            
            n_assets = len(mean_returns)
            

@@ -154,63 +154,67 @@ CQRRPT's implementation follows this detailed process:
 
 .. code-block:: python
 
-   import time
-   
-   def compare_qr_methods(matrix_sizes):
-       """Compare CQRRPT with standard QR.""""
-       
-       results = {}
-       
-       for m, n in matrix_sizes:
-           print(f"\\nTesting {m}x{n} matrix:")
-           A = torch.randn(m, n, dtype=torch.float64)
-           
-           # Standard PyTorch QR
-           start_time = time.time()
-           Q_torch, R_torch = torch.linalg.qr(A)
-           torch_time = time.time() - start_time
-           
-   # Panther CQRRPT
-   start_time = time.time()
-   Q_cqrrpt, R_cqrrpt, P_cqrrpt = pr.linalg.cqrrpt(A)
-   cqrrpt_time = time.time() - start_time
-   
-   # Note: CQRRPT performs sketching internally with compression ratio
-   # For m x n matrix, sketch size is typically d ≈ 1.2 * n to 2.0 * n
-   # The algorithm automatically balances accuracy vs. speed           # Compare accuracy
-           torch_error = torch.norm(A - Q_torch @ R_torch)
-           cqrrpt_error = torch.norm(A[:, P_cqrrpt] - Q_cqrrpt @ R_cqrrpt)
-           
-           results[(m, n)] = {
-               'torch_time': torch_time,
-               'cqrrpt_time': cqrrpt_time,
-               'speedup': torch_time / cqrrpt_time,
-               'torch_error': torch_error.item(),
-               'cqrrpt_error': cqrrpt_error.item()
-           }
-           
-           print(f"  PyTorch QR: {torch_time:.4f}s, error: {torch_error:.2e}")
-           print(f"  CQRRPT: {cqrrpt_time:.4f}s, error: {cqrrpt_error:.2e}")
-           print(f"  Speedup: {torch_time/cqrrpt_time:.2f}x")
-       
-       return results
-   
-   # Test different matrix sizes
-   sizes = [(500, 250), (1000, 500), (2000, 1000)]
-   comparison_results = compare_qr_methods(sizes)
+    import time
+    import torch
+    import panther as pr
+
+    def compare_qr_methods(matrix_sizes):
+        """Compare CQRRPT with standard QR."""
+        results = {}
+
+        for m, n in matrix_sizes:
+            print(f"\nTesting {m}x{n} matrix:")
+            A = torch.randn(m, n, dtype=torch.float64)
+
+            # Standard PyTorch QR
+            start_time = time.time()
+            Q_torch, R_torch = torch.linalg.qr(A)
+            torch_time = time.time() - start_time
+
+            # Panther CQRRPT
+            start_time = time.time()
+            Q_cqrrpt, R_cqrrpt, P_cqrrpt = pr.linalg.cqrrpt(A)
+            cqrrpt_time = time.time() - start_time
+
+            # Compare accuracy
+            torch_error = torch.norm(A - Q_torch @ R_torch)
+            cqrrpt_error = torch.norm(A[:, P_cqrrpt] - Q_cqrrpt @ R_cqrrpt)
+
+            # Store results
+            results[(m, n)] = {
+                'torch_time': torch_time,
+                'cqrrpt_time': cqrrpt_time,
+                'speedup': torch_time / cqrrpt_time,
+                'torch_error': torch_error.item(),
+                'cqrrpt_error': cqrrpt_error.item()
+            }
+
+            # Print results
+            print(f"  PyTorch QR: {torch_time:.4f}s, error: {torch_error:.2e}")
+            print(f"  CQRRPT:    {cqrrpt_time:.4f}s, error: {cqrrpt_error:.2e}")
+            print(f"  Speedup:   {torch_time / cqrrpt_time:.2f}x")
+
+        return results
+
+
+    # Test different matrix sizes
+    sizes = [(500, 250), (1000, 500), (2000, 1000)]
+    comparison_results = compare_qr_methods(sizes)
+
 
 **Using CQRRPT for Least Squares**
 
 .. code-block:: python
 
    def solve_least_squares_cqrrpt(A, b):
-       """Solve least squares problem using CQRRPT.""""
+       """Solve least squares problem using CQRRPT."""
        
        # Compute CQRRPT decomposition
        Q, R, P = pr.linalg.cqrrpt(A)
        
        # Solve R x = Q^T b for the permuted variables
        QtB = Q.T @ b
+       QtB = QtB.unsqueeze(1)
        x_permuted = torch.linalg.solve_triangular(R, QtB, upper=True)
        
        # Unpermute the solution
@@ -241,10 +245,10 @@ Randomized SVD (RSVD)
 
 **Mathematical Background**
 
-RSVD computes a low-rank approximation of the SVD: :math:`A \\approx U \\Sigma V^T` where:
+RSVD computes a low-rank approximation of the SVD: :math:`A \approx U \Sigma V^T` where:
 
 * :math:`U` has orthonormal columns
-* :math:`\\Sigma` is diagonal with singular values
+* :math:`\Sigma` is diagonal with singular values
 * :math:`V` has orthonormal columns
 
 The algorithm uses random sampling to efficiently compute the dominant singular vectors.
@@ -316,7 +320,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def adaptive_rsvd(A, energy_threshold=0.99, max_rank=None):
-       """Automatically determine rank based on energy threshold.""""
+       """Automatically determine rank based on energy threshold."""
        
        max_rank = max_rank or min(A.shape) // 2
        
@@ -351,7 +355,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def rsvd_pca(X, n_components, center_data=True):
-       """Perform PCA using randomized SVD.""""
+       """Perform PCA using randomized SVD."""
        
        # Center the data
        if center_data:
@@ -405,7 +409,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def matrix_completion_rsvd(A_observed, mask, rank, n_iterations=10):
-       """Simple matrix completion using iterative RSVD.""""
+       """Simple matrix completion using iterative RSVD."""
        
        # Initialize missing entries with column means
        A_filled = A_observed.clone()
@@ -456,7 +460,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
    test_norm = torch.norm(A_complete[test_mask])
    relative_error = completion_error / test_norm
    
-   print(f"\\nCompletion results:")
+   print(f"  Completion results:")
    print(f"  Test error: {completion_error:.4f}")
    print(f"  Relative test error: {relative_error:.6f}")
 
@@ -493,7 +497,7 @@ GPU Acceleration
 .. code-block:: python
 
    def chunked_rsvd(A, rank, chunk_size=1000):
-       """Process very large matrices in chunks.""""
+       """Process very large matrices in chunks."""
        
        m, n = A.shape
        
@@ -539,7 +543,7 @@ Practical Applications
 .. code-block:: python
 
    def compress_image_rsvd(image_tensor, compression_ratio=0.1):
-       """Compress image using RSVD.""""
+       """Compress image using RSVD."""
        
        # image_tensor should be (height, width, channels)
        h, w, c = image_tensor.shape
@@ -590,7 +594,7 @@ Practical Applications
 .. code-block:: python
 
    class RSVDDimensionalityReducer:
-       """Complete dimensionality reduction pipeline using RSVD.""""
+       """Complete dimensionality reduction pipeline using RSVD."""
        
        def __init__(self, n_components, whiten=False):
            self.n_components = n_components
@@ -600,7 +604,7 @@ Practical Applications
            self.singular_values_ = None
            
        def fit(self, X):
-           """Fit the model with X.""""
+           """Fit the model with X."""
            # Center data
            self.mean_ = torch.mean(X, dim=0)
            X_centered = X - self.mean_
@@ -614,7 +618,7 @@ Practical Applications
            return self
        
        def transform(self, X):
-           """Apply dimensionality reduction to X.""""
+           """Apply dimensionality reduction to X."""
            X_centered = X - self.mean_
            X_transformed = X_centered @ self.components_
            
@@ -624,11 +628,11 @@ Practical Applications
            return X_transformed
        
        def fit_transform(self, X):
-           \"\"\"Fit model and transform X.\"\"\""
+           """Fit model and transform X."""
            return self.fit(X).transform(X)
        
        def inverse_transform(self, X_transformed):
-           \"\"\"Transform back to original space.\"\"\""
+           """Transform back to original space."""
            if self.whiten:
                X_transformed = X_transformed * self.singular_values_
            
@@ -709,7 +713,7 @@ Where:
 .. code-block:: python
 
    def choose_algorithm(A, use_case):
-       \"\"\"Guide for selecting between CQRRPT and RSVD.\"\"\""
+       """Guide for selecting between CQRRPT and RSVD."""
        m, n = A.shape
        
        if use_case == "least_squares":
@@ -750,7 +754,7 @@ Performance Tips and Best Practices
 .. code-block:: python
 
    def recommend_parameters(matrix_shape, target_rank):
-       \"\"\"Recommend RSVD parameters based on matrix properties.\"\"\""
+       """Recommend RSVD parameters based on matrix properties."""
        m, n = matrix_shape
        min_dim = min(m, n)
        
@@ -772,7 +776,7 @@ Performance Tips and Best Practices
 .. code-block:: python
 
    def analyze_decomposition_error(A, U, S, Vt, rank_range=None):
-       \"\"\"Analyze approximation error vs rank.\"\"\""
+       """Analyze approximation error vs rank."""
        
        if rank_range is None:
            rank_range = range(1, len(S) + 1, max(1, len(S) // 20))
@@ -790,7 +794,7 @@ Performance Tips and Best Practices
 .. code-block:: python
 
    def numerical_stability_test():
-       \"\"\"Compare numerical stability of CQRRPT vs RSVD.\"\"\""
+       """Compare numerical stability of CQRRPT vs RSVD."""
        
        # Create ill-conditioned matrix
        m, n = 500, 300
@@ -837,7 +841,7 @@ Performance Tips and Best Practices
 .. code-block:: python
 
    def precision_guidelines():
-       \"\"\"Guidelines for choosing tolerances and precision.\"\"\""
+       """Guidelines for choosing tolerances and precision."""
        
        guidelines = {
            "float32": {

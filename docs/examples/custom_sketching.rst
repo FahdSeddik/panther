@@ -26,7 +26,7 @@ Custom SRHT Implementation
    from typing import Tuple
    
    class CustomSRHT(nn.Module):
-       \"\"\"Custom implementation of Subsampled Randomized Hadamard Transform.\"\"\""
+       """Custom implementation of Subsampled Randomized Hadamard Transform."""
        
        def __init__(self, input_dim: int, sketch_size: int, device=None):
            super().__init__()
@@ -50,7 +50,7 @@ Custom SRHT Implementation
            self.norm_factor = np.sqrt(self.hadamard_size / sketch_size)
        
        def hadamard_transform(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Fast Walsh-Hadamard Transform.\"\"\""
+           """Fast Walsh-Hadamard Transform."""
            batch_size = x.shape[0]
            
            # Pad input to next power of 2
@@ -73,7 +73,7 @@ Custom SRHT Implementation
            return x
        
        def forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Apply SRHT to input tensor.\"\"\""
+           """Apply SRHT to input tensor."""
            # Apply Hadamard transform
            x_transformed = self.hadamard_transform(x)
            
@@ -85,7 +85,7 @@ Custom SRHT Implementation
    
    # Example usage
    def test_custom_srht():
-       \"\"\"Test custom SRHT implementation.\"\"\""
+       """Test custom SRHT implementation."""
        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
        
        # Create test data
@@ -116,7 +116,7 @@ Custom Gaussian Sketching Layer
 .. code-block:: python
 
    class CustomGaussianSketch(nn.Module):
-       \"\"\"Custom Gaussian sketching with optional structured matrices.\"\"\""
+       """Custom Gaussian sketching with optional structured matrices."""
        
        def __init__(self, input_dim: int, output_dim: int, 
                     structured: bool = False, device=None):
@@ -135,14 +135,14 @@ Custom Gaussian Sketching Layer
                self._init_dense_matrix()
        
        def _init_dense_matrix(self):
-           \"\"\"Initialize dense Gaussian matrix.\"\"\""
+           """Initialize dense Gaussian matrix."""
            # Dense random matrix
            matrix = torch.randn(self.output_dim, self.input_dim, device=self.device)
            matrix /= np.sqrt(self.output_dim)  # Normalize
            self.register_buffer('sketch_matrix', matrix)
        
        def _init_structured_matrix(self):
-           \"\"\"Initialize structured matrix using FFT.\"\"\""
+           """Initialize structured matrix using FFT."""
            # Random diagonal matrix
            diagonal = torch.randn(self.input_dim, device=self.device)
            self.register_buffer('diagonal', diagonal)
@@ -155,18 +155,18 @@ Custom Gaussian Sketching Layer
                self.register_buffer('indices', torch.arange(self.input_dim, device=self.device))
        
        def forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Apply Gaussian sketching.\"\"\""
+           """Apply Gaussian sketching."""
            if self.structured:
                return self._structured_forward(x)
            else:
                return self._dense_forward(x)
        
        def _dense_forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Dense matrix multiplication.\"\"\""
+           """Dense matrix multiplication."""
            return torch.matmul(x, self.sketch_matrix.t())
        
        def _structured_forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Structured sketching using FFT.\"\"\""
+           """Structured sketching using FFT."""
            # Apply diagonal scaling
            x_scaled = x * self.diagonal
            
@@ -187,7 +187,7 @@ Custom Sketched Linear Layer
 .. code-block:: python
 
    class CustomSketchedLinear(nn.Module):
-       \"\"\"Custom sketched linear layer with multiple sketching options.\"\"\""
+       """Custom sketched linear layer with multiple sketching options."""
        
        def __init__(self, in_features: int, out_features: int, 
                     sketch_method: str = 'gaussian', sketch_ratio: float = 0.5,
@@ -218,7 +218,7 @@ Custom Sketched Linear Layer
            self._init_parameters()
        
        def _init_sketching_operators(self):
-           \"\"\"Initialize sketching operators.\"\"\""
+           """Initialize sketching operators."""
            if self.sketch_method == 'gaussian':
                self.input_sketch = CustomGaussianSketch(
                    self.in_features, self.sketch_size, device=self.device
@@ -237,7 +237,7 @@ Custom Sketched Linear Layer
                raise ValueError(f"Unknown sketch method: {self.sketch_method}")
        
        def _init_parameters(self):
-           \"\"\"Initialize parameters using proper scaling.\"\"\""
+           """Initialize parameters using proper scaling."""
            # Xavier/Glorot initialization adapted for low-rank
            fan_in = self.in_features
            fan_out = self.out_features
@@ -251,7 +251,7 @@ Custom Sketched Linear Layer
                self.V.normal_(0, scale)
        
        def forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Forward pass through sketched linear layer.\"\"\""
+           """Forward pass through sketched linear layer."""
            # Compute low-rank approximation: W ≈ U @ S @ V.T
            # where S is derived from sketching
            
@@ -281,7 +281,7 @@ Advanced Custom Network with Mixed Sketching
 .. code-block:: python
 
    class AdaptiveSketchedNetwork(nn.Module):
-       \"\"\"Network that adapts sketching method per layer.\"\"\""
+       """Network that adapts sketching method per layer."""
        
        def __init__(self, layer_configs: list, adaptive: bool = True):
            super().__init__()
@@ -314,7 +314,7 @@ Advanced Custom Network with Mixed Sketching
                    self.layers.append(activation)
        
        def _choose_sketch_method(self, in_feat: int, out_feat: int, layer_idx: int) -> str:
-           \"\"\"Adaptively choose sketching method.\"\"\""
+           """Adaptively choose sketching method."""
            # Use SRHT for large layers (better for high dimensions)
            if min(in_feat, out_feat) > 1000:
                return 'srht'
@@ -323,7 +323,7 @@ Advanced Custom Network with Mixed Sketching
                return 'gaussian'
        
        def _choose_sketch_ratio(self, in_feat: int, out_feat: int, layer_idx: int) -> float:
-           \"\"\"Adaptively choose sketch ratio.\"\"\""
+           """Adaptively choose sketch ratio."""
            # Higher compression for earlier layers
            base_ratio = 0.3 + 0.2 * (layer_idx / max(1, len(self.layers) - 1))
            
@@ -334,13 +334,13 @@ Advanced Custom Network with Mixed Sketching
            return np.clip(adjusted_ratio, 0.1, 0.8)
        
        def forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Forward pass through adaptive network.\"\"\""
+           """Forward pass through adaptive network."""
            for layer in self.layers:
                x = layer(x)
            return x
        
        def get_compression_info(self) -> dict:
-           \"\"\"Get compression statistics for each layer.\"\"\""
+           """Get compression statistics for each layer."""
            info = {}
            
            for i, layer in enumerate(self.layers):
@@ -376,7 +376,7 @@ CUDA-Accelerated Custom Sketching
        CUDA_AVAILABLE = False
    
    class CUDAGaussianSketch(nn.Module):
-       \"\"\"CUDA-accelerated Gaussian sketching.\"\"\""
+       """CUDA-accelerated Gaussian sketching."""
        
        def __init__(self, input_dim: int, sketch_size: int, device=None):
            super().__init__()
@@ -395,7 +395,7 @@ CUDA-Accelerated Custom Sketching
            self._init_random_matrix()
        
        def _init_random_matrix(self):
-           \"\"\"Initialize random matrix for sketching.\"\"\""
+           """Initialize random matrix for sketching."""
            if self.use_cuda:
                # For CUDA implementation, we might use structured matrices
                # or generate matrices on-the-fly in kernels
@@ -408,7 +408,7 @@ CUDA-Accelerated Custom Sketching
                self.register_buffer('random_matrix', matrix)
        
        def forward(self, x: torch.Tensor) -> torch.Tensor:
-           \"\"\"Apply CUDA-accelerated sketching.\"\"\""
+           """Apply CUDA-accelerated sketching."""
            if self.use_cuda:
                # Use custom CUDA kernel (hypothetical)
                # return pawX.gaussian_sketch(x, self.random_matrix)
@@ -427,7 +427,7 @@ AutoTuner Integration with Custom Layers
    from panther.tuner import SkAutoTuner
    
    def evaluate_custom_network(sketch_ratio_1, sketch_ratio_2, sketch_method_idx):
-       \"\"\"Evaluate custom network with different parameters.\"\"\""
+       """Evaluate custom network with different parameters."""
        
        # Map index to method
        methods = ['gaussian', 'srht']
@@ -485,7 +485,7 @@ Performance Benchmarking Custom Methods
    import matplotlib.pyplot as plt
    
    def benchmark_sketching_methods():
-       \"\"\"Benchmark different sketching implementations.\"\"\""
+       """Benchmark different sketching implementations."""
        
        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
        batch_size = 64
@@ -548,7 +548,7 @@ Best Practices for Custom Sketching
 .. code-block:: python
 
    def memory_efficient_sketching(x: torch.Tensor, sketch_size: int) -> torch.Tensor:
-       \"\"\"Memory-efficient sketching for large tensors.\"\"\""
+       """Memory-efficient sketching for large tensors."""
        
        batch_size, input_dim = x.shape
        
@@ -577,7 +577,7 @@ Best Practices for Custom Sketching
 .. code-block:: python
 
    def stable_sketching(x: torch.Tensor, epsilon: float = 1e-8) -> torch.Tensor:
-       \"\"\"Numerically stable sketching implementation.\"\"\""
+       """Numerically stable sketching implementation."""
        
        # Add small regularization to avoid numerical issues
        x_reg = x + epsilon * torch.randn_like(x)
@@ -593,7 +593,7 @@ Best Practices for Custom Sketching
 .. code-block:: python
 
    class GradientOptimizedSketch(nn.Module):
-       \"\"\"Sketching layer optimized for gradient flow.\"\"\""
+       """Sketching layer optimized for gradient flow."""
        
        def __init__(self, input_dim: int, sketch_size: int):
            super().__init__()

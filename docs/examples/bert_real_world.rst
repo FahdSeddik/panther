@@ -55,7 +55,7 @@ This example demonstrates how to use Panther's AutoTuner to automatically find o
 .. code-block:: python
 
    class MaskedTextDataset(Dataset):
-       \"\"\"Dataset for masked language modeling.\"\"\"
+       """Dataset for masked language modeling."""
        def __init__(self, texts, tokenizer, max_length=128):
            self.texts = texts
            self.tokenizer = tokenizer
@@ -181,7 +181,7 @@ This example demonstrates how to use Panther's AutoTuner to automatically find o
 .. code-block:: python
 
    def train_model(model, train_loader, num_epochs=3):
-       \"\"\"Train the optimized BERT model.\"\"\"
+       """Train the optimized BERT model."""
        model.train()
        optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
        
@@ -210,7 +210,7 @@ This example demonstrates how to use Panther's AutoTuner to automatically find o
 .. code-block:: python
 
    def compare_models(original_model, optimized_model, test_loader):
-       \"\"\"Compare original and optimized BERT models.\"\"\"
+       """Compare original and optimized BERT models."""
        
        def count_parameters(model):
            return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -297,7 +297,7 @@ Attention-Based Models
    from panther.nn.pawXimpl import sinSRPE
    
    class RandomizedTransformerEncoder(nn.Module):
-       \"\"\"Transformer encoder with randomized multi-head attention.\"\"\"
+       """Transformer encoder with randomized multi-head attention."""
        
        def __init__(self, d_model=512, n_heads=8, n_layers=6, 
                     d_ff=2048, dropout=0.1, num_random_features=256):
@@ -316,7 +316,7 @@ Attention-Based Models
            return x
    
    class RandomizedTransformerLayer(nn.Module):
-       \"\"\"Single transformer layer with randomized attention.\"\"\"
+       """Single transformer layer with randomized attention."""
        
        def __init__(self, d_model, n_heads, d_ff, dropout, num_random_features):
            super().__init__()

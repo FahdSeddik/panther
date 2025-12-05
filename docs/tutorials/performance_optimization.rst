@@ -43,7 +43,7 @@ GPU Acceleration Fundamentals
    x = torch.randn(batch_size, input_dim, device=device)
    
    def benchmark_model(model, input_tensor, num_runs=100, warmup=10):
-       \"\"\"Benchmark model inference time.\"\"\""
+       """Benchmark model inference time."""
        model.eval()
        
        # Warmup
@@ -78,7 +78,7 @@ GPU Acceleration Fundamentals
 .. code-block:: python
 
    def analyze_memory_usage(model, input_shape, batch_sizes=[32, 64, 128, 256]):
-       \"\"\"Analyze memory usage across different batch sizes.\"\"\""
+       """Analyze memory usage across different batch sizes."""
        
        model = model.to(device)
        results = {}
@@ -148,7 +148,7 @@ Modern NVIDIA GPUs (V100, A100, RTX series) include Tensor Cores that can dramat
 .. code-block:: python
 
    def optimize_for_tensor_cores(in_features, out_features, num_terms, low_rank):
-       \"\"\"Optimize dimensions for Tensor Core usage.\"\"\""
+       """Optimize dimensions for Tensor Core usage."""
        
        # Round dimensions to multiples of 8 for FP16 Tensor Cores
        def round_to_multiple(x, multiple=8):
@@ -200,7 +200,7 @@ Modern NVIDIA GPUs (V100, A100, RTX series) include Tensor Cores that can dramat
 .. code-block:: python
 
    def train_with_tensor_cores(model, train_loader, num_epochs=5):
-       \"\"\"Train model using mixed precision for Tensor Core acceleration.\"\"\""
+       """Train model using mixed precision for Tensor Core acceleration."""
        
        model = model.to(device)
        criterion = nn.CrossEntropyLoss()
@@ -248,7 +248,7 @@ Advanced Memory Management
 .. code-block:: python
 
    class MemoryEfficientTrainer:
-       \"\"\"Trainer with advanced memory management.\"\"\""
+       """Trainer with advanced memory management."""
        
        def __init__(self, model, accumulation_steps=4, max_memory_mb=8000):
            self.model = model
@@ -256,7 +256,7 @@ Advanced Memory Management
            self.max_memory_mb = max_memory_mb
            
        def train_epoch(self, train_loader, optimizer, criterion):
-           \"\"\"Train one epoch with gradient accumulation and memory monitoring.\"\"\""
+           """Train one epoch with gradient accumulation and memory monitoring."""
            
            self.model.train()
            optimizer.zero_grad()
@@ -307,7 +307,7 @@ Advanced Memory Management
 .. code-block:: python
 
    class AdaptiveBatchSizeTrainer:
-       \"\"\"Trainer that adapts batch size based on available memory.\"\"\""
+       """Trainer that adapts batch size based on available memory."""
        
        def __init__(self, model, initial_batch_size=64, memory_threshold=0.9):
            self.model = model
@@ -320,7 +320,7 @@ Advanced Memory Management
                self.total_memory = None
        
        def find_optimal_batch_size(self, sample_data):
-           \"\"\"Find the largest batch size that fits in memory.\"\"\""
+           """Find the largest batch size that fits in memory."""
            
            if self.total_memory is None:
                return self.current_batch_size
@@ -367,7 +367,7 @@ Algorithmic Optimizations
 .. code-block:: python
 
    class OptimizedSKLinear(pr.nn.SKLinear):
-       \"\"\"SKLinear with optimized parameter updates.\"\"\""
+       """SKLinear with optimized parameter updates."""
        
        def __init__(self, *args, **kwargs):
            super().__init__(*args, **kwargs)
@@ -419,11 +419,11 @@ Algorithmic Optimizations
    # Note: This is conceptual - actual kernel fusion requires C++/CUDA implementation
    
    class FusedSketchedOps:
-       \"\"\"Conceptual fused operations for sketched layers.\"\"\""
+       """Conceptual fused operations for sketched layers."""
        
        @staticmethod
        def fused_sketch_linear_relu(x, s1s, s2s, u1s, u2s, bias=None):
-           \"\"\"Fused sketched linear + ReLU operation.\"\"\""
+           """Fused sketched linear + ReLU operation."""
            
            # This would be implemented as a custom CUDA kernel
            # that combines the sketched linear computation with ReLU
@@ -435,7 +435,7 @@ Algorithmic Optimizations
        
        @staticmethod
        def fused_sketch_linear_dropout(x, s1s, s2s, u1s, u2s, bias=None, dropout_p=0.1, training=True):
-           \"\"\"Fused sketched linear + dropout operation.\"\"\""
+           """Fused sketched linear + dropout operation."""
            
            output = OptimizedSKLinear.forward_impl(x, s1s, s2s, u1s, u2s, bias)
            
@@ -454,7 +454,7 @@ Profiling and Benchmarking
    import matplotlib.pyplot as plt
    
    def profile_model_performance(model, input_tensor, num_steps=100):
-       \"\"\"Profile model performance using PyTorch profiler.\"\"\""
+       """Profile model performance using PyTorch profiler."""
        
        model = model.to(device)
        input_tensor = input_tensor.to(device)
@@ -507,14 +507,14 @@ Profiling and Benchmarking
 .. code-block:: python
 
    class BenchmarkSuite:
-       \"\"\"Comprehensive benchmarking for sketched models.\"\"\""
+       """Comprehensive benchmarking for sketched models."""
        
        def __init__(self, device=None):
            self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
            self.results = {}
        
        def benchmark_layer_configs(self, base_config, param_ranges):
-           \"\"\"Benchmark different layer configurations.\"\"\""
+           """Benchmark different layer configurations."""
            
            results = []
            
@@ -564,7 +564,7 @@ Profiling and Benchmarking
            return results
        
        def plot_performance_landscape(self, results):
-           \"\"\"Plot performance vs parameter tradeoffs.\"\"\""
+           """Plot performance vs parameter tradeoffs."""
            
            import pandas as pd
            
@@ -631,7 +631,7 @@ Production Optimization Strategies
 .. code-block:: python
 
    def optimize_model_for_production(model, sample_input, optimization_level='standard'):
-       \"\"\"Optimize model for production deployment.\"\"\""
+       """Optimize model for production deployment."""
        
        model = model.to(device)
        model.eval()
@@ -668,7 +668,7 @@ Production Optimization Strategies
    
    # Model serving with optimization
    class OptimizedModelServer:
-       \"\"\"Production model server with optimizations.\"\"\""
+       """Production model server with optimizations."""
        
        def __init__(self, model, batch_size=32, max_latency_ms=100):
            self.model = model
@@ -680,7 +680,7 @@ Production Optimization Strategies
            self.batch_timer = None
            
        def predict_batch(self, inputs):
-           \"\"\"Process a batch of inputs efficiently.\"\"\""
+           """Process a batch of inputs efficiently."""
            
            start_time = time.time()
            
@@ -707,14 +707,14 @@ Production Optimization Strategies
 .. code-block:: python
 
    class MemoryMappedModel:
-       \"\"\"Model with memory-mapped parameter loading for large models.\"\"\""
+       """Model with memory-mapped parameter loading for large models."""
        
        def __init__(self, model_path, device=None):
            self.device = device or torch.device('cpu')
            self.model_path = model_path
            
        def load_model_lazy(self):
-           \"\"\"Load model with lazy parameter loading.\"\"\""
+           """Load model with lazy parameter loading."""
            
            # Load model structure without parameters
            checkpoint = torch.load(self.model_path, map_location='cpu')
@@ -740,7 +740,7 @@ Best Practices Summary
 .. code-block:: python
 
    def memory_optimization_checklist():
-       \"\"\"Best practices for memory optimization.\"\"\""
+       """Best practices for memory optimization."""
        
        optimizations = [
            "✓ Use gradient accumulation for large effective batch sizes",
@@ -761,7 +761,7 @@ Best Practices Summary
 .. code-block:: python
 
    def performance_optimization_checklist():
-       \"\"\"Best practices for performance optimization.\"\"\""
+       """Best practices for performance optimization."""
        
        optimizations = [
            "✓ Profile code to identify bottlenecks",

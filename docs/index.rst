@@ -7,26 +7,26 @@
       document.body.classList.add('main-index-page');
       
       // Only auto-hide sidebar on desktop screens
-      if (window.innerWidth >= 960) {
+      //if (window.innerWidth >= 960) {
          // Wait for DOM to be ready
-         document.addEventListener('DOMContentLoaded', function() {
-            const primarySidebar = document.getElementById("__primary");
-            if (primarySidebar) {
-               primarySidebar.checked = false;
-            }
-         });
+      //   document.addEventListener('DOMContentLoaded', function() {
+      //      const primarySidebar = document.getElementById("__primary");
+      //      if (primarySidebar) {
+      //         primarySidebar.checked = false;
+      //      }
+      //   });
          
          // If DOM is already loaded
-         if (document.readyState === 'loading') {
+      //   if (document.readyState === 'loading') {
             // Document still loading, wait for DOMContentLoaded
-         } else {
+      //   } else {
             // Document already loaded
-            const primarySidebar = document.getElementById("__primary");
-            if (primarySidebar) {
-               primarySidebar.checked = false;
-            }
-         }
-      }
+      //    const primarySidebar = document.getElementById("__primary");
+      //      if (primarySidebar) {
+      //         primarySidebar.checked = false;
+      //      }
+      //   }
+      //}
    </script>
 
 .. raw:: html

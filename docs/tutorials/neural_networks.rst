@@ -100,7 +100,7 @@ Let's start by converting a standard neural network to use sketched layers:
 .. code-block:: python
 
    def create_synthetic_dataset(n_samples=10000, input_dim=784, n_classes=10):
-       \"\"\"Create synthetic classification dataset.\"\"\""
+       """Create synthetic classification dataset."""
        
        # Generate structured data
        class_centers = torch.randn(n_classes, input_dim)
@@ -128,7 +128,7 @@ Let's start by converting a standard neural network to use sketched layers:
        return X, y
    
    def train_and_evaluate(model, train_loader, test_loader, num_epochs=10, lr=0.001):
-       \"\"\"Train and evaluate a model.\"\"\""
+       """Train and evaluate a model."""
        
        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
        model = model.to(device)
@@ -216,7 +216,7 @@ Advanced Network Architectures
 .. code-block:: python
 
    class SketchedCNN(nn.Module):
-       \"\"\"CNN with sketched fully connected layers.\"\"\""
+       """CNN with sketched fully connected layers."""
        
        def __init__(self, num_classes=10, sketch_params=None):
            super().__init__()
@@ -274,7 +274,7 @@ Advanced Network Architectures
 .. code-block:: python
 
    class SketchedResidualBlock(nn.Module):
-       \"\"\"Residual block with sketched linear transformations.\"\"\""
+       """Residual block with sketched linear transformations."""
        
        def __init__(self, in_features, out_features, num_terms=4, low_rank=32):
            super().__init__()
@@ -302,7 +302,7 @@ Advanced Network Architectures
            return self.relu(main_out + shortcut_out)
    
    class SketchedResNet(nn.Module):
-       \"\"\"ResNet-style architecture with sketched layers.\"\"\""
+       """ResNet-style architecture with sketched layers."""
        
        def __init__(self, input_dim, block_configs, num_classes):
            super().__init__()
@@ -376,7 +376,7 @@ Advanced Network Architectures
    
    # Example: Transformer block with sketched feed-forward
    class TransformerBlock(nn.Module):
-       \"\"\"Transformer block with RandMultiHeadAttention and sketched feed-forward.\"\"\""
+       """Transformer block with RandMultiHeadAttention and sketched feed-forward."""
        
        def __init__(self, d_model, n_heads, d_ff, num_random_features=256, num_terms=6, low_rank=48):
            super().__init__()
@@ -420,7 +420,7 @@ Adaptive Sketching Strategies
 .. code-block:: python
 
    class AdaptiveSketchedLayer(nn.Module):
-       \"\"\"Sketched layer that adapts parameters based on input statistics.\"\"\""
+       """Sketched layer that adapts parameters based on input statistics."""
        
        def __init__(self, in_features, out_features, 
                     base_terms=4, base_rank=32, adaptation_rate=0.01):
@@ -464,7 +464,7 @@ Adaptive Sketching Strategies
            return self.sketched_layer(x)
        
        def adapt_parameters(self):
-           \"\"\"Adjust sketching parameters based on observed statistics.\"\"\""
+           """Adjust sketching parameters based on observed statistics."""
            
            # Simple adaptation rule: increase complexity if high variance
            if self.input_variance > 2.0 and self.current_terms < 16:
@@ -493,7 +493,7 @@ Adaptive Sketching Strategies
 .. code-block:: python
 
    class SketchedLayerWithScheduling(nn.Module):
-       \"\"\"Sketched layer with built-in learning rate scheduling.\"\"\""
+       """Sketched layer with built-in learning rate scheduling."""
        
        def __init__(self, in_features, out_features, num_terms=8, low_rank=64):
            super().__init__()
@@ -505,7 +505,7 @@ Adaptive Sketching Strategies
            self.register_buffer('u_lr_multiplier', torch.tensor(0.1))  # U matrices are fixed
            
        def get_parameter_groups(self, base_lr):
-           \"\"\"Get parameter groups with different learning rates.\"\"\""
+           """Get parameter groups with different learning rates."""
            
            s_params = [p for name, p in self.named_parameters() if 'S' in name]
            other_params = [p for name, p in self.named_parameters() if 'S' not in name]
@@ -523,7 +523,7 @@ Adaptive Sketching Strategies
 .. code-block:: python
 
    class ProgressiveSketchedNetwork(nn.Module):
-       \"\"\"Network that progressively increases sketch complexity during training.\"\"\""
+       """Network that progressively increases sketch complexity during training."""
        
        def __init__(self, layer_configs, num_classes):
            super().__init__()
@@ -537,7 +537,7 @@ Adaptive Sketching Strategies
            self.build_network()
            
        def build_network(self):
-           \"\"\"Build network for current training phase.\"\"\""
+           """Build network for current training phase."""
            
            layers = []
            phase_multiplier = (self.current_phase + 1) / self.max_phases
@@ -566,7 +566,7 @@ Adaptive Sketching Strategies
            self.network = nn.Sequential(*layers)
        
        def advance_phase(self):
-           \"\"\"Move to next training phase with increased complexity.\"\"\""
+           """Move to next training phase with increased complexity."""
            
            if self.current_phase < self.max_phases - 1:
                old_state = self.network.state_dict()
@@ -600,7 +600,7 @@ Memory and Computational Efficiency
    import gc
    
    class MemoryEfficientTrainer:
-       \"\"\"Trainer with memory monitoring and optimization.\"\"\""
+       """Trainer with memory monitoring and optimization."""
        
        def __init__(self, model, train_loader, val_loader, device):
            self.model = model.to(device)
@@ -611,7 +611,7 @@ Memory and Computational Efficiency
            self.memory_stats = []
            
        def train_epoch(self, optimizer, criterion, accumulation_steps=1):
-           \"\"\"Train one epoch with gradient accumulation.\"\"\""
+           """Train one epoch with gradient accumulation."""
            
            self.model.train()
            total_loss = 0
@@ -649,7 +649,7 @@ Memory and Computational Efficiency
            return total_loss / num_batches
        
        def log_memory_usage(self, batch_idx):
-           \"\"\"Log current memory usage.\"\"\""
+           """Log current memory usage."""
            
            if self.device.type == 'cuda':
                gpu_memory = torch.cuda.memory_allocated() / 1024**2  # MB
@@ -667,7 +667,7 @@ Memory and Computational Efficiency
            })
        
        def validate(self, criterion):
-           \"\"\"Validate model performance.\"\"\""
+           """Validate model performance."""
            
            self.model.eval()
            total_loss = 0
@@ -698,7 +698,7 @@ Memory and Computational Efficiency
    from torch.utils.checkpoint import checkpoint
    
    class CheckpointedSketchedLayer(nn.Module):
-       \"\"\"Sketched layer with gradient checkpointing.\"\"\""
+       """Sketched layer with gradient checkpointing."""
        
        def __init__(self, in_features, out_features, num_terms=8, low_rank=64):
            super().__init__()
@@ -718,7 +718,7 @@ Memory and Computational Efficiency
 .. code-block:: python
 
    def train_with_mixed_precision(model, train_loader, val_loader, num_epochs=10):
-       \"\"\"Train model using automatic mixed precision.\"\"\""
+       """Train model using automatic mixed precision."""
        
        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
        model = model.to(device)
@@ -758,7 +758,7 @@ Real-World Application: Document Classification
 .. code-block:: python
 
    class DocumentClassifier(nn.Module):
-       \"\"\"Complete document classifier using sketched layers.\"\"\""
+       """Complete document classifier using sketched layers."""
        
        def __init__(self, vocab_size, embed_dim=128, hidden_dims=[512, 256], 
                     num_classes=10, max_seq_len=512):

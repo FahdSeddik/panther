@@ -171,7 +171,7 @@ Linear Layer Replacements
    import panther as pr
    
    def benchmark_layer(layer, input_tensor, num_runs=100):
-       \"\"\"Benchmark forward and backward pass.\"\"\\"
+       """Benchmark forward and backward pass.\"\"\\"
        layer.train()
        
        # Warmup
@@ -257,7 +257,7 @@ Memory Usage Analysis
    import os
    
    def get_memory_usage():
-       \"\"\"Get current memory usage in MB.\"\"\""
+       """Get current memory usage in MB."""
        if torch.cuda.is_available():
            gpu_memory = torch.cuda.memory_allocated() / 1024**2  # MB
            return f"GPU: {gpu_memory:.1f}MB"
@@ -351,7 +351,7 @@ Sketching Examples
    
    # Compare preservation of distances
    def compare_distances(X_orig, X_reduced, n_samples=100):
-       \"\"\"Compare pairwise distances before/after reduction.\"\"\""
+       """Compare pairwise distances before/after reduction."""
        indices = torch.randperm(X_orig.shape[0])[:n_samples]
        
        orig_dists = torch.pdist(X_orig[indices])
@@ -376,7 +376,7 @@ Sketching Examples
    import time
    
    def fast_matrix_multiply(A, B, sketch_size=None):
-       \"\"\"Approximate A @ B using sketching.\"\"\""
+       """Approximate A @ B using sketching."""
        m, k = A.shape
        k2, n = B.shape
        assert k == k2, "Matrix dimensions must match"
@@ -441,7 +441,7 @@ Advanced Usage Patterns
    import panther as pr
    
    class AdaptiveSketchedLayer(nn.Module):
-       \"\"\"Layer that adapts sketching parameters based on input.\"\"\""
+       """Layer that adapts sketching parameters based on input."""
        
        def __init__(self, in_features, out_features, max_terms=16, max_rank=128):
            super().__init__()
@@ -504,7 +504,7 @@ Advanced Usage Patterns
    import panther as pr
    
    class ProgressiveSketchedModel(nn.Module):
-       \"\"\"Model that gradually increases sketching complexity during training.\"\"\""
+       """Model that gradually increases sketching complexity during training."""
        
        def __init__(self, layer_sizes):
            super().__init__()
@@ -521,7 +521,7 @@ Advanced Usage Patterns
            self.training_step = 0
            
        def increase_complexity(self):
-           \"\"\"Increase sketching parameters.\"\"\""
+           """Increase sketching parameters."""
            for layer in self.layers:
                if hasattr(layer, 'num_terms'):
                    # Gradually increase parameters
@@ -548,7 +548,7 @@ Advanced Usage Patterns
            return x
        
        def training_step_callback(self):
-           \"\"\"Call this every few training steps.\"\"\""
+           """Call this every few training steps."""
            self.training_step += 1
            if self.training_step % 1000 == 0:  # Every 1000 steps
                self.increase_complexity()
