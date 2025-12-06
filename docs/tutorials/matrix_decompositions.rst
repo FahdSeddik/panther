@@ -341,7 +341,7 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
        print(f"  Energy captured: {energy_ratio[rank_needed-1]:.6f}")
        
        # Return truncated decomposition
-       return U[:, :rank_needed], S[:rank_needed], V[:rank_needed, :], rank_needed
+       return U[:, :rank_needed], S[:rank_needed], V[:, :rank_needed], rank_needed
    
    # Example usage
    U_adaptive, S_adaptive, V_adaptive, optimal_rank = adaptive_rsvd(A, energy_threshold=0.95)
@@ -355,38 +355,33 @@ The algorithm uses random sampling to efficiently compute the dominant singular 
 .. code-block:: python
 
    def rsvd_pca(X, n_components, center_data=True):
-       """Perform PCA using randomized SVD."""
-       
-       # Center the data
-       if center_data:
-           mean = torch.mean(X, dim=0)
-           X_centered = X - mean
-       else:
-           X_centered = X
-           mean = torch.zeros(X.shape[1])
-       
-       # Compute RSVD
-       U, S, V = pr.linalg.randomized_svd(X_centered.T, k=n_components, tol=1e-6)
-       
-       # Principal components (loadings)
-       components = V.T  # Transpose to get components as columns
-       
-       # Explained variance
-       explained_variance = S**2 / (X.shape[0] - 1)
-       total_variance = torch.sum(torch.var(X_centered, dim=0))
-       explained_variance_ratio = explained_variance / total_variance
-       
-       # Transform data
-       X_transformed = X_centered @ components
-       
-       return {
-           'components': components,
-           'explained_variance': explained_variance,
-           'explained_variance_ratio': explained_variance_ratio,
-           'singular_values': S,
-           'mean': mean,
-           'X_transformed': X_transformed
-       }
+    """Perform PCA using randomized SVD."""
+
+    # Center data
+    if center_data:
+        mean = torch.mean(X, dim=0)
+        X_centered = X - mean
+    else:
+        mean = torch.zeros(X.shape[1])
+        X_centered = X
+
+    U, S, V = pr.linalg.randomized_svd(X_centered, k=n_components, tol=1e-6)
+
+    components = V  
+    explained_variance = S**2 / (X.shape[0] - 1)
+    total_variance = torch.sum(torch.var(X_centered, dim=0))
+    explained_variance_ratio = explained_variance / total_variance
+
+    X_transformed = X_centered @ components
+
+    return {
+        'components': components,
+        'explained_variance': explained_variance,
+        'explained_variance_ratio': explained_variance_ratio,
+        'singular_values': S,
+        'mean': mean,
+        'X_transformed': X_transformed
+    }
    
    # Example: PCA on synthetic data
    n_samples, n_features = 1000, 200
@@ -506,7 +501,7 @@ GPU Acceleration
            return pr.linalg.randomized_svd(A, k=rank, tol=1e-6)
        
        # Process in chunks and combine
-       if m > n:
+       if m >= n:
            # Tall matrix: chunk rows
            Q_list = []
            for i in range(0, m, chunk_size):
@@ -610,10 +605,10 @@ Practical Applications
            X_centered = X - self.mean_
            
            # Compute RSVD
-           U, S, V = pr.linalg.randomized_svd(X_centered.T, k=self.n_components, tol=1e-6)
+           U, S, V = pr.linalg.randomized_svd(X_centered, k=self.n_components, tol=1e-6)
            
            self.singular_values_ = S
-           self.components_ = V.T  # Components as columns
+           self.components_ = V  # Components as columns
            
            return self
        
