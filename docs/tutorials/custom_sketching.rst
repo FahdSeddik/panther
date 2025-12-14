@@ -10,13 +10,13 @@ Understanding Sketching Fundamentals
 
 Sketching reduces the dimensionality of data while preserving important properties. The key insight is that random projections can preserve distances and inner products with high probability.
 
-For a matrix :math:`A \\in \\mathbb{R}^{m \\times n}`, a sketch :math:`S \\in \\mathbb{R}^{k \\times m}` produces:
+For a matrix :math:`A \in \mathbb{R}^{m \times n}`, a sketch :math:`S \in \mathbb{R}^{k \times m}` produces:
 
 .. math::
 
-   \\widetilde{A} = SA
+   \widetilde{A} = SA
 
-where :math:`k \\ll m` and :math:`\\widetilde{A}` preserves key properties of :math:`A`.
+where :math:`k \ll m` and :math:`\widetilde{A}` preserves key properties of :math:`A`.
 
 **Using Panther's Built-in Sketching Operators**
 

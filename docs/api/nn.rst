@@ -217,7 +217,7 @@ The total parameters should be less than the original layer:
 
 .. math::
 
-   2 \\times \\text{num_terms} \\times \\text{low_rank} \\times (\\text{in_features} + \\text{out_features}) < \\text{in_features} \\times \\text{out_features}
+   2 \times \text{num_terms} \times \text{low_rank} \times (\text{in_features} + \text{out_features}) < \text{in_features} \times \text{out_features}
 
 GPU Optimization
 ----------------

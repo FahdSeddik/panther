@@ -41,7 +41,6 @@ The following are areas being considered for future development. Community contr
 
 - Enhanced CUDA kernel implementations
 - Dynamic sketching with adaptive parameters
-- Memory usage optimizations
 - Support for additional GPU architectures
 
 **Platform and Framework Support**
