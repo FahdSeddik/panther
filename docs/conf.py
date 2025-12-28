@@ -89,6 +89,7 @@ autodoc_mock_imports = [
     # Mock specific classes/enums from pawX
     "DistributionFamily",
     "Axis",
+    "torch"
 ]
 
 # Napoleon settings for Google/NumPy style docstrings

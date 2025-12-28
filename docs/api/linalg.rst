@@ -3,21 +3,19 @@ Linear Algebra API
 
 The :mod:`panther.linalg` module provides randomized linear algebra operations for efficient matrix decompositions.
 
-.. currentmodule:: panther.linalg
 
 Core Functions
 --------------
 
-.. autofunction:: cqrrpt
-   :no-index:
-
-.. autofunction:: randomized_svd
-   :no-index:
+.. automodule:: panther.linalg
+   :members: cqrrpt, randomized_svd
+   :undoc-members:
+   :show-inheritance:
 
 Distribution Families
 ---------------------
 
-.. py:class:: DistributionFamily
+.. autoclass:: panther.linalg.DistributionFamily
 
    Enumeration of available distribution families for linear algebra operations.
    
