@@ -106,24 +106,6 @@
    api/tuner
    api/utils
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Examples & Tutorials
-   :hidden:
-   
-   examples/index
-   benchmarks
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Advanced Topics
-   :hidden:
-   
-   advanced/cuda_kernels
-   advanced/tensor_cores
-   advanced/custom_sketching
-   advanced/memory_optimization
-   advanced/distributed_training
 
 .. toctree::
    :maxdepth: 1

@@ -128,5 +128,4 @@ html_theme_options = {
     "navigation_depth": 4,
     "use_sidenotes": True,
     "show_prev_next": False,
-    "theme_mode": "auto",
 }

@@ -45,7 +45,7 @@ Panther provides several sketching operators through the `panther.sketch` module
        m=100,
        n=1000,
        vec_nnz=3,  # non-zeros per column
-       axis=pr.sketch.Axis.Rows
+       axis=pr.sketch.Axis.Long
    )
    
    # SRHT (Subsampled Randomized Hadamard Transform)
@@ -91,7 +91,7 @@ Available Sketching Methods
        m=200,
        n=5000,
        vec_nnz=3,
-       axis=pr.sketch.Axis.Rows
+       axis=pr.sketch.Axis.Long
    )
    
    # Much less memory than dense sketching

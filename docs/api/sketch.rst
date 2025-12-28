@@ -85,7 +85,7 @@ Examples
        m=200,                              # output dimension
        n=5000,                             # input dimension  
        vec_nnz=3,                          # non-zeros per column
-       axis=pr.sketch.Axis.Rows
+       axis=pr.sketch.Axis.Short
    )
    
    # Apply to large matrix
@@ -146,61 +146,6 @@ Examples
    
    print(f"Sign matrix: {sign_matrix.shape}")  # (64, 256)
    print(f"Values are ±1/√m: {sign_matrix[0, :5]}")
-
-Sketching for Different Use Cases
-----------------------------------
-
-**1. Matrix Multiplication Acceleration**
-
-.. code-block:: python
-
-   # For computing A @ B where A is large
-   A = torch.randn(5000, 1000)
-   B = torch.randn(1000, 800)
-   
-   # Sketch A to reduce computation
-   S = pr.sketch.dense_sketch_operator(1000, 5000, 
-                                      pr.sketch.DistributionFamily.Gaussian)
-   SA = S @ A  # (1000, 1000)
-   
-   # Approximate A @ B ≈ S^+ @ (SA @ B) where S^+ is pseudoinverse
-   result = torch.linalg.pinv(S) @ (SA @ B)
-   print(f"Approximate result: {result.shape}")
-
-**2. Dimensionality Reduction**
-
-.. code-block:: python
-
-   # Reduce high-dimensional data
-   high_dim_data = torch.randn(10000, 5000)  # 10k samples, 5k features
-   
-   # Project to lower dimension
-   projection = pr.sketch.dense_sketch_operator(
-       m=500,                               # reduced dimension
-       n=5000,                              # original dimension
-       distribution=pr.sketch.DistributionFamily.Gaussian
-   )
-   
-   low_dim_data = high_dim_data @ projection.T
-   print(f"Reduced: {high_dim_data.shape} → {low_dim_data.shape}")
-
-**3. Fast Linear System Solving**
-
-.. code-block:: python
-
-   # Solve Ax = b approximately using sketching
-   A = torch.randn(2000, 1000)
-   b = torch.randn(2000)
-   
-   # Sketch the system
-   S = pr.sketch.dense_sketch_operator(500, 2000,
-                                      pr.sketch.DistributionFamily.Gaussian)
-   SA = S @ A    # (500, 1000)
-   Sb = S @ b    # (500,)
-   
-   # Solve smaller system SA x = Sb
-   x_approx = torch.linalg.lstsq(SA, Sb).solution
-   print(f"Approximate solution: {x_approx.shape}")
 
 Distribution Families
 ---------------------
@@ -311,6 +256,7 @@ Best Practices
 .. code-block:: python
 
    # Rule of thumb: sketch_size ≈ 2-4 × target_rank
+   import numpy as np
    target_rank = 50
    sketch_size = 4 * target_rank  # 200
    
@@ -327,21 +273,5 @@ Best Practices
        m=1000,
        n=1000000,    # 1M dimensions
        vec_nnz=4,    # Only 4 non-zeros per column
-       axis=pr.sketch.Axis.Rows
+       axis=pr.sketch.Axis.Long
    )
-
-**3. Combine with other Panther operations**
-
-.. code-block:: python
-
-   # Sketch then decompose
-   A = torch.randn(10000, 5000)
-   
-   # First sketch to manageable size
-   S = pr.sketch.dense_sketch_operator(2000, 10000,
-                                      pr.sketch.DistributionFamily.Gaussian)
-   SA = S @ A
-   
-   # Then apply randomized decomposition
-   Q, R, J = pr.linalg.cqrrpt(SA)
-   print(f"Final decomposition: Q{Q.shape}, R{R.shape}")

@@ -98,8 +98,8 @@ Examples
    layer = pr.nn.SKLinear(
        in_features=512,
        out_features=256,
-       num_terms=8,        # Number of sketching terms
-       low_rank=32,        # Rank of each sketch
+       num_terms=2,        # Number of sketching terms
+       low_rank=16,        # Rank of each sketch
        bias=True
    )
    
@@ -206,10 +206,10 @@ The key parameters for sketched layers are:
    conservative = SKLinear(1024, 512, num_terms=1, low_rank=32)
    
    # Balanced: Good accuracy/speed tradeoff  
-   balanced = SKLinear(1024, 512, num_terms=4, low_rank=64)
+   balanced = SKLinear(1024, 512, num_terms=1, low_rank=64)
    
    # Aggressive: More parameters, slower but more accurate
-   aggressive = SKLinear(1024, 512, num_terms=8, low_rank=128)
+   aggressive = SKLinear(1024, 512, num_terms=2, low_rank=64)
 
 **Parameter count constraint:**
 
@@ -234,74 +234,12 @@ For optimal GPU performance on modern hardware:
    layer = SKLinear(
        in_features=1024,    # ✓ Multiple of 16
        out_features=512,    # ✓ Multiple of 16
-       num_terms=8,
-       low_rank=64          # ✓ Multiple of 16
+       num_terms=2,
+       low_rank=32          # ✓ Multiple of 16
    )
    
    # Batch size should also be multiple of 16
    x = torch.randn(128, 1024)  # ✓ batch_size=128
-
-**Memory Monitoring**
-
-.. code-block:: python
-
-   import torch
-   from panther.nn import SKLinear
-   
-   def compare_memory_usage():
-       # Standard layer
-       standard = torch.nn.Linear(2048, 2048)
-       
-       # Sketched layer
-       sketched = SKLinear(2048, 2048, num_terms=8, low_rank=128)
-       
-       print(f"Standard parameters: {sum(p.numel() for p in standard.parameters()):,}")
-       print(f"Sketched parameters: {sum(p.numel() for p in sketched.parameters()):,}")
-
-Training Considerations
------------------------
-
-**Gradient Computation**
-
-Sketched layers support full backpropagation:
-
-.. code-block:: python
-
-   import torch.nn as nn
-   from panther.nn import SKLinear
-   
-   model = nn.Sequential(
-       SKLinear(784, 512, num_terms=8, low_rank=64),
-       nn.ReLU(),
-       SKLinear(512, 256, num_terms=6, low_rank=32), 
-       nn.ReLU(),
-       SKLinear(256, 10, num_terms=4, low_rank=16)
-   )
-   
-   # Standard training loop works
-   optimizer = torch.optim.Adam(model.parameters())
-   criterion = nn.CrossEntropyLoss()
-   
-   for x, y in dataloader:
-       optimizer.zero_grad()
-       output = model(x)
-       loss = criterion(output, y)
-       loss.backward()  # Gradients computed correctly
-       optimizer.step()
-
-**Learning Rate Considerations**
-
-Sketched layers may benefit from different learning rates:
-
-.. code-block:: python
-
-   # Separate learning rates for sketched parameters
-   optimizer = torch.optim.Adam([
-       {'params': [p for name, p in model.named_parameters() if 'S1s' in name], 'lr': 1e-3},
-       {'params': [p for name, p in model.named_parameters() if 'S2s' in name], 'lr': 1e-3},
-       {'params': [p for name, p in model.named_parameters() if 'bias' in name], 'lr': 1e-4}
-   ])
-
 See Also
 --------
 
