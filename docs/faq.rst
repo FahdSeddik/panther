@@ -245,10 +245,6 @@ Ensure you set random seeds:
 Advanced Questions
 ------------------
 
-**Can I implement custom sketching operators?**
-
-Yes! See our :doc:`advanced/custom_sketching` guide for detailed instructions on implementing custom sketching methods.
-
 **How do I contribute to Panther?**
 
 Contributions are welcome! To contribute:

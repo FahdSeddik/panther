@@ -284,13 +284,9 @@ Now that you understand the basics, explore these advanced topics:
 
 * :doc:`tutorials/index` - Detailed tutorials and examples
 * :doc:`api/nn` - Complete neural network API reference  
-* :doc:`examples/real_world_applications` - Real-world application examples
-* :doc:`examples/autotuner_guide` - Automatic hyperparameter tuning
-* :doc:`examples/performance_benchmarks` - Comprehensive benchmark results
 
 Need Help?
 ----------
 
 * Check the API documentation: :doc:`api/linalg`, :doc:`api/nn`, :doc:`api/sketch`, :doc:`api/tuner`
 * Visit our `GitHub repository <https://github.com/FahdSeddik/panther>`_ for issues and discussions
-* See :doc:`examples/index` for more comprehensive examples

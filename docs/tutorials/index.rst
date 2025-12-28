@@ -45,6 +45,5 @@ Explore advanced features and customization options.
 Additional Resources
 --------------------
 
-* :doc:`../examples/index` - Complete examples and use cases
 * API Reference: :doc:`../api/linalg`, :doc:`../api/nn`, :doc:`../api/sketch`, :doc:`../api/tuner`, :doc:`../api/utils`
 * `GitHub Repository <https://github.com/FahdSeddik/panther>`_ - Source code and issues

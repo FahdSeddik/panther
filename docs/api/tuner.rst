@@ -120,13 +120,3 @@ Examples
 Using Different Search Algorithms
 ----------------------------------
 
-.. note::
-   See the :doc:`../examples/autotuner_guide` for more detailed examples of using different search algorithms.
-
-The AutoTuner supports multiple search algorithms. The actual API and available algorithms are defined in the ``panther.tuner.SkAutoTuner.Searching`` module.
-
-See Also
---------
-
-* :doc:`../examples/autotuner_guide` - Comprehensive guide to using the AutoTuner
-* :doc:`../examples/basic_usage` - Basic Panther examples

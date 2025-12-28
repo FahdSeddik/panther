@@ -240,9 +240,8 @@ For optimal GPU performance on modern hardware:
    
    # Batch size should also be multiple of 16
    x = torch.randn(128, 1024)  # ✓ batch_size=128
+   
 See Also
 --------
 
-* :doc:`../examples/basic_usage` - Practical examples of using sketched layers
 * :doc:`../tutorials/sketched_linear_layers` - In-depth tutorial on sketched linear layers
-* :doc:`../examples/autotuner_guide` - Automatic parameter optimization
