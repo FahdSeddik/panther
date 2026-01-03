@@ -11,6 +11,7 @@ Learn Panther step-by-step with these comprehensive tutorials.
    neural_networks
    performance_optimization
    custom_sketching
+   autotuning
 
 Beginner Tutorials
 ------------------
@@ -41,6 +42,9 @@ Explore advanced features and customization options.
 
 :doc:`custom_sketching`
     Create custom sketching operators and extend Panther's functionality.
+
+:doc:`autotuning`
+    Use the AutoTuner to automatically find optimal sketching parameters for maximum throughput.
 
 Additional Resources
 --------------------
