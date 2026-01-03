@@ -251,7 +251,7 @@ class LayerNameResolver:
             # If not a valid regex, try simple substring matching
             return [name for name in self.layer_map.keys() if pattern in name]
 
-    def get_layers_by_depth(self, depth: int) -> List[str]:
+    def _get_layers_by_depth(self, depth: int) -> List[str]:
         """
         Get layer names at a specific depth in the model hierarchy.
 
@@ -266,7 +266,7 @@ class LayerNameResolver:
         """
         return [name for name in self.layer_map.keys() if name.count(".") == depth]
 
-    def get_layer_types(self) -> Dict[str, List[str]]:
+    def _get_layer_types(self) -> Dict[str, List[str]]:
         """
         Get a mapping of layer types to layer names.
 
@@ -283,7 +283,7 @@ class LayerNameResolver:
 
         return type_map
 
-    def get_layers_by_parent(self, parent_name: str) -> List[str]:
+    def _get_layers_by_parent(self, parent_name: str) -> List[str]:
         """
         Get all direct child layers of a parent layer.
 
@@ -302,7 +302,7 @@ class LayerNameResolver:
             if name.startswith(parent_name) and name[len(parent_name) :].count(".") == 0
         ]
 
-    def filter_layers_by_attribute(
+    def _filter_layers_by_attribute(
         self, attribute_name: str, attribute_value: Any
     ) -> List[str]:
         """
@@ -324,7 +324,7 @@ class LayerNameResolver:
 
         return matched_layers
 
-    def filter_layers_by_function(
+    def _filter_layers_by_function(
         self, filter_fn: Callable[[nn.Module], bool]
     ) -> List[str]:
         """
@@ -338,7 +338,7 @@ class LayerNameResolver:
         """
         return [name for name, layer in self.layer_map.items() if filter_fn(layer)]
 
-    def get_layer_parameter_count(self) -> Dict[str, int]:
+    def _get_layer_parameter_count(self) -> Dict[str, int]:
         """
         Count parameters for each layer in the model.
 
@@ -353,7 +353,7 @@ class LayerNameResolver:
 
         return param_counts
 
-    def get_top_n_layers_by_parameters(self, n: int = 10) -> List[Tuple[str, int]]:
+    def _get_top_n_layers_by_parameters(self, n: int = 10) -> List[Tuple[str, int]]:
         """
         Get the top N layers with the most parameters.
 
@@ -363,11 +363,11 @@ class LayerNameResolver:
         Returns:
             List of tuples (layer_name, parameter_count) sorted by parameter count
         """
-        param_counts = self.get_layer_parameter_count()
+        param_counts = self._get_layer_parameter_count()
         sorted_layers = sorted(param_counts.items(), key=lambda x: x[1], reverse=True)
         return sorted_layers[:n]
 
-    def find_common_prefix(self) -> str:
+    def _find_common_prefix(self) -> str:
         """
         Find the common prefix shared by all layer names.
 

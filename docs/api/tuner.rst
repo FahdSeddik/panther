@@ -13,12 +13,10 @@ Optional Dependencies
 +===============+============================+=======================================+
 | pandas        | ``pip install pandas``     | ``get_results_dataframe()``           |
 +---------------+----------------------------+---------------------------------------+
-| matplotlib    | ``pip install matplotlib`` | ``visualize_tuning_results()``        |
-+---------------+----------------------------+---------------------------------------+
 
 .. tip::
-   For full visualization and DataFrame results support:
-   ``pip install matplotlib pandas``
+   For tuning result visualization, use Optuna's built-in plots on ``tuner.search_algorithm.study``.
+   See the :ref:`external-tools` section for examples.
 
 Public Exports
 --------------
@@ -110,19 +108,6 @@ Results and Analysis Methods
 
       results_df = tuner.get_results_dataframe()
       print(results_df[["layer_name", "num_terms", "low_rank", "accuracy", "speed", "score"]])
-
-Visualization Methods
-~~~~~~~~~~~~~~~~~~~~~
-
-.. py:method:: SKAutoTuner.visualize_tuning_results(save_path=None, show_plot=True, figsize=None, max_cols=2)
-
-   Visualize tuning results with plots showing parameter-score relationships.
-
-   :param save_path: Path to save the visualization (optional)
-   :param show_plot: Whether to display the plot interactively
-   :param figsize: Figure size as ``(width, height)``
-   :param max_cols: Maximum columns in the subplot grid
-   :raises ImportError: If matplotlib or pandas is not installed
 
 Persistence Methods
 ~~~~~~~~~~~~~~~~~~~
@@ -712,14 +697,15 @@ ModelVisualizer
 
 .. py:class:: ModelVisualizer
 
-   Utility class for inspecting PyTorch model structures. All methods are static.
-
-Model Inspection
-~~~~~~~~~~~~~~~~
+   Utility class for discovering layer names in PyTorch models. Use this to craft
+   correct layer selectors for ``LayerConfig``. All methods are static.
 
 .. py:staticmethod:: ModelVisualizer.print_module_tree(model: nn.Module, root_name: str = "model")
 
    Print the module hierarchy as an ASCII tree with layer types.
+
+   :param model: The PyTorch model to inspect
+   :param root_name: Display name for the root module
 
    .. code-block:: python
 
@@ -735,29 +721,67 @@ Model Inspection
       #     └─ layer1 (TransformerLayer)/
       #         ...
 
-.. py:staticmethod:: ModelVisualizer.export_model_structure(model: nn.Module, output_path: str = None) -> Dict[str, Any]
-
-   Export model structure as a JSON-serializable dictionary.
-
-   :param model: The model to export
-   :param output_path: Optional path to save JSON file
-   :returns: Dictionary with model structure, types, and metadata
+   Use the printed layer names directly in your ``LayerConfig``:
 
    .. code-block:: python
 
-      structure = ModelVisualizer.export_model_structure(model, "model_structure.json")
+      config = LayerConfig(
+          layer_names=["encoder.layer0.fc", "encoder.layer1.fc"],
+          params={...}
+      )
 
-.. py:staticmethod:: ModelVisualizer.get_model_summary_data(model: nn.Module, is_sketched_func=None) -> Dict[str, Any]
+.. _external-tools:
 
-   Get model summary including parameter counts and optional sketched layer detection.
+External Tools for Model Analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   :param model: The model to summarize
-   :param is_sketched_func: Optional function to detect sketched layers
-   :returns: Dictionary with ``total_params``, ``sketched_layers``, and ``layers`` list
+For detailed model summaries with accurate parameter counts, use `torchinfo <https://github.com/TylerYep/torchinfo>`_:
 
-.. py:staticmethod:: ModelVisualizer.print_model_summary(model: nn.Module, is_sketched_func=None)
+.. code-block:: bash
 
-   Print a formatted model summary to stdout.
+   pip install torchinfo
+
+.. code-block:: python
+
+   from torchinfo import summary
+
+   # Get detailed model summary with parameter counts and layer shapes
+   summary(model, input_size=(1, 3, 224, 224))
+
+   # Or get summary as a string
+   model_stats = summary(model, input_size=(1, 3, 224, 224), verbose=0)
+   print(f"Total parameters: {model_stats.total_params:,}")
+   print(f"Trainable parameters: {model_stats.trainable_params:,}")
+
+For tuning result visualization, use Optuna's built-in visualization on the study object:
+
+.. code-block:: python
+
+   import optuna
+
+   # After tuning, access the Optuna study
+   study = tuner.search_algorithm.study
+
+   # Plot optimization history
+   optuna.visualization.plot_optimization_history(study).show()
+
+   # Plot parameter importances
+   optuna.visualization.plot_param_importances(study).show()
+
+   # Plot parallel coordinate plot of trials
+   optuna.visualization.plot_parallel_coordinate(study).show()
+
+   # Plot slice plot for each parameter
+   optuna.visualization.plot_slice(study).show()
+
+   # For Jupyter notebooks, use matplotlib backend
+   from optuna.visualization.matplotlib import plot_optimization_history
+   plot_optimization_history(study)
+
+.. tip::
+   Optuna provides many more visualizations. See the
+   `Optuna Visualization Documentation <https://optuna.readthedocs.io/en/stable/reference/visualization/index.html>`_
+   for the full list.
 
 Complete Examples
 -----------------
@@ -850,8 +874,10 @@ Basic Tuning with Accuracy Threshold
    results_df = tuner.get_results_dataframe()
    print(results_df[["layer_name", "num_terms", "low_rank", "accuracy", "speed", "score"]])
 
-   # Visualize
-   tuner.visualize_tuning_results(save_path="tuning_results.png")
+   # Visualize with Optuna (see External Tools section)
+   import optuna
+   study = tuner.search_algorithm.study
+   optuna.visualization.plot_optimization_history(study).show()
 
 Using Automatic Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -34,8 +34,8 @@ SKAutoTuner/
 │   ├── __init__.py
 │   ├── SearchAlgorithm.py      # Base search algorithm class
 │   └── OptunaSearch.py         # Optuna-backed search (RECOMMENDED)
-└── Visualizer/                 # Visualization tools (optional)
-    └── ModelVisualizer.py
+└── Visualizer/                 # Layer name discovery
+    └── ModelVisualizer.py      # Print module tree for layer selection
 ```
 
 ## Installation
@@ -227,6 +227,55 @@ The auto-tuner tracks comprehensive metrics during the tuning process:
 - **score**: Final objective score (speed if accuracy ≥ threshold, else -inf)
 - Best parameter combinations for each layer
 - Full trial history accessible via `get_results_dataframe()`
+
+## External Tools
+
+SKAutoTuner is focused on tuning. For related tasks, we recommend these external tools:
+
+### Model Summaries (torchinfo)
+
+For detailed model summaries with accurate parameter counts and layer shapes:
+
+```bash
+pip install torchinfo
+```
+
+```python
+from torchinfo import summary
+
+# Get detailed summary with parameter counts
+summary(model, input_size=(1, 3, 224, 224))
+
+# Get summary statistics programmatically
+model_stats = summary(model, input_size=(1, 3, 224, 224), verbose=0)
+print(f"Total parameters: {model_stats.total_params:,}")
+print(f"Trainable parameters: {model_stats.trainable_params:,}")
+```
+
+### Tuning Visualizations (Optuna)
+
+For visualizing tuning results, use Optuna's built-in visualization:
+
+```python
+import optuna
+
+# After tuning, access the Optuna study
+study = tuner.search_algorithm.study
+
+# Plot optimization history
+optuna.visualization.plot_optimization_history(study).show()
+
+# Plot parameter importances
+optuna.visualization.plot_param_importances(study).show()
+
+# Plot parallel coordinate plot
+optuna.visualization.plot_parallel_coordinate(study).show()
+
+# Plot contour plot for parameter pairs
+optuna.visualization.plot_contour(study).show()
+```
+
+See the [Optuna Visualization Documentation](https://optuna.readthedocs.io/en/stable/reference/visualization/index.html) for more options.
 
 ## License
 
