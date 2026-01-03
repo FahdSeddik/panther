@@ -1,18 +1,20 @@
 # SKAutoTuner
 
-A powerful automatic tuning framework for sketched neural networks.
+A powerful automatic tuning framework for sketched neural networks with industry-standard HPO.
 
 ## Overview
 
-SKAutoTuner is a specialized toolkit for optimizing and tuning sketch-based neural network layers. It allows for automated exploration of parameter spaces to find optimal configurations that balance accuracy and efficiency. The toolkit is designed to work with PyTorch models and provides various search algorithms for hyperparameter optimization.
+SKAutoTuner is a specialized toolkit for optimizing and tuning sketch-based neural network layers. It allows for automated exploration of parameter spaces to find optimal configurations that balance accuracy and efficiency. The toolkit is designed to work with PyTorch models and integrates **Optuna** as the default search backend, providing state-of-the-art hyperparameter optimization.
 
 ## Key Features
 
-- **Automated Parameter Tuning**: Optimize sketch parameters for neural network layers
-- **Multiple Search Algorithms**: Including Grid Search, Random Search, Bayesian Optimization, and more
+- **Industry-Standard HPO**: Uses Optuna by default for state-of-the-art optimization (TPE sampler)
+- **Mixed Parameter Spaces**: Supports categorical, integer, and continuous parameters via `ParamSpec`
+- **Constraint-Based Optimization**: Maximize speed while maintaining accuracy ≥ threshold
+- **Multiple Search Algorithms**: Including Optuna (recommended), Grid Search, Random Search, Bayesian Optimization, and more
 - **Layer Configuration**: Flexible configuration system for defining tuning parameters
 - **Visualization Tools**: Built-in visualization for tuning results and model configurations
-- **Performance Evaluation**: Evaluate both accuracy and efficiency metrics
+- **Full Metrics Tracking**: Records accuracy, speed, and score for every trial
 
 ## Package Structure
 
@@ -20,64 +22,70 @@ SKAutoTuner is a specialized toolkit for optimizing and tuning sketch-based neur
 SKAutoTuner/
 ├── __init__.py                 # Package exports
 ├── SKAutoTuner.py              # Main auto-tuner implementation
-├── ModelVisualizer.py          # Model visualization utilities
-├── ConfigVisualizer.py         # Configuration visualization utilities
 ├── layer_type_mapping.py       # Mappings for supported layer types
 ├── Configs/                    # Configuration components
 │   ├── __init__.py
 │   ├── LayerConfig.py          # Layer configuration classes
 │   ├── TuningConfigs.py        # Tuning configuration classes
+│   ├── ParamSpec.py            # Parameter distribution specs (Categorical, Int, Float)
+│   ├── ParamsResolver.py       # Auto parameter generation
 │   └── LayerNameResolver.py    # Layer name resolution utilities
-└── Searching/                  # Search algorithm implementations
-    ├── __init__.py
-    ├── SearchAlgorithm.py      # Base search algorithm class
-    ├── GridSearch.py           # Grid search implementation
-    ├── RandomSearch.py         # Random search implementation
-    ├── BayesianOptimization.py # Bayesian optimization implementation
-    ├── EvolutionaryAlgorithm.py # Evolutionary algorithm implementation
-    ├── ParticleSwarmOptimization.py # PSO implementation
-    ├── SimulatedAnnealing.py   # Simulated annealing implementation
-    ├── TreeParzenEstimator.py  # TPE implementation
-    └── Hyperband.py            # Hyperband implementation
+├── Searching/                  # Search algorithm implementations
+│   ├── __init__.py
+│   ├── SearchAlgorithm.py      # Base search algorithm class
+│   ├── OptunaSearch.py         # Optuna-backed search (RECOMMENDED)
+│   ├── GridSearch.py           # Grid search implementation
+│   ├── RandomSearch.py         # Random search implementation
+│   ├── BayesianOptimization.py # Bayesian optimization (legacy)
+│   └── ...                     # Other legacy algorithms
+└── Visualizer/                 # Visualization tools
+    └── ...
 ```
 
 ## Installation
 
-SKAutoTuner is included as part of the Panther framework. No separate installation is required if you have the Panther package installed.
+SKAutoTuner is included as part of the Panther framework. Optuna is automatically installed as a dependency.
 
 ## Usage
 
-### Basic Usage
+### Basic Usage (Recommended: Optuna)
 
 ```python
 from panther.tuner.SkAutoTuner import SKAutoTuner, TuningConfigs, LayerConfig
+from panther.tuner.SkAutoTuner.Configs import Int, Categorical
 import torch.nn as nn
 
 # Define a model to tune
 model = MyNeuralNetwork()
 
-# Define a function to evaluate model accuracy
+# Define evaluation functions
 def evaluate_accuracy(model):
     # Custom evaluation logic
     return accuracy_score
 
-# Create tuning configurations
+def evaluate_speed(model):
+    # Custom speed measurement (throughput - higher is better)
+    return throughput
+
+# Create tuning configurations with modern ParamSpec types
 configs = TuningConfigs([
     LayerConfig(
-        layer_names=["conv1", "conv2"],  # Layers to tune
+        layer_names=["conv1", "conv2"],
         params={
-            "sketch_type": ["channel", "spatial"],
-            "sketch_factor": [0.25, 0.5, 0.75]
+            "num_terms": Categorical([1, 2, 3]),  # Categorical choices
+            "low_rank": Int(8, 128, step=8),      # Integer range with step
         },
-        separate=True  # Tune each layer separately
+        separate=True
     )
 ])
 
-# Initialize the auto-tuner
+# Initialize the auto-tuner (uses OptunaSearch by default)
 tuner = SKAutoTuner(
     model=model,
     configs=configs,
     accuracy_eval_func=evaluate_accuracy,
+    accuracy_threshold=0.90,              # Minimum acceptable accuracy
+    optmization_eval_func=evaluate_speed, # Maximize this after meeting threshold
     verbose=True
 )
 
@@ -87,57 +95,74 @@ tuner.tune()
 # Apply the best parameters found
 optimized_model = tuner.apply_best_params()
 
-# Visualize the results
-tuner.visualize_tuning_results(save_path="tuning_results.png")
+# Get detailed results with accuracy and speed metrics
+results_df = tuner.get_results_dataframe()
+print(results_df[["layer_name", "num_terms", "low_rank", "accuracy", "speed", "score"]])
 ```
 
-### Advanced Usage
+### Using Legacy List-Based Parameters
 
-#### Using Different Search Algorithms
+For backward compatibility, you can still use lists:
 
 ```python
-from panther.tuner.SkAutoTuner import SKAutoTuner, BayesianOptimization
+configs = TuningConfigs([
+    LayerConfig(
+        layer_names=["fc1"],
+        params={
+            "num_terms": [1, 2, 3],      # Legacy list format
+            "low_rank": [8, 16, 32, 64], # Legacy list format
+        },
+    )
+])
+```
 
-# Initialize with Bayesian Optimization
+### Customizing Optuna Search
+
+```python
+from panther.tuner.SkAutoTuner.Searching import OptunaSearch
+from optuna.samplers import CmaEsSampler
+
+# Use CMA-ES sampler for continuous optimization
 tuner = SKAutoTuner(
     model=model,
     configs=configs,
     accuracy_eval_func=evaluate_accuracy,
-    search_algorithm=BayesianOptimization(),
+    search_algorithm=OptunaSearch(
+        n_trials=200,
+        sampler=CmaEsSampler(seed=42),
+        seed=42,
+    ),
     verbose=True
 )
+
+# Access the underlying Optuna study for advanced analysis
+study = tuner.search_algorithm.study
+print(study.best_params)
+print(study.trials_dataframe())
 ```
 
-#### Balancing Accuracy and Efficiency
+### Using Legacy Search Algorithms
+
+Legacy algorithms are still available but not recommended for new projects:
 
 ```python
-# Function to evaluate efficiency (e.g., inference time)
-def evaluate_efficiency(model):
-    # Custom efficiency measurement
-    return speed_score
+from panther.tuner.SkAutoTuner.Searching import GridSearch, RandomSearch, BayesianOptimization
 
+# Grid Search (exhaustive, use for small spaces only)
 tuner = SKAutoTuner(
     model=model,
     configs=configs,
     accuracy_eval_func=evaluate_accuracy,
-    accuracy_threshold=0.90,  # Minimum acceptable accuracy
-    optmization_eval_func=evaluate_efficiency,  # Optimize this after meeting accuracy threshold
-    verbose=True
+    search_algorithm=GridSearch(),
 )
-```
 
-#### Visualizing Model Configurations
-
-```python
-from panther.tuner.SkAutoTuner import ModelVisualizer, ConfigVisualizer
-
-# Visualize the model architecture
-visualizer = ModelVisualizer(model)
-visualizer.visualize(save_path="model_architecture.png")
-
-# Visualize configuration options
-config_vis = ConfigVisualizer(tuner.configs)
-config_vis.visualize_configs(save_path="config_options.png")
+# Random Search
+tuner = SKAutoTuner(
+    model=model,
+    configs=configs,
+    accuracy_eval_func=evaluate_accuracy,
+    search_algorithm=RandomSearch(n_trials=50),
+)
 ```
 
 ## Configuration Components
@@ -155,9 +180,39 @@ The `LayerConfig` class defines which layers to tune and what parameters to expl
 
 The `TuningConfigs` class holds multiple `LayerConfig` objects for a complete tuning configuration.
 
+### ParamSpec Types
+
+Modern parameter specification types for mixed search spaces:
+
+- **Categorical(choices)**: Fixed set of choices (any type)
+- **Int(low, high, step=1, log=False)**: Integer range with optional step and log scale
+- **Float(low, high, step=None, log=False)**: Float range with optional step and log scale
+
+```python
+from panther.tuner.SkAutoTuner.Configs import Categorical, Int, Float
+
+params = {
+    "num_terms": Categorical([1, 2, 3, 4]),
+    "low_rank": Int(8, 256, step=8),
+    "dropout": Float(0.0, 0.5, step=0.1),
+    "learning_rate": Float(1e-5, 1e-2, log=True),
+}
+```
+
 ## Search Algorithms
 
-SKAutoTuner supports multiple search algorithms for hyperparameter optimization:
+### Recommended: OptunaSearch
+
+OptunaSearch provides industry-standard HPO with state-of-the-art samplers:
+
+- **TPESampler** (default): Tree-structured Parzen Estimator
+- **CmaEsSampler**: Covariance Matrix Adaptation Evolution Strategy
+- **RandomSampler**: Simple random sampling
+- **GridSampler**: Exhaustive grid search
+
+### Legacy Algorithms (Maintenance Mode)
+
+These algorithms are still available but not recommended for new projects:
 
 - **GridSearch**: Exhaustive search over all parameter combinations
 - **RandomSearch**: Random sampling from parameter space
@@ -168,24 +223,15 @@ SKAutoTuner supports multiple search algorithms for hyperparameter optimization:
 - **TreeParzenEstimator**: Sequential model-based optimization
 - **Hyperband**: Bandit-based approach for resource allocation
 
-## Visualization Tools
-
-### ModelVisualizer
-
-Visualizes the model architecture with layer details and connections.
-
-### ConfigVisualizer
-
-Visualizes tuning configurations and parameter spaces for better understanding of the search space.
-
 ## Performance Tracking
 
-The auto-tuner tracks performance metrics during the tuning process:
+The auto-tuner tracks comprehensive metrics during the tuning process:
 
-- Accuracy scores for each parameter combination
-- Efficiency metrics when specified
+- **accuracy**: Accuracy score for each parameter combination
+- **speed**: Speed/throughput metric when `optmization_eval_func` is provided
+- **score**: Final objective score (speed if accuracy ≥ threshold, else -inf)
 - Best parameter combinations for each layer
-- Tuning history for analysis
+- Full trial history accessible via `get_results_dataframe()`
 
 ## License
 

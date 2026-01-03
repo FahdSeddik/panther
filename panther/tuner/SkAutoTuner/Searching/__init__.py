@@ -12,6 +12,7 @@ from .BayesianOptimization import BayesianOptimization
 from .EvolutionaryAlgorithm import EvolutionaryAlgorithm
 from .GridSearch import GridSearch
 from .Hyperband import Hyperband
+from .OptunaSearch import OptunaSearch
 from .ParticleSwarmOptimization import ParticleSwarmOptimization
 from .RandomSearch import RandomSearch
 from .SearchAlgorithm import SearchAlgorithm
@@ -28,4 +29,5 @@ __all__ = [
     "EvolutionaryAlgorithm",
     "ParticleSwarmOptimization",
     "TreeParzenEstimator",
+    "OptunaSearch",
 ]

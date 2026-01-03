@@ -328,7 +328,7 @@ def first_pass_gU1s_g_S2s(g, U1s, S2s):
 
     # assert g_U1s.stride() == g_S2s.stride(), "Matrix A must be contiguous"
 
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
         * triton.cdiv(K, META["BLOCK_SIZE_K"]),
@@ -590,7 +590,7 @@ def second_pass_gUS11_22_kernel(
         shape=(BLOCK_SIZE_BSIZE, BLOCK_SIZE_d2), value=0.0, dtype=tl.float32
     )
 
-    for l in range(0, L):
+    for l in range(0, L):  # noqa: E741
         l_tmp_stride = l * stride_g_U1s2_l
 
         g_U1s_ptrs = l_tmp_stride + g_U1s_ptr + in_tmp
@@ -664,7 +664,7 @@ def second_pass_gUS11_22(g_U1s, g_S2s, S1s, U2s):
     )
     stride_out_bsize, stride_out_d2 = out.shape[1], 1
 
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
         * triton.cdiv(d2, META["BLOCK_SIZE_d2"]),
     )
@@ -1010,7 +1010,7 @@ def calc_grad_S1s(hin, g_U1s):
     )
 
     # Define the grid for kernel launch
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(d2, META["BLOCK_SIZE_d2"]) * triton.cdiv(k, META["BLOCK_SIZE_k"]),
     )
@@ -1216,7 +1216,7 @@ def calc_grad_S2s(U2s_hin, g):
     )
 
     # Define the grid for kernel launch
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(K, META["BLOCK_SIZE_K"]) * triton.cdiv(d1, META["BLOCK_SIZE_d1"]),
     )

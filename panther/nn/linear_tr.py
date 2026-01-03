@@ -68,7 +68,7 @@ def forward_op(
     )
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
         * triton.cdiv(K, META["BLOCK_SIZE_K"]),
@@ -222,7 +222,7 @@ def backward_op(
     )
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
         * triton.cdiv(K, META["BLOCK_SIZE_K"]),
@@ -318,7 +318,7 @@ def backward_op(
     )
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(d2, META["BLOCK_SIZE_d2"]) * triton.cdiv(k, META["BLOCK_SIZE_k"]),
     )
@@ -361,7 +361,7 @@ def backward_op(
     )
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(K, META["BLOCK_SIZE_K"])
         * triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"]),
@@ -409,7 +409,7 @@ def backward_op(
     )
 
     # Define the computational grid for the Triton kernel
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(K, META["BLOCK_SIZE_K"]) * triton.cdiv(d1, META["BLOCK_SIZE_d1"]),
     )

@@ -1,4 +1,7 @@
+import copy as copy_module
 from typing import Any, Dict, List, Optional, Union
+
+from .ParamSpec import ParamSpec, get_param_choices
 
 
 class LayerConfig:
@@ -12,7 +15,7 @@ class LayerConfig:
         layer_names: Union[
             str, List[str], Dict[str, Union[str, List[str], int, List[int]]]
         ],
-        params: Dict[str, List],
+        params: Dict[str, ParamSpec],
         separate: bool = True,
         copy_weights: bool = True,
     ):
@@ -58,11 +61,11 @@ class LayerConfig:
         ]
         if isinstance(self.layer_names, dict):
             layer_names_copy_dict: Dict[str, Union[str, List[str], int, List[int]]] = {}
-            for key, value in self.layer_names.items():
-                if isinstance(value, list):
-                    layer_names_copy_dict[key] = value.copy()
+            for key, layer_val in self.layer_names.items():
+                if isinstance(layer_val, list):
+                    layer_names_copy_dict[key] = layer_val.copy()
                 else:
-                    layer_names_copy_dict[key] = value
+                    layer_names_copy_dict[key] = layer_val
             layer_names_copy = layer_names_copy_dict
         elif isinstance(self.layer_names, list):
             layer_names_copy = self.layer_names.copy()
@@ -70,9 +73,13 @@ class LayerConfig:
             layer_names_copy = self.layer_names
 
         # Deep copy params
-        params_copy = {}
-        for key, value in self.params.items():
-            params_copy[key] = value.copy()
+        params_copy: Dict[str, ParamSpec] = {}
+        for key, param_spec in self.params.items():
+            if isinstance(param_spec, list):
+                params_copy[key] = param_spec.copy()
+            else:
+                # ParamSpec types (Categorical, Int, Float) are dataclasses
+                params_copy[key] = copy_module.deepcopy(param_spec)
 
         return LayerConfig(
             layer_names=layer_names_copy,
@@ -112,31 +119,31 @@ class LayerConfig:
             merged_layer_names_dict: Dict[
                 str, Union[str, List[str], int, List[int]]
             ] = {}
-            for key, value in self.layer_names.items():
-                merged_layer_names_dict[key] = value
+            for key, layer_val in self.layer_names.items():
+                merged_layer_names_dict[key] = layer_val
 
-            for key, value in other.layer_names.items():
+            for key, layer_val in other.layer_names.items():
                 if key in merged_layer_names_dict:
                     existing = merged_layer_names_dict[key]
-                    if isinstance(existing, list) and isinstance(value, list):
+                    if isinstance(existing, list) and isinstance(layer_val, list):
                         # Properly handle list types
                         if isinstance(
                             existing[0] if existing else None, str
-                        ) and isinstance(value[0] if value else None, str):
-                            result: List[str] = existing + value  # type: ignore
+                        ) and isinstance(layer_val[0] if layer_val else None, str):
+                            result: List[str] = existing + layer_val  # type: ignore
                             merged_layer_names_dict[key] = result
                         else:
-                            result_int: List[int] = existing + value  # type: ignore
+                            result_int: List[int] = existing + layer_val  # type: ignore
                             merged_layer_names_dict[key] = result_int
                     elif isinstance(existing, list):
-                        if isinstance(value, (str, int)):
-                            existing.append(value)  # type: ignore
-                    elif isinstance(value, list):
-                        merged_layer_names_dict[key] = [existing] + value  # type: ignore
+                        if isinstance(layer_val, (str, int)):
+                            existing.append(layer_val)  # type: ignore
+                    elif isinstance(layer_val, list):
+                        merged_layer_names_dict[key] = [existing] + layer_val  # type: ignore
                     else:
-                        merged_layer_names_dict[key] = [existing, value]  # type: ignore
+                        merged_layer_names_dict[key] = [existing, layer_val]  # type: ignore
                 else:
-                    merged_layer_names_dict[key] = value
+                    merged_layer_names_dict[key] = layer_val
             merged_layer_names = merged_layer_names_dict
         else:
             # If types are different, convert to list and combine
@@ -159,13 +166,16 @@ class LayerConfig:
             merged_layer_names = first_list + second_list  # type: ignore
 
         # Merge params
-        merged_params = self.params.copy()
-        for key, value in other.params.items():
+        merged_params: Dict[str, ParamSpec] = self.params.copy()
+        for key, param_spec in other.params.items():
             if key in merged_params:
                 # Combine parameter values, removing duplicates
-                merged_params[key] = list(set(merged_params[key] + value))
+                # Convert both to lists for merging
+                existing_choices = get_param_choices(merged_params[key]) or []
+                new_choices = get_param_choices(param_spec) or []
+                merged_params[key] = list(set(existing_choices + new_choices))
             else:
-                merged_params[key] = value
+                merged_params[key] = param_spec
 
         return LayerConfig(
             layer_names=merged_layer_names,
@@ -259,8 +269,13 @@ class LayerConfig:
             return 0
 
         space_size = 1
-        for values in self.params.values():
-            space_size *= len(values)
+        for spec in self.params.values():
+            choices = get_param_choices(spec)
+            if choices is not None:
+                space_size *= len(choices)
+            else:
+                # Continuous range - return -1 to indicate infinite space
+                return -1
         return space_size
 
     def has_param(self, param_name: str) -> bool:
@@ -285,7 +300,10 @@ class LayerConfig:
         Returns:
             List of values for the parameter, or None if the parameter doesn't exist
         """
-        return self.params.get(param_name)
+        spec = self.params.get(param_name)
+        if spec is None:
+            return None
+        return get_param_choices(spec)
 
     def param_count(self) -> int:
         """

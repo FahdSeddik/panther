@@ -372,7 +372,7 @@ def first_pass(hin, S1s, U2s):
     # assert out1.stride() == out2.stride(), "Matrix A must be contiguous"
 
     # Define grid for kernel launch based on tensor dimensions
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         L,
         triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
         * triton.cdiv(K, META["BLOCK_SIZE_K"]),
@@ -648,7 +648,7 @@ def second_pass_kernel(
     )
 
     # Process each layer
-    for l in range(0, L):
+    for l in range(0, L):  # noqa: E741
         l_tmp_stride = l * stride_in12_l
 
         # Calculate pointers for current layer
@@ -757,7 +757,7 @@ def second_pass(in1, in2, U1s, S2s, bias):
     stride_out_bsize, stride_out_d1 = out.shape[1], 1
 
     # Define grid for kernel launch based on tensor dimensions
-    grid = lambda META: (
+    grid = lambda META: (  # noqa: E731
         triton.cdiv(BSIZE, META["BLOCK_SIZE_BSIZE"])
         * triton.cdiv(d1, META["BLOCK_SIZE_D1"]),
     )

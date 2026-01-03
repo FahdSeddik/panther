@@ -21,6 +21,7 @@ torchvision = {version = "0.21.0+cu124", source = "pytorch"}
 torchaudio = {version = "2.6.0+cu124", source = "pytorch"}
 botorch = "^0.14.0"
 matplotlib = "^3.10.3"
+optuna = "^4.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -8,8 +8,9 @@ import pandas as pd  # type: ignore
 import torch.nn as nn
 
 from .Configs import LayerConfig, LayerNameResolver, ParamsResolver, TuningConfigs
+from .Configs.ParamSpec import get_param_choices
 from .layer_type_mapping import LAYER_TYPE_MAPPING
-from .Searching import GridSearch, SearchAlgorithm
+from .Searching import OptunaSearch, SearchAlgorithm
 
 
 class SKAutoTuner:
@@ -42,7 +43,7 @@ class SKAutoTuner:
         """
         self.model = model
         self.accuracy_eval_func = accuracy_eval_func
-        self.search_algorithm = search_algorithm or GridSearch()
+        self.search_algorithm = search_algorithm or OptunaSearch()
         self.verbose = verbose
         self.num_runs_per_param = num_runs_per_param
         self.accuracy_threshold = accuracy_threshold
@@ -482,8 +483,13 @@ class SKAutoTuner:
                 # Update search algorithm with average score
                 self.search_algorithm.update(params, best_score_across_param_runs)
 
-                # Save result
-                result = {"params": params, "score": best_score_across_param_runs}
+                # Save result with full metrics
+                result = {
+                    "params": params,
+                    "score": best_score_across_param_runs,
+                    "accuracy": best_accuracy_score_across_param_runs,
+                    "speed": best_speed_score_across_param_runs,
+                }
                 layer_results.append(result)
 
                 if best_score_across_param_runs > best_score:
@@ -599,8 +605,13 @@ class SKAutoTuner:
             # Update search algorithm with best score
             self.search_algorithm.update(params, best_score_across_param_runs)
 
-            # Save result
-            result = {"params": params, "score": best_score_across_param_runs}
+            # Save result with full metrics
+            result = {
+                "params": params,
+                "score": best_score_across_param_runs,
+                "accuracy": best_accuracy_score_across_param_runs,
+                "speed": best_speed_score_across_param_runs,
+            }
             all_results.append(result)
 
             if best_score_across_param_runs > best_score:
@@ -692,9 +703,11 @@ class SKAutoTuner:
 
         # Replace each layer with the first parameter values
         for config in self.configs.configs:
-            default_params = {
-                param: values[0] for param, values in config.params.items()
-            }
+            default_params = {}
+            for param, spec in config.params.items():
+                choices = get_param_choices(spec)
+                if choices:
+                    default_params[param] = choices[0]
 
             for layer_name in config.layer_names:
                 layer = self._get_layer_by_name(layer_name)
@@ -712,7 +725,7 @@ class SKAutoTuner:
         Get the results of the tuning process as a pandas DataFrame.
 
         Returns:
-            DataFrame with columns for layer name, parameters, and scores
+            DataFrame with columns for layer name, parameters, accuracy, speed, and scores
         """
         rows = []
 
@@ -721,6 +734,8 @@ class SKAutoTuner:
                 row = {"layer_name": layer_name}
                 row.update(result["params"])
                 row["score"] = result["score"]
+                row["accuracy"] = result.get("accuracy")
+                row["speed"] = result.get("speed")
                 rows.append(row)
 
         return pd.DataFrame(rows)

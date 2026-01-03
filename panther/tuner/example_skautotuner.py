@@ -5,6 +5,7 @@ import random
 import torch
 import torch.nn as nn
 
+from panther.tuner.SkAutoTuner.Configs import Categorical, Int
 from panther.tuner.SkAutoTuner.Configs.LayerConfig import LayerConfig
 from panther.tuner.SkAutoTuner.Configs.TuningConfigs import TuningConfigs
 from panther.tuner.SkAutoTuner.SKAutoTuner import SKAutoTuner
@@ -106,16 +107,22 @@ if __name__ == "__main__":
 
     # --- Configuration for Tuning ---
     # Define which layers to tune and with what parameters
-    # Note: Keep parameter ranges small for quick example execution.
+    # Using modern ParamSpec types (Categorical, Int) for better HPO integration
     config1 = LayerConfig(
         layer_names=["conv1"],
-        params={"num_terms": [10, 20], "low_rank": [5, 8]},
+        params={
+            "num_terms": Categorical([10, 15, 20]),  # Categorical choices
+            "low_rank": Int(4, 16, step=4),  # Integer range: 4, 8, 12, 16
+        },
         separate=True,  # Tune this layer group separately
         copy_weights=True,
     )
     config2 = LayerConfig(
         layer_names=["fc1"],
-        params={"num_terms": [15, 25], "low_rank": [6, 10]},
+        params={
+            "num_terms": Categorical([15, 20, 25]),
+            "low_rank": Int(4, 16, step=2),
+        },
         separate=True,
         copy_weights=True,
     )
@@ -125,13 +132,16 @@ if __name__ == "__main__":
     model_for_tuning = copy.deepcopy(original_model)
 
     # --- Instantiate SKAutoTuner ---
-    print("\n--- Initializing SKAutoTuner for Tuning ---")
+    # Uses OptunaSearch by default for industry-standard HPO
+    print("\n--- Initializing SKAutoTuner for Tuning (using Optuna) ---")
     tuner = SKAutoTuner(
         model=model_for_tuning,
         configs=tuning_configs,
         accuracy_eval_func=dummy_accuracy_eval_func,
         optmization_eval_func=dummy_optimization_eval_func,
         accuracy_threshold=0.65,  # Aim for at least this accuracy
+        # search_algorithm defaults to OptunaSearch() with TPE sampler
+        # You can customize: search_algorithm=OptunaSearch(n_trials=50, seed=42)
         verbose=True,
         num_runs_per_param=1,  # For faster example execution
     )
@@ -148,11 +158,25 @@ if __name__ == "__main__":
         print(f"Layer: {layer_name}, Best Params: {params_info['params']}")
 
     # --- 3. Get Results DataFrame ---
+    # Now includes accuracy and speed metrics for each trial
     print("\n--- Tuning Results DataFrame (get_results_dataframe) ---")
     # This requires pandas to be installed.
     try:
         results_df = tuner.get_results_dataframe()
-        print(results_df.to_string())
+        # Show key columns including the new accuracy and speed metrics
+        display_cols = [
+            col
+            for col in [
+                "layer_name",
+                "num_terms",
+                "low_rank",
+                "accuracy",
+                "speed",
+                "score",
+            ]
+            if col in results_df.columns
+        ]
+        print(results_df[display_cols].to_string())
     except ImportError:
         print("Pandas not installed. Skipping get_results_dataframe().")
     except Exception as e:

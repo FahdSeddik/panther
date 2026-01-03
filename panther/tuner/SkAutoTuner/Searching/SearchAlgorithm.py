@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 
 class SearchAlgorithm(ABC):
@@ -8,12 +8,13 @@ class SearchAlgorithm(ABC):
     """
 
     @abstractmethod
-    def initialize(self, param_space: Dict[str, List]):
+    def initialize(self, param_space: Dict[str, Any]):
         """
         Initialize the search algorithm with the parameter space.
 
         Args:
-            param_space: Dictionary of parameter names and their possible values
+            param_space: Dictionary of parameter names and their possible values.
+                         Values can be lists (legacy) or ParamSpec types (Categorical, Int, Float).
         """
         pass
 
