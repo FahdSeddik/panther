@@ -19,7 +19,6 @@ python = "^3.12"
 torch = {version = "2.6.0+cu124", source = "pytorch"}
 torchvision = {version = "0.21.0+cu124", source = "pytorch"}
 torchaudio = {version = "2.6.0+cu124", source = "pytorch"}
-botorch = "^0.14.0"
 matplotlib = "^3.10.3"
 optuna = "^4.1.0"
 
@@ -54,7 +53,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    # Suppress NumPy deprecation warnings from botorch (third-party library issue)
-    "ignore:__array__ implementation doesn't accept a copy keyword:DeprecationWarning:botorch.optim.utils.numpy_utils",
-]
+filterwarnings = []

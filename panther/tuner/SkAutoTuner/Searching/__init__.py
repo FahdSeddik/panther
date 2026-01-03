@@ -1,33 +1,19 @@
 """
 Search algorithm implementations for the SkAutoTuner.
 
-This module provides different search algorithms that can be used for hyperparameter tuning:
+This module provides search algorithms for hyperparameter tuning:
 - SearchAlgorithm: Abstract base class that defines the interface
-- RandomSearch: Simple random sampling of the parameter space
-- GridSearch: Exhaustive search through all parameter combinations
-- BayesianOptimization: Advanced optimization using Gaussian Processes
+- OptunaSearch: Industry-standard HPO using Optuna (RECOMMENDED)
+
+For grid or random search, use OptunaSearch with the appropriate sampler:
+- optuna.samplers.GridSampler for grid search
+- optuna.samplers.RandomSampler for random search
 """
 
-from .BayesianOptimization import BayesianOptimization
-from .EvolutionaryAlgorithm import EvolutionaryAlgorithm
-from .GridSearch import GridSearch
-from .Hyperband import Hyperband
 from .OptunaSearch import OptunaSearch
-from .ParticleSwarmOptimization import ParticleSwarmOptimization
-from .RandomSearch import RandomSearch
 from .SearchAlgorithm import SearchAlgorithm
-from .SimulatedAnnealing import SimulatedAnnealing
-from .TreeParzenEstimator import TreeParzenEstimator
 
 __all__ = [
     "SearchAlgorithm",
-    "RandomSearch",
-    "GridSearch",
-    "BayesianOptimization",
-    "SimulatedAnnealing",
-    "Hyperband",
-    "EvolutionaryAlgorithm",
-    "ParticleSwarmOptimization",
-    "TreeParzenEstimator",
     "OptunaSearch",
 ]

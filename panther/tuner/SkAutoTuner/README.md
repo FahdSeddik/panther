@@ -11,7 +11,7 @@ SKAutoTuner is a specialized toolkit for optimizing and tuning sketch-based neur
 - **Industry-Standard HPO**: Uses Optuna by default for state-of-the-art optimization (TPE sampler)
 - **Mixed Parameter Spaces**: Supports categorical, integer, and continuous parameters via `ParamSpec`
 - **Constraint-Based Optimization**: Maximize speed while maintaining accuracy ≥ threshold
-- **Multiple Search Algorithms**: Including Optuna (recommended), Grid Search, Random Search, Bayesian Optimization, and more
+- **Flexible Samplers**: Use any Optuna sampler (TPE, CMA-ES, Grid, Random) via `OptunaSearch`
 - **Layer Configuration**: Flexible configuration system for defining tuning parameters
 - **Visualization Tools**: Built-in visualization for tuning results and model configurations
 - **Full Metrics Tracking**: Records accuracy, speed, and score for every trial
@@ -33,13 +33,9 @@ SKAutoTuner/
 ├── Searching/                  # Search algorithm implementations
 │   ├── __init__.py
 │   ├── SearchAlgorithm.py      # Base search algorithm class
-│   ├── OptunaSearch.py         # Optuna-backed search (RECOMMENDED)
-│   ├── GridSearch.py           # Grid search implementation
-│   ├── RandomSearch.py         # Random search implementation
-│   ├── BayesianOptimization.py # Bayesian optimization (legacy)
-│   └── ...                     # Other legacy algorithms
-└── Visualizer/                 # Visualization tools
-    └── ...
+│   └── OptunaSearch.py         # Optuna-backed search (RECOMMENDED)
+└── Visualizer/                 # Visualization tools (optional)
+    └── ModelVisualizer.py
 ```
 
 ## Installation
@@ -141,27 +137,37 @@ print(study.best_params)
 print(study.trials_dataframe())
 ```
 
-### Using Legacy Search Algorithms
+### Using Grid or Random Search via Optuna
 
-Legacy algorithms are still available but not recommended for new projects:
+For grid or random search, use the corresponding Optuna samplers:
 
 ```python
-from panther.tuner.SkAutoTuner.Searching import GridSearch, RandomSearch, BayesianOptimization
+from panther.tuner.SkAutoTuner.Searching import OptunaSearch
+from optuna.samplers import GridSampler, RandomSampler
 
-# Grid Search (exhaustive, use for small spaces only)
+# Grid Search via Optuna (exhaustive, use for small parameter spaces only)
+search_space = {
+    "num_terms": [1, 2, 3],
+    "low_rank": [8, 16, 32, 64],
+}
 tuner = SKAutoTuner(
     model=model,
     configs=configs,
     accuracy_eval_func=evaluate_accuracy,
-    search_algorithm=GridSearch(),
+    search_algorithm=OptunaSearch(
+        sampler=GridSampler(search_space),
+    ),
 )
 
-# Random Search
+# Random Search via Optuna (simple random sampling)
 tuner = SKAutoTuner(
     model=model,
     configs=configs,
     accuracy_eval_func=evaluate_accuracy,
-    search_algorithm=RandomSearch(n_trials=50),
+    search_algorithm=OptunaSearch(
+        n_trials=50,
+        sampler=RandomSampler(seed=42),
+    ),
 )
 ```
 
@@ -201,27 +207,16 @@ params = {
 
 ## Search Algorithms
 
-### Recommended: OptunaSearch
+### OptunaSearch (Recommended)
 
 OptunaSearch provides industry-standard HPO with state-of-the-art samplers:
 
-- **TPESampler** (default): Tree-structured Parzen Estimator
-- **CmaEsSampler**: Covariance Matrix Adaptation Evolution Strategy
+- **TPESampler** (default): Tree-structured Parzen Estimator - excellent for most use cases
+- **CmaEsSampler**: Covariance Matrix Adaptation - great for continuous parameters
 - **RandomSampler**: Simple random sampling
 - **GridSampler**: Exhaustive grid search
 
-### Legacy Algorithms (Maintenance Mode)
-
-These algorithms are still available but not recommended for new projects:
-
-- **GridSearch**: Exhaustive search over all parameter combinations
-- **RandomSearch**: Random sampling from parameter space
-- **BayesianOptimization**: Model-based optimization using Gaussian processes
-- **EvolutionaryAlgorithm**: Genetic algorithm-based optimization
-- **ParticleSwarmOptimization**: Swarm intelligence-based optimization
-- **SimulatedAnnealing**: Probabilistic optimization with temperature cooling
-- **TreeParzenEstimator**: Sequential model-based optimization
-- **Hyperband**: Bandit-based approach for resource allocation
+All search strategies are unified under OptunaSearch using the appropriate sampler.
 
 ## Performance Tracking
 

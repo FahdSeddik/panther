@@ -1,16 +1,17 @@
 import copy
 import os
 import pickle
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type
 
-import matplotlib.pyplot as plt
-import pandas as pd  # type: ignore
 import torch.nn as nn
 
 from .Configs import LayerConfig, LayerNameResolver, ParamsResolver, TuningConfigs
 from .Configs.ParamSpec import get_param_choices
 from .layer_type_mapping import LAYER_TYPE_MAPPING
 from .Searching import OptunaSearch, SearchAlgorithm
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class SKAutoTuner:
@@ -720,13 +721,24 @@ class SKAutoTuner:
 
         return self.model
 
-    def get_results_dataframe(self) -> pd.DataFrame:
+    def get_results_dataframe(self) -> "pd.DataFrame":
         """
         Get the results of the tuning process as a pandas DataFrame.
 
         Returns:
             DataFrame with columns for layer name, parameters, accuracy, speed, and scores
+
+        Note:
+            Requires pandas to be installed. Install with: pip install pandas
         """
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for get_results_dataframe(). "
+                "Install it with: pip install pandas"
+            )
+
         rows = []
 
         for layer_name, results in self.results.items():
@@ -767,7 +779,25 @@ class SKAutoTuner:
 
         Returns:
             None
+
+        Note:
+            Requires matplotlib and pandas. Install with: pip install matplotlib pandas
         """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError(
+                "matplotlib is required for visualize_tuning_results(). "
+                "Install it with: pip install matplotlib"
+            )
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for visualize_tuning_results(). "
+                "Install it with: pip install pandas"
+            )
+
         # Get results dataframe
         results_df = self.get_results_dataframe()
 
