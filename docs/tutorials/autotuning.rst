@@ -326,15 +326,11 @@ The SKAutoTuner delivers concrete, measurable results:
 - Accuracy maintained: 99.8% of original performance
 
 
-**ResNet-50 on ImageNet**
+**ResNet-50 on Cifar-10**
 
 - Tuned: 30% parameter reduction, 52ms per image, **1.05x speedup**
 - Top-1 accuracy: 89% → 85.5% (only 3.5% drop for 30% parameter reduction)
 
-**Why These Results Are Significant:**
-
-- **72% parameter reduction** = Smaller models for edge devices, lower memory, reduced inference latency
-- **99%+ accuracy maintained** = Model quality guarantee; production-safe compression
 Advanced Configuration
 ----------------------
 
