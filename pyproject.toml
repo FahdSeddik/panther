@@ -4,7 +4,7 @@ version = "0.1.2"
 description = ""
 authors = ["The Panther Team"]
 readme = "README.md"
-include = ["pawX/**", "pawX/*.pyd"]
+include = ["pawX/**", "pawX/*.pyd", "pawX/*.so"]
 
 [[tool.poetry.packages]]
 include = "pawX"

@@ -94,6 +94,7 @@
    installation
    quickstart
    tutorials/index
+   benchmarking/index
 
 .. toctree::
    :maxdepth: 2
