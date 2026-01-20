@@ -48,9 +48,9 @@ This quickly becomes unmaintainable for large models with hundreds of layers acr
 
 **Real Impact:**
 
-- Transform BERT from 110M parameters to 20M (82% reduction) while maintaining 99%+ accuracy
-- Achieve 2-4x speedup on inference while preserving model quality
-- Deploy across multiple architectures (BERT, GPT, ResNet, etc.) with the same workflow
+- Using a BERT based model , using the tuner we were able to reduce parameters from 109.51M to 30.38M maintaining the same accuracy and achieving a 1.04x speedup using wikitext-2-raw-v1 dataset.
+- Achieved 30% parameter reduction on Resnet50 with 3.5% accuracy loss on Cifar-10
+- Deploy across multiple architectures (BERT,ResNet, etc.) with the same workflow
 
 **One-line difference:**
 
@@ -321,185 +321,20 @@ The SKAutoTuner delivers concrete, measurable results:
 
 **BERT Model Compression (110M parameters)**
 
-- Original: 110M parameters, 380ms per sample, 1.0x baseline
-- Tuned with sketching: 20M parameters (82% reduction), 95ms per sample, **4.0x speedup**
-- Accuracy maintained: 99.2% of original performance
+- Original: 110M parameters, 66ms per sample, 1.0x baseline
+- Tuned with sketching: 30.38M parameters (72.26% reduction), 63.5ms per sample, **1.04x speedup**
+- Accuracy maintained: 99.8% of original performance
 
-**GPT-2 Small (125M parameters)**
-
-- Original: 125M parameters, 2.5 seconds for 512-token batch
-- Tuned: 35M parameters (72% reduction), 0.8 seconds per batch, **3.1x speedup**
-- Accuracy: 97.8% of original perplexity on validation set
 
 **ResNet-50 on ImageNet**
 
-- Original: 26M parameters, 150ms per image
-- Tuned: 8M parameters (69% reduction), 52ms per image, **2.9x speedup**
-- Top-1 accuracy: 75.2% → 74.1% (only 1.1% drop for 69% parameter reduction)
+- Tuned: 30% parameter reduction, 52ms per image, **1.05x speedup**
+- Top-1 accuracy: 89% → 85.5% (only 3.5% drop for 30% parameter reduction)
 
 **Why These Results Are Significant:**
 
-- **82% parameter reduction** = Smaller models for edge devices, lower memory, reduced inference latency
-- **4x speedup** = Reduced cloud infrastructure costs, better user experience, feasible real-time applications
+- **72% parameter reduction** = Smaller models for edge devices, lower memory, reduced inference latency
 - **99%+ accuracy maintained** = Model quality guarantee; production-safe compression
-
-**The Tuner Makes This Possible:**
-
-Without the tuner, manual compression attempts would yield:
-
-- 70% parameter reduction but 95% accuracy (unacceptable drop)
-- 60% parameter reduction but still only 1.5x speedup (poor efficiency)
-- Multiple failed attempts with different parameter combinations
-
-With the tuner, you get optimal configurations automatically—Pareto-optimal on both speed and accuracy.
-
-Tuning Strategies
------------------
-
-The tuner is flexible. These strategies show how to handle different scenarios:
-
-Strategy 1: Quick Exploration with "auto"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Let the tuner figure out good parameter ranges based on layer dimensions:
-
-.. code-block:: python
-
-   config = LayerConfig(
-       layer_names={"type": "Linear"},
-       params="auto",  # Intelligent automatic ranges
-       separate=True
-   )
-
-**When to use:** First attempt, when you don't know good parameter ranges
-
-**What happens:** The tuner analyzes each layer's input/output dimensions and generates optimal search ranges (e.g., low_rank up to min dimension)
-
-Strategy 2: Targeted Layer Selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Focus tuning on the most impactful layers to reduce tuning time:
-
-.. code-block:: python
-
-   from panther.tuner import ModelVisualizer
-
-   # First, inspect your model structure
-   ModelVisualizer.print_module_tree(model)
-
-   # Tune only the expensive layers (e.g., large linear layers in transformer)
-   config = LayerConfig(
-       layer_names={
-           "pattern": "encoder\\.layers\\.[0-5]\\..*",
-           "type": "Linear"
-       },
-       params={
-           "num_terms": Categorical([1, 2, 3]),
-           "low_rank": Int(16, 256, step=16)
-       },
-       separate=True
-   )
-
-**When to use:** When you have limited tuning budget or only want to compress expensive layers
-
-**Impact:** Tuning only the top 20% of expensive layers often yields 80% of the total speedup
-
-Strategy 3: Joint vs Separate Tuning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Separate tuning** (default): Each layer gets its own optimal parameters.
-
-.. code-block:: python
-
-   # More trials, but finds per-layer optimal settings
-   config = LayerConfig(
-       layer_names=["layer1", "layer2", "layer3"],
-       params={"num_terms": Categorical([1, 2, 3])},
-       separate=True  # 3 independent searches
-   )
-
-**Pros:** Each layer optimized individually for maximum accuracy/speed
-
-**Cons:** More trials needed (multiplicative across layers)
-
-**Joint tuning**: All specified layers share the same parameters.
-
-.. code-block:: python
-
-   # Fewer trials, layers use identical settings
-   config = LayerConfig(
-       layer_names=["layer1", "layer2", "layer3"],
-       params={"num_terms": Categorical([1, 2, 3])},
-       separate=False  # 1 search, shared parameters
-   )
-
-**Pros:** Faster tuning (linear in layers), easier deployment (single parameter set)
-
-**Cons:** Suboptimal for individual layers if they differ in importance
-
-**When to use joint tuning:**
-- Layers are similar (same size, same role)
-- You want faster tuning
-- Memory constraints require uniform compression
-- Deployment simplicity is critical
-
-Strategy 4: Progressive Refinement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For very large search spaces, tune in stages—first exploring broadly, then refining:
-
-.. code-block:: python
-
-   # Stage 1: Broad exploration with sparse sampling
-   coarse_config = LayerConfig(
-       layer_names={"type": "Linear"},
-       params={
-           "num_terms": Categorical([1, 2, 4, 8]),      # Wide range
-           "low_rank": Categorical([16, 64, 128, 256])  # Sparse values
-       }
-   )
-
-   tuner = SKAutoTuner(
-       model=model,
-       configs=TuningConfigs([coarse_config]),
-       accuracy_eval_func=accuracy_eval_func,
-       accuracy_threshold=0.95,
-       optmization_eval_func=speed_eval_func,
-       search_algorithm=OptunaSearch(n_trials=30),  # Quick exploration
-   )
-   tuner.tune()
-
-   # Analyze: which regions performed best?
-   df = tuner.get_results_dataframe()
-   print(df.sort_values("score", ascending=False).head(10))
-   
-   # Suppose we find num_terms=2 and low_rank around 64-128 work best
-   
-   # Stage 2: Fine-grained search in the promising region
-   fine_config = LayerConfig(
-       layer_names={"type": "Linear"},
-       params={
-           "num_terms": Categorical([2, 3]),           # Narrow: around best
-           "low_rank": Int(48, 144, step=8)            # Dense sampling in [64-128] region
-       }
-   )
-
-   # Create fresh tuner with refined ranges
-   fine_tuner = SKAutoTuner(
-       model=model,  # Use original model, not the one from stage 1
-       configs=TuningConfigs([fine_config]),
-       accuracy_eval_func=accuracy_eval_func,
-       accuracy_threshold=0.95,
-       optmization_eval_func=speed_eval_func,
-       search_algorithm=OptunaSearch(n_trials=50),  # More trials in smaller space
-   )
-   fine_tuner.tune()
-   
-   # Apply the refined best parameters
-   optimized_model = fine_tuner.apply_best_params()
-
-**When to use:** Extremely large search spaces where exploration matters (rarely needed)
-
 Advanced Configuration
 ----------------------
 
@@ -522,65 +357,6 @@ The tuner defaults to Optuna's TPE (Tree-structured Parzen Estimator) sampler, w
    search = OptunaSearch(n_trials=50, sampler=RandomSampler(seed=42))
 
 **Recommendation:** Start with TPE (default). Use CMA-ES only if you have pure continuous parameters and many trials to spend.
-
-Resumable Tuning with Persistence
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For long tuning runs (100+ trials), persist progress to a database so you can interrupt and resume:
-
-.. code-block:: python
-
-   tuner = SKAutoTuner(
-       model=model,
-       configs=TuningConfigs([config]),
-       accuracy_eval_func=accuracy_eval_func,
-       accuracy_threshold=0.95,
-       optmization_eval_func=speed_eval_func,
-       search_algorithm=OptunaSearch(
-           n_trials=500,
-           study_name="my_model_tuning",
-           storage="sqlite:///tuning.db",
-           load_if_exists=True  # Resumes if exists
-       ),
-   )
-
-   # Can be interrupted and resumed
-   tuner.tune()
-
-Database options:
-
-- **SQLite** (default): ``"sqlite:///tuning.db"`` - local file, perfect for single machine
-- **PostgreSQL**: ``"postgresql://user:pass@localhost/tuning"`` - for cloud deployment
-- **MySQL**: ``"mysql://user:pass@localhost/tuning"`` - MySQL option
-
-Handling Noisy Evaluations
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If your evaluations are noisy (common with randomized sketched layers, GPU timing variance on old hardware, or small validation sets), increase ``num_runs_per_param`` to re-evaluate configurations:
-
-
-
-.. note::
-   ``SKAutoTuner`` does **not** compute an average. For each parameter set it runs ``num_runs_per_param`` evaluations and keeps the **best** (highest) score observed for that parameter set.
-
-.. code-block:: python
-
-   tuner = SKAutoTuner(
-       model=model,
-       configs=TuningConfigs([config]),
-       accuracy_eval_func=accuracy_eval_func,
-       optmization_eval_func=speed_eval_func,
-       num_runs_per_param=3,  # Re-try each param set; best-of-N is used
-       verbose=True
-   )
-
-**When to use:** num_runs_per_param > 1
-
-- Speed measurements show high variance (GPU frequency scaling, OS scheduling)
-- Accuracy varies significantly on different validation splits
-- Sketched operations have inherent randomness
-
-**Rule of thumb:** Start with ``num_runs_per_param=1``. Increase to 3-5 only if you see inconsistent results across runs.
 
 Analyzing Results
 -----------------
