@@ -25,6 +25,14 @@ If you have CUDA 12.4 installed and you're on a Windows machine with GPU, instal
 pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
+### Using Docker
+
+You can also use our pre-built Docker image with all dependencies included for GPU systems:
+
+```bash
+docker pull fahdseddik/panther-dev
+```
+
 ### On Windows
 1. **Open PowerShell** and run the following command:
 

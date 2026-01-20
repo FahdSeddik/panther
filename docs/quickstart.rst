@@ -27,6 +27,12 @@ Build from source (for CPU-only systems or custom builds):
    # OR
    make install   # Linux/macOS
 
+Using Docker (all dependencies included) for GPU systems:
+
+.. code-block:: bash
+
+   docker pull fahdseddik/panther-dev
+
 Your First Panther Program
 ---------------------------
 
