@@ -1,0 +1,721 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Installation Guide &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=969202b3"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'installation';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart Guide" href="quickstart.html" />
+    <link rel="prev" title="Quick Summary" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/installation.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Finstallation.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/installation.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Installation Guide</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#system-requirements">System Requirements</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-installation">Quick Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manual-installation">Manual Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#environment-setup">Environment Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-installation">Development Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-issues">Common Issues</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#verifying-gpu-support">Verifying GPU Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#uninstallation">Uninstallation</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="installation-guide">
+<h1>Installation Guide<a class="headerlink" href="#installation-guide" title="Link to this heading">#</a></h1>
+<p>This guide explains how to install Panther and its dependencies.</p>
+<section id="system-requirements">
+<h2>System Requirements<a class="headerlink" href="#system-requirements" title="Link to this heading">#</a></h2>
+<p><strong>Python</strong>: Panther requires Python 3.12 or later.</p>
+<p><strong>Hardware Requirements</strong>:</p>
+<ul class="simple">
+<li><p><strong>CPU</strong>: Any modern x86-64 processor (CPU-only operation fully supported)</p></li>
+<li><p><strong>GPU</strong>: NVIDIA GPU with CUDA 12.4+ (optional, for GPU acceleration)</p></li>
+<li><p><strong>Memory</strong>: Minimum 8GB RAM recommended</p></li>
+</ul>
+<p><strong>Dependencies</strong>:</p>
+<ul class="simple">
+<li><p>PyTorch 2.6.0+ (CPU or CUDA version)</p></li>
+<li><p>CUDA Toolkit 12.4+ (optional, only for GPU acceleration)</p></li>
+<li><p>C++ compiler (GCC on Linux, MSVC on Windows)</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Panther works on CPU-only machines!</strong> All core features are available without CUDA.
+The build system automatically detects your hardware and builds the appropriate version.</p>
+</div>
+</section>
+<section id="quick-installation">
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Link to this heading">#</a></h2>
+<p><strong>Option 1: Install from PyPI (GPU Only)</strong></p>
+<p>For GPU-accelerated systems with CUDA 12.4 on Windows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--force-reinstall<span class="w"> </span>panther-ml<span class="o">==</span><span class="m">0</span>.1.2<span class="w"> </span>--extra-index-url<span class="w"> </span>https://download.pytorch.org/whl/cu124
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>CPU-only systems must build from source.</strong> The PyPI package currently includes CUDA dependencies.
+Use the automated setup scripts below (Option 2) which will automatically build the appropriate
+CPU-only version for your system.</p>
+</div>
+<p><strong>Option 2: Build from Source (CPU &amp; GPU)</strong></p>
+<p>For CPU-only systems or custom builds (works on both CPU-only and GPU systems):</p>
+<p><strong>Windows:</strong></p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># Open PowerShell as Administrator</span>
+<span class="p">.\</span><span class="n">install</span><span class="p">.</span><span class="n">ps1</span>
+</pre></div>
+</div>
+<p><strong>Linux/macOS:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make sure you have build-essential installed</span>
+make<span class="w"> </span>setup
+</pre></div>
+</div>
+<p><strong>Option 3: Docker Image</strong></p>
+<p>Use our pre-built Docker image with all dependencies included:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>fahdseddik/panther-dev
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Docker image includes all necessary dependencies and works on GPU systems.
+Simply pull the image and start using Panther without any manual setup.</p>
+</div>
+</section>
+<section id="manual-installation">
+<h2>Manual Installation<a class="headerlink" href="#manual-installation" title="Link to this heading">#</a></h2>
+<p>If you prefer to install Panther manually or need to customize the installation:</p>
+<p><strong>Step 1: Install Poetry (if not already installed)</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-sSL<span class="w"> </span>https://install.python-poetry.org<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-
+</pre></div>
+</div>
+<p><strong>Step 2: Clone the Repository</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/FahdSeddik/panther.git
+<span class="nb">cd</span><span class="w"> </span>panther
+</pre></div>
+</div>
+<p><strong>Step 3: Install Python Dependencies</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install
+</pre></div>
+</div>
+<p><strong>Step 4: Build the Native Backend</strong></p>
+<p><strong>On Linux:</strong></p>
+<p>First, install required system libraries:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>liblapacke-dev<span class="w"> </span>libopenblas-dev
+</pre></div>
+</div>
+<p>Then build the native backend:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>pawX
+make<span class="w"> </span>all
+<span class="nb">cd</span><span class="w"> </span>..
+</pre></div>
+</div>
+<p><strong>On Windows:</strong></p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd </span><span class="n">pawX</span>
+<span class="p">.\</span><span class="n">build</span><span class="p">.</span><span class="n">ps1</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Automatic CPU/GPU Detection</strong>: The build process automatically detects your system:</p>
+<ul class="simple">
+<li><p><strong>With CUDA</strong>: Builds with GPU acceleration support</p></li>
+<li><p><strong>Without CUDA</strong>: Builds CPU-only version with full core functionality</p></li>
+<li><p>CPU-only builds exclude CUDA-dependent features but maintain all essential operations</p></li>
+</ul>
+</div>
+<p><strong>Step 5: Install Panther Package</strong></p>
+<p>Install the panther package in editable mode:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Step 6: Verify Installation</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Test basic functionality</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Installation successful!&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Q shape: </span><span class="si">{</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, R shape: </span><span class="si">{</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, J shape: </span><span class="si">{</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="environment-setup">
+<h2>Environment Setup<a class="headerlink" href="#environment-setup" title="Link to this heading">#</a></h2>
+<p><strong>Virtual Environment (Recommended)</strong></p>
+<p>It’s recommended to use a virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>panther_env
+
+<span class="c1"># On Windows:</span>
+panther_env<span class="se">\S</span>cripts<span class="se">\a</span>ctivate
+
+<span class="c1"># On Linux/macOS:</span>
+<span class="nb">source</span><span class="w"> </span>panther_env/bin/activate
+</pre></div>
+</div>
+<p><strong>CUDA Environment Variables</strong></p>
+<p>For optimal GPU performance, ensure these environment variables are set:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">CUDA_HOME</span><span class="o">=</span>/usr/local/cuda
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$CUDA_HOME</span>/bin:<span class="nv">$PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="nv">$CUDA_HOME</span>/lib64:<span class="nv">$LD_LIBRARY_PATH</span>
+</pre></div>
+</div>
+</section>
+<section id="development-installation">
+<h2>Development Installation<a class="headerlink" href="#development-installation" title="Link to this heading">#</a></h2>
+<p>For development work on Panther:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/FahdSeddik/panther.git
+<span class="nb">cd</span><span class="w"> </span>panther
+poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>dev
+
+<span class="c1"># Install pre-commit hooks</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+</section>
+<section id="common-issues">
+<h2>Common Issues<a class="headerlink" href="#common-issues" title="Link to this heading">#</a></h2>
+<p><strong>Issue: CUDA not found</strong></p>
+<p>Make sure CUDA Toolkit is properly installed and in your PATH:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nvcc<span class="w"> </span>--version
+</pre></div>
+</div>
+<p><strong>Issue: Compilation errors on Windows</strong></p>
+<p>Ensure you have Visual Studio Build Tools installed with C++ support.</p>
+<p><strong>Issue: Import errors (“No module named ‘panther’”)</strong></p>
+<p>Make sure you’ve installed the package in editable mode:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p>If you still see import errors, check that the native backend was compiled successfully:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>pawX/pawX.*.pyd<span class="w">  </span><span class="c1"># Windows</span>
+ls<span class="w"> </span>pawX/pawX.*.so<span class="w">   </span><span class="c1"># Linux</span>
+</pre></div>
+</div>
+<p><strong>Issue: OpenBLAS not found (Linux)</strong></p>
+<p>If you see linker errors about missing <code class="docutils literal notranslate"><span class="pre">-lopenblas</span></code>, install the OpenBLAS development package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>libopenblas-dev
+</pre></div>
+</div>
+<p>The installation scripts should handle this automatically, but manual installation may be needed in some cases. On Windows, OpenBLAS binaries are bundled with the package.</p>
+</section>
+<section id="verifying-gpu-support">
+<h2>Verifying GPU Support<a class="headerlink" href="#verifying-gpu-support" title="Link to this heading">#</a></h2>
+<p>To check if GPU acceleration is available:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA available: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA version: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="c1"># Test GPU functionality</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GPU acceleration is working!&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="uninstallation">
+<h2>Uninstallation<a class="headerlink" href="#uninstallation" title="Link to this heading">#</a></h2>
+<p>To uninstall Panther:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>uninstall<span class="w"> </span>panther-ml
+</pre></div>
+</div>
+<p>If installed from source, simply delete the cloned directory after deactivating any virtual environment.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#system-requirements">System Requirements</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-installation">Quick Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manual-installation">Manual Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#environment-setup">Environment Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-installation">Development Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-issues">Common Issues</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#verifying-gpu-support">Verifying GPU Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#uninstallation">Uninstallation</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

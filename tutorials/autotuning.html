@@ -1,0 +1,1111 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Autotuning for Maximum Performance &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/autotuning';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Benchmarking" href="../benchmarking/index.html" />
+    <link rel="prev" title="Custom Sketching Implementation" href="custom_sketching.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/tutorials/autotuning.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Ftutorials/autotuning.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/autotuning.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Autotuning for Maximum Performance</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-the-auto-tuner-the-bridge-to-production">Why the Auto-Tuner? The Bridge to Production</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start">Quick Start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#industrial-grade-search-capabilities">Industrial-Grade Search Capabilities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constraint-based-optimization-the-tuner-s-superpower">Constraint-Based Optimization: The Tuner’s Superpower</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-evaluation-functions">Setting Up Evaluation Functions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#layer-discovery-and-pattern-matching">Layer Discovery and Pattern Matching</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-parameter-space-generation">Automatic Parameter Space Generation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-constrained-tuning">Running Constrained Tuning</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-the-optimization">Understanding the Optimization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#real-world-impact-what-the-tuner-achieves">Real-World Impact: What the Tuner Achieves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-configuration">Advanced Configuration</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-different-samplers">Using Different Samplers</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-results">Analyzing Results</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dataframe-analysis">DataFrame Analysis</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#complete-example-transformer-tuning">Complete Example: Transformer Tuning</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="autotuning-for-maximum-performance">
+<h1>Autotuning for Maximum Performance<a class="headerlink" href="#autotuning-for-maximum-performance" title="Link to this heading">#</a></h1>
+<p>This tutorial shows you how to use Panther’s AutoTuner to automatically find the best sketching parameters for your neural network, maximizing throughput while maintaining accuracy.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#why-the-auto-tuner-the-bridge-to-production" id="id1">Why the Auto-Tuner? The Bridge to Production</a></p></li>
+<li><p><a class="reference internal" href="#overview" id="id2">Overview</a></p></li>
+<li><p><a class="reference internal" href="#quick-start" id="id3">Quick Start</a></p></li>
+<li><p><a class="reference internal" href="#industrial-grade-search-capabilities" id="id4">Industrial-Grade Search Capabilities</a></p></li>
+<li><p><a class="reference internal" href="#constraint-based-optimization-the-tuner-s-superpower" id="id5">Constraint-Based Optimization: The Tuner’s Superpower</a></p>
+<ul>
+<li><p><a class="reference internal" href="#setting-up-evaluation-functions" id="id6">Setting Up Evaluation Functions</a></p></li>
+<li><p><a class="reference internal" href="#layer-discovery-and-pattern-matching" id="id7">Layer Discovery and Pattern Matching</a></p></li>
+<li><p><a class="reference internal" href="#automatic-parameter-space-generation" id="id8">Automatic Parameter Space Generation</a></p></li>
+<li><p><a class="reference internal" href="#running-constrained-tuning" id="id9">Running Constrained Tuning</a></p></li>
+<li><p><a class="reference internal" href="#understanding-the-optimization" id="id10">Understanding the Optimization</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#real-world-impact-what-the-tuner-achieves" id="id11">Real-World Impact: What the Tuner Achieves</a></p></li>
+<li><p><a class="reference internal" href="#advanced-configuration" id="id12">Advanced Configuration</a></p>
+<ul>
+<li><p><a class="reference internal" href="#using-different-samplers" id="id13">Using Different Samplers</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#analyzing-results" id="id14">Analyzing Results</a></p>
+<ul>
+<li><p><a class="reference internal" href="#dataframe-analysis" id="id15">DataFrame Analysis</a></p></li>
+<li><p><a class="reference internal" href="#visualization" id="id16">Visualization</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#best-practices" id="id17">Best Practices</a></p></li>
+<li><p><a class="reference internal" href="#complete-example-transformer-tuning" id="id18">Complete Example: Transformer Tuning</a></p></li>
+</ul>
+</nav>
+<section id="why-the-auto-tuner-the-bridge-to-production">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Why the Auto-Tuner? The Bridge to Production</a><a class="headerlink" href="#why-the-auto-tuner-the-bridge-to-production" title="Link to this heading">#</a></h2>
+<p>The <strong>SKAutoTuner</strong> is the critical bridge that transforms standard PyTorch models into production-optimized Panther models. Without it, deploying sketched networks would be manual, error-prone, and effectively impossible at scale.</p>
+<p><strong>The Problem It Solves:</strong></p>
+<p>Deep neural networks have complex nested hierarchies. To deploy a sketched model, you must:</p>
+<ol class="arabic simple">
+<li><p>Navigate deep module hierarchies to locate target layers</p></li>
+<li><p>Extract and preserve original weights</p></li>
+<li><p>Replace layers with sketched versions (e.g., <code class="docutils literal notranslate"><span class="pre">SKLinear</span></code>)</p></li>
+<li><p>Discover optimal sketching parameters for each layer</p></li>
+<li><p>Search multidimensional parameter spaces efficiently</p></li>
+<li><p>Maintain accuracy while maximizing speed</p></li>
+</ol>
+<p><strong>Manual Workflow (Without the Tuner):</strong></p>
+<p>Manually replacing even a single BERT layer requires:</p>
+<ul class="simple">
+<li><p>Understanding model architecture and naming conventions</p></li>
+<li><p>Writing custom code to traverse <code class="docutils literal notranslate"><span class="pre">BertForMaskedLM</span></code> → <code class="docutils literal notranslate"><span class="pre">BertOnlyMLMHead</span></code> → <code class="docutils literal notranslate"><span class="pre">BertLMPredictionHead</span></code> → target <code class="docutils literal notranslate"><span class="pre">Linear</span></code></p></li>
+<li><p>Carefully managing weight copying to preserve training</p></li>
+<li><p>Guessing or grid-searching through parameter combinations</p></li>
+<li><p>Re-evaluating accuracy and speed for each attempt</p></li>
+<li><p>Finding it was slow, inaccurate, and unreproducible</p></li>
+</ul>
+<p>This quickly becomes unmaintainable for large models with hundreds of layers across multiple architectures.</p>
+<p><strong>What the Auto-Tuner Does:</strong></p>
+<ul class="simple">
+<li><p><strong>Automates hierarchy navigation</strong>: Finds layers using intuitive pattern matching</p></li>
+<li><p><strong>Manages complexity behind the scenes</strong>: Weight management, layer replacement, configuration tracking</p></li>
+<li><p><strong>Discovers optimal parameters systematically</strong>: Uses industry-standard Optuna with state-of-the-art TPE sampler</p></li>
+<li><p><strong>Guarantees accuracy thresholds</strong>: Searches only parameter combinations that maintain your target accuracy</p></li>
+<li><p><strong>Maximizes speed</strong> within constraints: Optimizes throughput once accuracy is satisfied</p></li>
+<li><p><strong>Handles noisy evaluations</strong>: Re-evaluates uncertain configurations to ensure robustness</p></li>
+<li><p><strong>Provides full traceability</strong>: Complete metrics on every trial for analysis and visualization</p></li>
+</ul>
+<p><strong>Real Impact:</strong></p>
+<ul class="simple">
+<li><p>Using a BERT based model , using the tuner we were able to reduce parameters from 109.51M to 30.38M maintaining the same accuracy and achieving a 1.04x speedup using wikitext-2-raw-v1 dataset.</p></li>
+<li><p>Achieved 30% parameter reduction on Resnet50 with 3.5% accuracy loss on Cifar-10</p></li>
+<li><p>Deploy across multiple architectures (BERT,ResNet, etc.) with the same workflow</p></li>
+</ul>
+<p><strong>One-line difference:</strong></p>
+<p>Without tuner: Hours of debugging, manual layer selection, parameter guessing
+With tuner: <code class="docutils literal notranslate"><span class="pre">tuner.tune()</span></code> → Apply best params → Deploy</p>
+</section>
+<section id="overview">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>When sketching neural network layers, choosing the right parameters e.g. (<code class="docutils literal notranslate"><span class="pre">num_terms</span></code>, <code class="docutils literal notranslate"><span class="pre">low_rank</span></code>) is crucial:</p>
+<ul class="simple">
+<li><p><strong>Too aggressive</strong>: Fast but inaccurate</p></li>
+<li><p><strong>Too conservative</strong>: Accurate but slow</p></li>
+<li><p><strong>Just right</strong>: Maximum speedup with acceptable accuracy loss</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">SKAutoTuner</span></code> automates this entire process using <strong>industry-standard hyperparameter optimization</strong> (Optuna with TPE sampler), relieving you from manual parameter tuning, layer discovery, and accuracy management.</p>
+</section>
+<section id="quick-start">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Quick Start</a><a class="headerlink" href="#quick-start" title="Link to this heading">#</a></h2>
+<p>Here’s the fastest way to tune your model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">TuningConfigs</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">YourModel</span><span class="p">()</span>
+
+<span class="c1"># Use &quot;auto&quot; for automatic parameter ranges</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+    <span class="n">params</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">TuningConfigs</span><span class="p">([</span><span class="n">config</span><span class="p">]),</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">your_accuracy_function</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">tuner</span><span class="o">.</span><span class="n">tune</span><span class="p">()</span>
+<span class="n">optimized_model</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">apply_best_params</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Behind the scenes, the tuner automatically:</p>
+<ol class="arabic simple">
+<li><p><strong>Discovers layers</strong>: Finds all Linear layers in your model using flexible pattern matching</p></li>
+<li><p><strong>Generates parameter space</strong>: Creates intelligent search ranges based on layer dimensions</p></li>
+<li><p><strong>Searches efficiently</strong>: Uses Optuna’s TPE sampler to intelligently explore the parameter space (not random or grid)</p></li>
+<li><p><strong>Maintains accuracy</strong>: Evaluates your function on each trial</p></li>
+<li><p><strong>Applies winners</strong>: Replaces layers with their sketched versions using optimal parameters</p></li>
+</ol>
+</section>
+<section id="industrial-grade-search-capabilities">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Industrial-Grade Search Capabilities</a><a class="headerlink" href="#industrial-grade-search-capabilities" title="Link to this heading">#</a></h2>
+<p>Unlike basic grid search or random sampling, Panther’s tuner uses <strong>Optuna</strong> with the <strong>Tree-structured Parzen Estimator (TPE)</strong> sampler—the same technology used in production at top tech companies:</p>
+<p><strong>Why TPE (Tree-Structured Parzen Estimator)?</strong></p>
+<ul class="simple">
+<li><p><strong>Intelligent exploration</strong>: Builds probabilistic models of the parameter space</p></li>
+<li><p><strong>Adaptive sampling</strong>: Focuses trials in promising regions while still exploring</p></li>
+<li><p><strong>Sample efficient</strong>: Finds good parameters in 50-200 trials instead of thousands</p></li>
+<li><p><strong>Mixed parameter types</strong>: Handles categorical, integer, and continuous parameters simultaneously</p></li>
+<li><p><strong>No assumptions</strong>: Works well regardless of parameter distributions</p></li>
+</ul>
+<p><strong>Without Optuna/TPE</strong> (manual or random search):</p>
+<ul class="simple">
+<li><p>Grid search: 3 × 3 × 3 = 27 trials for 3 parameters with 3 values each</p></li>
+<li><p>Random: Inefficient, many wasted trials</p></li>
+<li><p>Manual guessing: Error-prone and non-reproducible</p></li>
+</ul>
+<p><strong>With Optuna/TPE</strong> (tuner default):</p>
+<ul class="simple">
+<li><p>Intelligently narrows search space</p></li>
+<li><p>Often converges in 50-100 trials</p></li>
+<li><p>Reproducible results with seed control</p></li>
+<li><p>Full trial history for analysis</p></li>
+</ul>
+</section>
+<section id="constraint-based-optimization-the-tuner-s-superpower">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Constraint-Based Optimization: The Tuner’s Superpower</a><a class="headerlink" href="#constraint-based-optimization-the-tuner-s-superpower" title="Link to this heading">#</a></h2>
+<p>The most powerful feature is <strong>constraint-based optimization</strong>: <strong>maximize speed while maintaining a minimum accuracy threshold</strong>. This ensures you never sacrifice model quality for compression.</p>
+<p>This is what transforms the tuner from a hyperparameter tool into a production-grade compression framework:</p>
+<ul class="simple">
+<li><p><strong>Problem</strong>: Sketching trades accuracy for speed. How much should we compress?</p></li>
+<li><p><strong>Solution</strong>: Define your acceptable accuracy loss (e.g., 99% of original), and the tuner finds the fastest configuration that meets that constraint</p></li>
+<li><p><strong>Result</strong>: No guessing, no manual validation, provably maintains quality while maximizing deployment benefit</p></li>
+</ul>
+<section id="setting-up-evaluation-functions">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Setting Up Evaluation Functions</a><a class="headerlink" href="#setting-up-evaluation-functions" title="Link to this heading">#</a></h3>
+<p>You need two functions:</p>
+<ol class="arabic simple">
+<li><p><strong>Accuracy function</strong>: Returns a score where higher is better (e.g., accuracy, F1)</p></li>
+<li><p><strong>Speed function</strong>: Returns throughput where higher is better (e.g., samples/second)</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">accuracy_eval_func</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate model accuracy on validation set.&quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">correct</span> <span class="o">=</span> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">val_loader</span><span class="p">:</span>
+            <span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">cuda</span><span class="p">(),</span> <span class="n">targets</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">targets</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">correct</span> <span class="o">+=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">speed_eval_func</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Measure inference throughput (samples per second).&quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">*</span><span class="n">input_shape</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+    <span class="c1"># Warmup</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+
+    <span class="c1"># Measure</span>
+    <span class="n">iterations</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">iterations</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">)</span> <span class="o">/</span> <span class="n">elapsed</span>
+</pre></div>
+</div>
+</section>
+<section id="layer-discovery-and-pattern-matching">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Layer Discovery and Pattern Matching</a><a class="headerlink" href="#layer-discovery-and-pattern-matching" title="Link to this heading">#</a></h3>
+<p>The tuner can find layers in multiple ways—you don’t need to know the exact layer names:</p>
+<p><strong>By type</strong> (find all layers of a kind):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># All Linear layers in the model</span>
+<span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>By name pattern</strong> (regex matching):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Linear layers in the encoder (BERT transformer blocks)</span>
+<span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="s2">&quot;encoder</span><span class="se">\\</span><span class="s2">.layers</span><span class="se">\\</span><span class="s2">.[0-5]</span><span class="se">\\</span><span class="s2">..*&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>By text matching</strong> (simple substring):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Attention layers</span>
+<span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;contains&quot;</span><span class="p">:</span> <span class="s2">&quot;attn&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>By exact name</strong> (if you know it):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Specific layers</span>
+<span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;layer1.0.linear&quot;</span><span class="p">,</span> <span class="s2">&quot;layer2.1.linear&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="automatic-parameter-space-generation">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Automatic Parameter Space Generation</a><a class="headerlink" href="#automatic-parameter-space-generation" title="Link to this heading">#</a></h3>
+<p>The tuner can automatically determine good search ranges based on layer dimensions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+    <span class="n">params</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>  <span class="c1"># Tuner decides optimal ranges</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>For a Linear layer with 768 input and 3072 output dimensions, the tuner automatically generates ranges like:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">num_terms</span></code>: [1, 2, 3, 4]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">low_rank</span></code>: [64, 128, 256, 512] (based on min dimension)</p></li>
+</ul>
+<p>Or explicitly specify your own ranges:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">Int</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span>
+        <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="running-constrained-tuning">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Running Constrained Tuning</a><a class="headerlink" href="#running-constrained-tuning" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">TuningConfigs</span><span class="p">,</span>
+    <span class="n">Categorical</span><span class="p">,</span> <span class="n">Int</span><span class="p">,</span> <span class="n">OptunaSearch</span>
+<span class="p">)</span>
+
+<span class="c1"># Define which layers to tune and their parameter search space</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>  <span class="c1"># All Linear layers</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span>
+        <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>      <span class="c1"># Tune each layer independently</span>
+    <span class="n">copy_weights</span><span class="o">=</span><span class="kc">True</span>   <span class="c1"># Preserve trained weights</span>
+<span class="p">)</span>
+
+<span class="c1"># Create tuner with constraint</span>
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">TuningConfigs</span><span class="p">([</span><span class="n">config</span><span class="p">]),</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">accuracy_eval_func</span><span class="p">,</span>
+    <span class="n">accuracy_threshold</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>              <span class="c1"># Must maintain 95% accuracy</span>
+    <span class="n">optmization_eval_func</span><span class="o">=</span><span class="n">speed_eval_func</span><span class="p">,</span>  <span class="c1"># Maximize this</span>
+    <span class="n">search_algorithm</span><span class="o">=</span><span class="n">OptunaSearch</span><span class="p">(</span><span class="n">n_trials</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">),</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="c1"># Run the search</span>
+<span class="n">best_params</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">tune</span><span class="p">()</span>
+
+
+<span class="c1"># Apply winning configuration</span>
+<span class="n">optimized_model</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">apply_best_params</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best parameters found: </span><span class="si">{</span><span class="n">best_params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="understanding-the-optimization">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Understanding the Optimization</a><a class="headerlink" href="#understanding-the-optimization" title="Link to this heading">#</a></h3>
+<p>When both <code class="docutils literal notranslate"><span class="pre">accuracy_threshold</span></code> and <code class="docutils literal notranslate"><span class="pre">optmization_eval_func</span></code> are set:</p>
+<ol class="arabic simple">
+<li><p><strong>Each trial evaluates accuracy first</strong> (fast failure)</p></li>
+<li><p><strong>If accuracy ≥ threshold</strong>: The configuration passes; its speed score becomes the objective</p></li>
+<li><p><strong>If accuracy &lt; threshold</strong>: The configuration is rejected with score <code class="docutils literal notranslate"><span class="pre">-inf</span></code></p></li>
+<li><p><strong>The tuner maximizes speed</strong> among all configurations meeting the accuracy bar</p></li>
+<li><p><strong>Best configuration is selected</strong> based on the fastest valid configuration found</p></li>
+</ol>
+<p>This is a <strong>constrained optimization problem</strong> and is exactly how production ML systems work—you cannot sacrifice quality, but you can optimize deployment speed.</p>
+</section>
+</section>
+<section id="real-world-impact-what-the-tuner-achieves">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Real-World Impact: What the Tuner Achieves</a><a class="headerlink" href="#real-world-impact-what-the-tuner-achieves" title="Link to this heading">#</a></h2>
+<p>The SKAutoTuner delivers concrete, measurable results:</p>
+<p><strong>BERT Model Compression (110M parameters)</strong></p>
+<ul class="simple">
+<li><p>Original: 110M parameters, 66ms per sample, 1.0x baseline</p></li>
+<li><p>Tuned with sketching: 30.38M parameters (72.26% reduction), 63.5ms per sample, <strong>1.04x speedup</strong></p></li>
+<li><p>Accuracy maintained: 99.8% of original performance</p></li>
+</ul>
+<p><strong>ResNet-50 on Cifar-10</strong></p>
+<ul class="simple">
+<li><p>Tuned: 30% parameter reduction, 52ms per image, <strong>1.05x speedup</strong></p></li>
+<li><p>Top-1 accuracy: 89% → 85.5% (only 3.5% drop for 30% parameter reduction)</p></li>
+</ul>
+</section>
+<section id="advanced-configuration">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Advanced Configuration</a><a class="headerlink" href="#advanced-configuration" title="Link to this heading">#</a></h2>
+<section id="using-different-samplers">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Using Different Samplers</a><a class="headerlink" href="#using-different-samplers" title="Link to this heading">#</a></h3>
+<p>The tuner defaults to Optuna’s TPE (Tree-structured Parzen Estimator) sampler, which works well for most problems. You can customize it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">optuna.samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">TPESampler</span><span class="p">,</span> <span class="n">CmaEsSampler</span><span class="p">,</span> <span class="n">RandomSampler</span>
+
+<span class="c1"># TPE (default) - good general-purpose sampler, best for mixed parameter spaces</span>
+<span class="n">search</span> <span class="o">=</span> <span class="n">OptunaSearch</span><span class="p">(</span><span class="n">n_trials</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="n">TPESampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">))</span>
+
+<span class="c1"># CMA-ES - excellent for continuous parameters, requires many trials</span>
+<span class="n">search</span> <span class="o">=</span> <span class="n">OptunaSearch</span><span class="p">(</span><span class="n">n_trials</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="n">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">))</span>
+
+<span class="c1"># Random - useful as a simple baseline or sanity check</span>
+<span class="n">search</span> <span class="o">=</span> <span class="n">OptunaSearch</span><span class="p">(</span><span class="n">n_trials</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="n">RandomSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><strong>Recommendation:</strong> Start with TPE (default). Use CMA-ES only if you have pure continuous parameters and many trials to spend.</p>
+</section>
+</section>
+<section id="analyzing-results">
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Analyzing Results</a><a class="headerlink" href="#analyzing-results" title="Link to this heading">#</a></h2>
+<section id="dataframe-analysis">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">DataFrame Analysis</a><a class="headerlink" href="#dataframe-analysis" title="Link to this heading">#</a></h3>
+<p>The tuner provides comprehensive trial data for deep analysis:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Get all trial results</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">get_results_dataframe</span><span class="p">()</span>
+
+<span class="c1"># Columns: layer_name, num_terms, low_rank, accuracy, speed, score, trial_number</span>
+
+<span class="c1"># Best configurations per layer</span>
+<span class="n">best_per_layer</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;layer_name&quot;</span><span class="p">)[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">best_per_layer</span><span class="p">)</span>
+
+<span class="c1"># Configurations meeting accuracy threshold and their speeds</span>
+<span class="n">valid</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.95</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">valid</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;speed&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="c1"># How does each parameter affect performance?</span>
+<span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;num_terms&quot;</span><span class="p">,</span> <span class="s2">&quot;low_rank&quot;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> vs Score:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">param</span><span class="p">)[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">]))</span>
+
+<span class="c1"># Correlation between parameters and accuracy</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;num_terms&quot;</span><span class="p">,</span> <span class="s2">&quot;low_rank&quot;</span><span class="p">,</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">corr</span><span class="p">())</span>
+</pre></div>
+</div>
+<p><strong>What to look for:</strong></p>
+<ul class="simple">
+<li><p>Do valid configurations exist? (Any row where accuracy ≥ threshold)</p></li>
+<li><p>What’s the speedup range? (min/max speed of valid configs)</p></li>
+<li><p>Which parameters matter? (High std in score across parameter values)</p></li>
+<li><p>Are there clusters? (Do certain parameter values consistently beat others?)</p></li>
+</ul>
+</section>
+<section id="visualization">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Visualization</a><a class="headerlink" href="#visualization" title="Link to this heading">#</a></h3>
+<p>Use Optuna’s built-in visualization for rich analysis:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">optuna.visualization</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">vis</span>
+
+<span class="c1"># Access the underlying Optuna study</span>
+<span class="n">study</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">study</span>
+
+<span class="c1"># Parameter importances - which params affect score most?</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">plot_param_importances</span><span class="p">(</span><span class="n">study</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Optimization history - did the search make progress?</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">plot_optimization_history</span><span class="p">(</span><span class="n">study</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Parameter relationships</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">plot_parallel_coordinate</span><span class="p">(</span><span class="n">study</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;num_terms&quot;</span><span class="p">,</span> <span class="s2">&quot;low_rank&quot;</span><span class="p">])</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># 2D contour of parameter interactions</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">plot_contour</span><span class="p">(</span><span class="n">study</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;num_terms&quot;</span><span class="p">,</span> <span class="s2">&quot;low_rank&quot;</span><span class="p">])</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2><a class="toc-backref" href="#id17" role="doc-backlink">Best Practices</a><a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<p><strong>Golden Rules:</strong></p>
+<ol class="arabic">
+<li><p><strong>Start with “auto”</strong>: Let the tuner determine reasonable ranges first. Saves manual parameter exploration.</p></li>
+<li><p><strong>Use a representative validation set</strong>: Your accuracy function must reflect real-world performance. A small, biased validation set leads to bad parameter choices.</p></li>
+<li><p><strong>Warm up GPU</strong>: Include warmup iterations in speed measurements to stabilize GPU clocks. Skip first few iterations in timing:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Bad: includes GPU warmup time</span>
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c1"># Good: GPU is warmed up</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>  <span class="c1"># Warmup</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+<span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Set realistic accuracy thresholds</strong>: A 0.99 threshold when original accuracy is 0.92 is impossible. Start with 0.98 or 0.95 (1-2% loss acceptable).</p></li>
+<li><p><strong>Save results</strong>: Use database storage for long tuning runs (100+ trials). Enables resumption if interrupted.</p></li>
+<li><p><strong>Visualize early</strong>: After ~20 trials, check the optimization history. If no progress, increase n_trials or adjust parameter ranges.</p></li>
+<li><p><strong>Consider batch size</strong>: Measure speed at your <strong>deployment batch size</strong>, not just any batch size. Smaller batches → less throughput advantage, larger batches → memory bottleneck.</p></li>
+<li><p><strong>Check layer coverage</strong>: Use <code class="docutils literal notranslate"><span class="pre">ModelVisualizer.print_module_tree()</span></code> to confirm your patterns match intended layers.</p></li>
+<li><p><strong>Start conservative</strong>: Begin with tight accuracy thresholds. You can loosen them later if needed. Better to have a super-stable model first.</p></li>
+<li><p><strong>Enable verbose mode</strong>: <code class="docutils literal notranslate"><span class="pre">verbose=True</span></code> during development to track progress and identify stuck searches.</p></li>
+</ol>
+</section>
+<section id="complete-example-transformer-tuning">
+<h2><a class="toc-backref" href="#id18" role="doc-backlink">Complete Example: Transformer Tuning</a><a class="headerlink" href="#complete-example-transformer-tuning" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">TuningConfigs</span><span class="p">,</span>
+    <span class="n">Categorical</span><span class="p">,</span> <span class="n">Int</span><span class="p">,</span> <span class="n">OptunaSearch</span><span class="p">,</span> <span class="n">ModelVisualizer</span>
+<span class="p">)</span>
+
+<span class="c1"># Load your trained transformer</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">load_my_transformer</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Inspect the model structure</span>
+<span class="n">ModelVisualizer</span><span class="o">.</span><span class="n">print_module_tree</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<span class="c1"># Prepare evaluation data</span>
+<span class="n">val_loader</span> <span class="o">=</span> <span class="n">get_validation_loader</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">accuracy_eval_func</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">correct</span> <span class="o">=</span> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">val_loader</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">cuda</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">pred</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">pred</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">y</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">speed_eval_func</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>  <span class="c1"># batch_size=32, seq_len=128</span>
+
+    <span class="c1"># Warmup</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+
+    <span class="c1"># Measure</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span> <span class="o">/</span> <span class="n">elapsed</span>  <span class="c1"># samples/sec</span>
+
+<span class="c1"># Configure tuning for transformer layers</span>
+<span class="n">configs</span> <span class="o">=</span> <span class="n">TuningConfigs</span><span class="p">([</span>
+    <span class="c1"># Tune attention projections</span>
+    <span class="n">LayerConfig</span><span class="p">(</span>
+        <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;contains&quot;</span><span class="p">:</span> <span class="s2">&quot;attn&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span>
+            <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+        <span class="p">},</span>
+        <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">),</span>
+    <span class="c1"># Tune FFN layers</span>
+    <span class="n">LayerConfig</span><span class="p">(</span>
+        <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;contains&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span>
+            <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+        <span class="p">},</span>
+        <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">),</span>
+<span class="p">])</span>
+
+<span class="c1"># Run constrained optimization</span>
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">configs</span><span class="p">,</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">accuracy_eval_func</span><span class="p">,</span>
+    <span class="n">accuracy_threshold</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span>  <span class="c1"># Keep 98% of original accuracy</span>
+    <span class="n">optmization_eval_func</span><span class="o">=</span><span class="n">speed_eval_func</span><span class="p">,</span>
+    <span class="n">search_algorithm</span><span class="o">=</span><span class="n">OptunaSearch</span><span class="p">(</span>
+        <span class="n">n_trials</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">study_name</span><span class="o">=</span><span class="s2">&quot;transformer_tuning&quot;</span><span class="p">,</span>
+        <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;sqlite:///transformer_tuning.db&quot;</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="mi">42</span>
+    <span class="p">),</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">tuner</span><span class="o">.</span><span class="n">tune</span><span class="p">()</span>
+
+<span class="c1"># Apply best configuration</span>
+<span class="n">optimized_model</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">apply_best_params</span><span class="p">()</span>
+
+<span class="c1"># Final verification</span>
+<span class="n">orig_acc</span> <span class="o">=</span> <span class="n">accuracy_eval_func</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">opt_acc</span> <span class="o">=</span> <span class="n">accuracy_eval_func</span><span class="p">(</span><span class="n">optimized_model</span><span class="p">)</span>
+<span class="n">orig_speed</span> <span class="o">=</span> <span class="n">speed_eval_func</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">opt_speed</span> <span class="o">=</span> <span class="n">speed_eval_func</span><span class="p">(</span><span class="n">optimized_model</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original:  accuracy=</span><span class="si">{</span><span class="n">orig_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, speed=</span><span class="si">{</span><span class="n">orig_speed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> samples/sec&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Optimized: accuracy=</span><span class="si">{</span><span class="n">opt_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, speed=</span><span class="si">{</span><span class="n">opt_speed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> samples/sec&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Speedup: </span><span class="si">{</span><span class="n">opt_speed</span><span class="o">/</span><span class="n">orig_speed</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x&quot;</span><span class="p">)</span>
+
+<span class="c1"># Save results</span>
+<span class="n">tuner</span><span class="o">.</span><span class="n">save_tuning_results</span><span class="p">(</span><span class="s2">&quot;best_config.pkl&quot;</span><span class="p">)</span>
+
+<span class="c1"># Visualize with Optuna (optional)</span>
+<span class="c1"># import optuna.visualization as vis</span>
+<span class="c1"># vis.plot_optimization_history(tuner.search_algorithm.study).show()</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-the-auto-tuner-the-bridge-to-production">Why the Auto-Tuner? The Bridge to Production</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start">Quick Start</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#industrial-grade-search-capabilities">Industrial-Grade Search Capabilities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constraint-based-optimization-the-tuner-s-superpower">Constraint-Based Optimization: The Tuner’s Superpower</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-evaluation-functions">Setting Up Evaluation Functions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#layer-discovery-and-pattern-matching">Layer Discovery and Pattern Matching</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-parameter-space-generation">Automatic Parameter Space Generation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-constrained-tuning">Running Constrained Tuning</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-the-optimization">Understanding the Optimization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#real-world-impact-what-the-tuner-achieves">Real-World Impact: What the Tuner Achieves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-configuration">Advanced Configuration</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-different-samplers">Using Different Samplers</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-results">Analyzing Results</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dataframe-analysis">DataFrame Analysis</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#complete-example-transformer-tuning">Complete Example: Transformer Tuning</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

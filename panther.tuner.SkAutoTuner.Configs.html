@@ -1,0 +1,1434 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>panther.tuner.SkAutoTuner.Configs package &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=969202b3"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'panther.tuner.SkAutoTuner.Configs';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/panther.tuner.SkAutoTuner.Configs.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Fpanther.tuner.SkAutoTuner.Configs.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/panther.tuner.SkAutoTuner.Configs.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>panther.tuner.SkAutoTuner.Configs package</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.LayerConfig">panther.tuner.SkAutoTuner.Configs.LayerConfig module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig"><code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.layer_names"><code class="docutils literal notranslate"><span class="pre">LayerConfig.layer_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.params"><code class="docutils literal notranslate"><span class="pre">LayerConfig.params</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.separate"><code class="docutils literal notranslate"><span class="pre">LayerConfig.separate</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.copy_weights"><code class="docutils literal notranslate"><span class="pre">LayerConfig.copy_weights</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.__init__"><code class="docutils literal notranslate"><span class="pre">LayerConfig.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.clone"><code class="docutils literal notranslate"><span class="pre">LayerConfig.clone()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.LayerNameResolver">panther.tuner.SkAutoTuner.Configs.LayerNameResolver module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.__init__"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.resolve"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.ParamSpec">panther.tuner.SkAutoTuner.Configs.ParamSpec module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical"><code class="docutils literal notranslate"><span class="pre">Categorical</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.choices"><code class="docutils literal notranslate"><span class="pre">Categorical.choices</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.__init__"><code class="docutils literal notranslate"><span class="pre">Categorical.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int"><code class="docutils literal notranslate"><span class="pre">Int</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.low"><code class="docutils literal notranslate"><span class="pre">Int.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.high"><code class="docutils literal notranslate"><span class="pre">Int.high</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.step"><code class="docutils literal notranslate"><span class="pre">Int.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.log"><code class="docutils literal notranslate"><span class="pre">Int.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.__init__"><code class="docutils literal notranslate"><span class="pre">Int.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float"><code class="docutils literal notranslate"><span class="pre">Float</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.low"><code class="docutils literal notranslate"><span class="pre">Float.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.high"><code class="docutils literal notranslate"><span class="pre">Float.high</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.step"><code class="docutils literal notranslate"><span class="pre">Float.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.log"><code class="docutils literal notranslate"><span class="pre">Float.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.__init__"><code class="docutils literal notranslate"><span class="pre">Float.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.is_param_spec"><code class="docutils literal notranslate"><span class="pre">is_param_spec()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.to_categorical"><code class="docutils literal notranslate"><span class="pre">to_categorical()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.get_param_choices"><code class="docutils literal notranslate"><span class="pre">get_param_choices()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.ParamsResolver">panther.tuner.SkAutoTuner.Configs.ParamsResolver module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver"><code class="docutils literal notranslate"><span class="pre">ParamsResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.__init__"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.resolve"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.TuningConfigs">panther.tuner.SkAutoTuner.Configs.TuningConfigs module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs"><code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.__init__"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.add"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.add()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.remove"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.remove()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.replace"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.replace()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.clone"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.clone()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.merge"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.merge()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.filter"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.filter()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.map"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.map()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs">Module contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig"><code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.layer_names"><code class="docutils literal notranslate"><span class="pre">LayerConfig.layer_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.params"><code class="docutils literal notranslate"><span class="pre">LayerConfig.params</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.separate"><code class="docutils literal notranslate"><span class="pre">LayerConfig.separate</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.copy_weights"><code class="docutils literal notranslate"><span class="pre">LayerConfig.copy_weights</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.__init__"><code class="docutils literal notranslate"><span class="pre">LayerConfig.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.clone"><code class="docutils literal notranslate"><span class="pre">LayerConfig.clone()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs"><code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.__init__"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.add"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.add()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.clone"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.clone()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.filter"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.filter()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.map"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.merge"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.merge()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.remove"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.remove()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.replace"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.replace()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.__init__"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.resolve"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver"><code class="docutils literal notranslate"><span class="pre">ParamsResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.__init__"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.resolve"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Categorical"><code class="docutils literal notranslate"><span class="pre">Categorical</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Categorical.__init__"><code class="docutils literal notranslate"><span class="pre">Categorical.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Categorical.choices"><code class="docutils literal notranslate"><span class="pre">Categorical.choices</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int"><code class="docutils literal notranslate"><span class="pre">Int</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.__init__"><code class="docutils literal notranslate"><span class="pre">Int.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.log"><code class="docutils literal notranslate"><span class="pre">Int.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.step"><code class="docutils literal notranslate"><span class="pre">Int.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.low"><code class="docutils literal notranslate"><span class="pre">Int.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.high"><code class="docutils literal notranslate"><span class="pre">Int.high</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float"><code class="docutils literal notranslate"><span class="pre">Float</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.__init__"><code class="docutils literal notranslate"><span class="pre">Float.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.log"><code class="docutils literal notranslate"><span class="pre">Float.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.step"><code class="docutils literal notranslate"><span class="pre">Float.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.low"><code class="docutils literal notranslate"><span class="pre">Float.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.high"><code class="docutils literal notranslate"><span class="pre">Float.high</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="panther-tuner-skautotuner-configs-package">
+<h1>panther.tuner.SkAutoTuner.Configs package<a class="headerlink" href="#panther-tuner-skautotuner-configs-package" title="Link to this heading">#</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+</section>
+<section id="module-panther.tuner.SkAutoTuner.Configs.LayerConfig">
+<span id="panther-tuner-skautotuner-configs-layerconfig-module"></span><h2>panther.tuner.SkAutoTuner.Configs.LayerConfig module<a class="headerlink" href="#module-panther.tuner.SkAutoTuner.Configs.LayerConfig" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.LayerConfig.</span></span><span class="sig-name descname"><span class="pre">LayerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Configuration for a single layer or group of layers to tune.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.layer_names">
+<span class="sig-name descname"><span class="pre">layer_names</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.layer_names" title="Link to this definition">#</a></dt>
+<dd><p>Layer selector (string, list, or dict with criteria)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.params">
+<span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.params" title="Link to this definition">#</a></dt>
+<dd><p>Dictionary of parameter names to ParamSpec or list of values</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.separate">
+<span class="sig-name descname"><span class="pre">separate</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.separate" title="Link to this definition">#</a></dt>
+<dd><p>Whether to tune each layer independently</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.copy_weights">
+<span class="sig-name descname"><span class="pre">copy_weights</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.copy_weights" title="Link to this definition">#</a></dt>
+<dd><p>Whether to copy weights when replacing layers</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize a layer configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer_names</strong> – Layer selector, can be:
+- A string: Regex pattern or substring
+- A list of strings: Multiple patterns or exact names
+- A dictionary with selection criteria (pattern, type, contains, indices, range)</p></li>
+<li><p><strong>params</strong> – Dictionary of parameter names and their possible values</p></li>
+<li><p><strong>separate</strong> – Whether to tune layers separately or jointly</p></li>
+<li><p><strong>copy_weights</strong> – Whether to copy weights when replacing layers</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig.clone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.clone" title="Link to this definition">#</a></dt>
+<dd><p>Create a deep copy of this LayerConfig.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new LayerConfig instance with the same properties</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-panther.tuner.SkAutoTuner.Configs.LayerNameResolver">
+<span id="panther-tuner-skautotuner-configs-layernameresolver-module"></span><h2>panther.tuner.SkAutoTuner.Configs.LayerNameResolver module<a class="headerlink" href="#module-panther.tuner.SkAutoTuner.Configs.LayerNameResolver" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.LayerNameResolver.</span></span><span class="sig-name descname"><span class="pre">LayerNameResolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerNameResolver.html#LayerNameResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Provides intuitive ways to select layers for tuning in large models.</p>
+<p>This resolver allows users to specify layers using patterns, types, or indices
+rather than requiring exact layer names.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerNameResolver.html#LayerNameResolver.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize the resolver with a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> – The neural network model to analyze</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">selectors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerNameResolver.html#LayerNameResolver.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.resolve" title="Link to this definition">#</a></dt>
+<dd><p>Resolve layer name selectors to actual layer names in the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>selectors</strong> – <p>One or more selectors to match layers. Can be:</p>
+<ul>
+<li><p>A single string pattern (e.g., “encoder.*attention”)</p></li>
+<li><p>A list of string patterns</p></li>
+<li><p>A dictionary with keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’pattern’: String or list of regex patterns</p></li>
+<li><p>’type’: Layer type or list of types (e.g., ‘Linear’, ‘Conv2d’)</p></li>
+<li><p>’contains’: String that layer name must contain</p></li>
+<li><p>’indices’: Indices to select from matched layers (e.g., [0, 2, 4] for first, third, fifth)</p></li>
+<li><p>’range’: Range of indices as [start, end, step]</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of resolved layer names that match the selectors</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-panther.tuner.SkAutoTuner.Configs.ParamSpec">
+<span id="panther-tuner-skautotuner-configs-paramspec-module"></span><h2>panther.tuner.SkAutoTuner.Configs.ParamSpec module<a class="headerlink" href="#module-panther.tuner.SkAutoTuner.Configs.ParamSpec" title="Link to this heading">#</a></h2>
+<p>First-class parameter distribution specifications for modern HPO.</p>
+<p>Enables expressing categorical, integer, and float distributions explicitly,
+which can be mapped to Optuna distributions or other HPO frameworks.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamSpec.</span></span><span class="sig-name descname"><span class="pre">Categorical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">choices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Categorical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A categorical parameter that takes values from a fixed set of choices.</p>
+<p class="rubric">Examples</p>
+<p>Categorical([1, 2, 3])  # Integer choices
+Categorical([“relu”, “gelu”, “silu”])  # String choices
+Categorical([True, False])  # Boolean choices</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.choices">
+<span class="sig-name descname"><span class="pre">choices</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.choices" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">choices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Int">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamSpec.</span></span><span class="sig-name descname"><span class="pre">Int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>An integer parameter within a range [low, high].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> – Lower bound (inclusive)</p></li>
+<li><p><strong>high</strong> – Upper bound (inclusive)</p></li>
+<li><p><strong>step</strong> – Step size for discrete values (default: 1)</p></li>
+<li><p><strong>log</strong> – Whether to sample in log scale (useful for parameters like learning rate)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Int(1, 100)  # Integer from 1 to 100
+Int(8, 512, step=8)  # Multiples of 8 from 8 to 512
+Int(1, 1000, log=True)  # Log-scale integer sampling</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.low">
+<span class="sig-name descname"><span class="pre">low</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.low" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.high">
+<span class="sig-name descname"><span class="pre">high</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.high" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.step">
+<span class="sig-name descname"><span class="pre">step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.step" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.log" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Float">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamSpec.</span></span><span class="sig-name descname"><span class="pre">Float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A floating-point parameter within a range [low, high].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> – Lower bound (inclusive)</p></li>
+<li><p><strong>high</strong> – Upper bound (inclusive)</p></li>
+<li><p><strong>step</strong> – Step size for discrete values (None for continuous)</p></li>
+<li><p><strong>log</strong> – Whether to sample in log scale</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Float(0.0, 1.0)  # Continuous float from 0 to 1
+Float(1e-5, 1e-1, log=True)  # Log-scale float (e.g., learning rate)
+Float(0.1, 1.0, step=0.1)  # Discrete float values</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.low">
+<span class="sig-name descname"><span class="pre">low</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.low" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.high">
+<span class="sig-name descname"><span class="pre">high</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.high" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.step">
+<span class="sig-name descname"><span class="pre">step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.step" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.log" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.is_param_spec">
+<span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamSpec.</span></span><span class="sig-name descname"><span class="pre">is_param_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#is_param_spec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.is_param_spec" title="Link to this definition">#</a></dt>
+<dd><p>Check if a value is a ParamSpec type.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.to_categorical">
+<span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamSpec.</span></span><span class="sig-name descname"><span class="pre">to_categorical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#to_categorical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.to_categorical" title="Link to this definition">#</a></dt>
+<dd><p>Convert a list to a Categorical spec.</p>
+<p>This is useful for backward compatibility with legacy list-based param definitions.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamSpec.get_param_choices">
+<span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamSpec.</span></span><span class="sig-name descname"><span class="pre">get_param_choices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#get_param_choices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.get_param_choices" title="Link to this definition">#</a></dt>
+<dd><p>Get discrete choices from a param spec, if applicable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of choices for Categorical, None for continuous Int/Float ranges.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-panther.tuner.SkAutoTuner.Configs.ParamsResolver">
+<span id="panther-tuner-skautotuner-configs-paramsresolver-module"></span><h2>panther.tuner.SkAutoTuner.Configs.ParamsResolver module<a class="headerlink" href="#module-panther.tuner.SkAutoTuner.Configs.ParamsResolver" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.ParamsResolver.</span></span><span class="sig-name descname"><span class="pre">ParamsResolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamsResolver.html#ParamsResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A class to resolve parameters for the SkAutoTuner.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamsResolver.html#ParamsResolver.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize the resolver with a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The neural network model to analyze</p></li>
+<li><p><strong>verbose</strong> – Whether to print verbose logs</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamsResolver.html#ParamsResolver.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.resolve" title="Link to this definition">#</a></dt>
+<dd><p>Resolves and returns the parameters.</p>
+<p>If config.params is a dictionary, it’s returned as is, wrapped in TuningConfigs.
+If config.params is “auto”, it automatically determines parameters based on layer types and sizes.
+Otherwise, raises a ValueError.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The resolved parameters as TuningConfigs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-panther.tuner.SkAutoTuner.Configs.TuningConfigs">
+<span id="panther-tuner-skautotuner-configs-tuningconfigs-module"></span><h2>panther.tuner.SkAutoTuner.Configs.TuningConfigs module<a class="headerlink" href="#module-panther.tuner.SkAutoTuner.Configs.TuningConfigs" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.TuningConfigs.</span></span><span class="sig-name descname"><span class="pre">TuningConfigs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Collection of LayerConfig objects for tuning multiple layer groups.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize with a list of layer configurations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>configs</strong> – List of LayerConfig objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.add" title="Link to this definition">#</a></dt>
+<dd><p>Add a LayerConfig, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.remove">
+<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.remove" title="Link to this definition">#</a></dt>
+<dd><p>Remove a LayerConfig by index, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.replace">
+<span class="sig-name descname"><span class="pre">replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.replace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.replace" title="Link to this definition">#</a></dt>
+<dd><p>Replace a LayerConfig at index, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.clone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.clone" title="Link to this definition">#</a></dt>
+<dd><p>Create a deep copy of this TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.merge">
+<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.merge" title="Link to this definition">#</a></dt>
+<dd><p>Merge with another TuningConfigs, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predicate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.filter" title="Link to this definition">#</a></dt>
+<dd><p>Filter configs by predicate, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.map">
+<span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.map" title="Link to this definition">#</a></dt>
+<dd><p>Apply a transformation to each config, returning a new TuningConfigs.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-panther.tuner.SkAutoTuner.Configs">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-panther.tuner.SkAutoTuner.Configs" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">LayerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Configuration for a single layer or group of layers to tune.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.layer_names">
+<span class="sig-name descname"><span class="pre">layer_names</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.layer_names" title="Link to this definition">#</a></dt>
+<dd><p>Layer selector (string, list, or dict with criteria)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.params">
+<span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.params" title="Link to this definition">#</a></dt>
+<dd><p>Dictionary of parameter names to ParamSpec or list of values</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.separate">
+<span class="sig-name descname"><span class="pre">separate</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.separate" title="Link to this definition">#</a></dt>
+<dd><p>Whether to tune each layer independently</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.copy_weights">
+<span class="sig-name descname"><span class="pre">copy_weights</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.copy_weights" title="Link to this definition">#</a></dt>
+<dd><p>Whether to copy weights when replacing layers</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize a layer configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer_names</strong> – Layer selector, can be:
+- A string: Regex pattern or substring
+- A list of strings: Multiple patterns or exact names
+- A dictionary with selection criteria (pattern, type, contains, indices, range)</p></li>
+<li><p><strong>params</strong> – Dictionary of parameter names and their possible values</p></li>
+<li><p><strong>separate</strong> – Whether to tune layers separately or jointly</p></li>
+<li><p><strong>copy_weights</strong> – Whether to copy weights when replacing layers</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerConfig.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig.clone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.clone" title="Link to this definition">#</a></dt>
+<dd><p>Create a deep copy of this LayerConfig.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new LayerConfig instance with the same properties</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">TuningConfigs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Collection of LayerConfig objects for tuning multiple layer groups.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize with a list of layer configurations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>configs</strong> – List of LayerConfig objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.add" title="Link to this definition">#</a></dt>
+<dd><p>Add a LayerConfig, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.clone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.clone" title="Link to this definition">#</a></dt>
+<dd><p>Create a deep copy of this TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predicate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.filter" title="Link to this definition">#</a></dt>
+<dd><p>Filter configs by predicate, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.map">
+<span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.map" title="Link to this definition">#</a></dt>
+<dd><p>Apply a transformation to each config, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.merge">
+<span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.merge" title="Link to this definition">#</a></dt>
+<dd><p>Merge with another TuningConfigs, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.remove">
+<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.remove" title="Link to this definition">#</a></dt>
+<dd><p>Remove a LayerConfig by index, returning a new TuningConfigs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.TuningConfigs.replace">
+<span class="sig-name descname"><span class="pre">replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs.replace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.replace" title="Link to this definition">#</a></dt>
+<dd><p>Replace a LayerConfig at index, returning a new TuningConfigs.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerNameResolver">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">LayerNameResolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerNameResolver.html#LayerNameResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Provides intuitive ways to select layers for tuning in large models.</p>
+<p>This resolver allows users to specify layers using patterns, types, or indices
+rather than requiring exact layer names.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerNameResolver.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerNameResolver.html#LayerNameResolver.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize the resolver with a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> – The neural network model to analyze</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.LayerNameResolver.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">selectors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/LayerNameResolver.html#LayerNameResolver.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.resolve" title="Link to this definition">#</a></dt>
+<dd><p>Resolve layer name selectors to actual layer names in the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>selectors</strong> – <p>One or more selectors to match layers. Can be:</p>
+<ul>
+<li><p>A single string pattern (e.g., “encoder.*attention”)</p></li>
+<li><p>A list of string patterns</p></li>
+<li><p>A dictionary with keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’pattern’: String or list of regex patterns</p></li>
+<li><p>’type’: Layer type or list of types (e.g., ‘Linear’, ‘Conv2d’)</p></li>
+<li><p>’contains’: String that layer name must contain</p></li>
+<li><p>’indices’: Indices to select from matched layers (e.g., [0, 2, 4] for first, third, fifth)</p></li>
+<li><p>’range’: Range of indices as [start, end, step]</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of resolved layer names that match the selectors</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamsResolver">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">ParamsResolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamsResolver.html#ParamsResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A class to resolve parameters for the SkAutoTuner.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamsResolver.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamsResolver.html#ParamsResolver.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize the resolver with a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The neural network model to analyze</p></li>
+<li><p><strong>verbose</strong> – Whether to print verbose logs</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.ParamsResolver.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamsResolver.html#ParamsResolver.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.resolve" title="Link to this definition">#</a></dt>
+<dd><p>Resolves and returns the parameters.</p>
+<p>If config.params is a dictionary, it’s returned as is, wrapped in TuningConfigs.
+If config.params is “auto”, it automatically determines parameters based on layer types and sizes.
+Otherwise, raises a ValueError.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The resolved parameters as TuningConfigs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Categorical">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">Categorical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">choices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Categorical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Categorical" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A categorical parameter that takes values from a fixed set of choices.</p>
+<p class="rubric">Examples</p>
+<p>Categorical([1, 2, 3])  # Integer choices
+Categorical([“relu”, “gelu”, “silu”])  # String choices
+Categorical([True, False])  # Boolean choices</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Categorical.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">choices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Categorical.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Categorical.choices">
+<span class="sig-name descname"><span class="pre">choices</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Categorical.choices" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Int">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">Int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Int" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>An integer parameter within a range [low, high].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> – Lower bound (inclusive)</p></li>
+<li><p><strong>high</strong> – Upper bound (inclusive)</p></li>
+<li><p><strong>step</strong> – Step size for discrete values (default: 1)</p></li>
+<li><p><strong>log</strong> – Whether to sample in log scale (useful for parameters like learning rate)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Int(1, 100)  # Integer from 1 to 100
+Int(8, 512, step=8)  # Multiples of 8 from 8 to 512
+Int(1, 1000, log=True)  # Log-scale integer sampling</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Int.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Int.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Int.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Int.log" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Int.step">
+<span class="sig-name descname"><span class="pre">step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Int.step" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Int.low">
+<span class="sig-name descname"><span class="pre">low</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Int.low" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Int.high">
+<span class="sig-name descname"><span class="pre">high</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Int.high" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Float">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.SkAutoTuner.Configs.</span></span><span class="sig-name descname"><span class="pre">Float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Float" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A floating-point parameter within a range [low, high].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> – Lower bound (inclusive)</p></li>
+<li><p><strong>high</strong> – Upper bound (inclusive)</p></li>
+<li><p><strong>step</strong> – Step size for discrete values (None for continuous)</p></li>
+<li><p><strong>log</strong> – Whether to sample in log scale</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Float(0.0, 1.0)  # Continuous float from 0 to 1
+Float(1e-5, 1e-1, log=True)  # Log-scale float (e.g., learning rate)
+Float(0.1, 1.0, step=0.1)  # Discrete float values</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Float.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Float.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Float.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Float.log" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Float.step">
+<span class="sig-name descname"><span class="pre">step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Float.step" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Float.low">
+<span class="sig-name descname"><span class="pre">low</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Float.low" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.SkAutoTuner.Configs.Float.high">
+<span class="sig-name descname"><span class="pre">high</span></span><a class="headerlink" href="#panther.tuner.SkAutoTuner.Configs.Float.high" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.LayerConfig">panther.tuner.SkAutoTuner.Configs.LayerConfig module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig"><code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.layer_names"><code class="docutils literal notranslate"><span class="pre">LayerConfig.layer_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.params"><code class="docutils literal notranslate"><span class="pre">LayerConfig.params</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.separate"><code class="docutils literal notranslate"><span class="pre">LayerConfig.separate</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.copy_weights"><code class="docutils literal notranslate"><span class="pre">LayerConfig.copy_weights</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.__init__"><code class="docutils literal notranslate"><span class="pre">LayerConfig.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.LayerConfig.clone"><code class="docutils literal notranslate"><span class="pre">LayerConfig.clone()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.LayerNameResolver">panther.tuner.SkAutoTuner.Configs.LayerNameResolver module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.__init__"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.LayerNameResolver.resolve"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.ParamSpec">panther.tuner.SkAutoTuner.Configs.ParamSpec module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical"><code class="docutils literal notranslate"><span class="pre">Categorical</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.choices"><code class="docutils literal notranslate"><span class="pre">Categorical.choices</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Categorical.__init__"><code class="docutils literal notranslate"><span class="pre">Categorical.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int"><code class="docutils literal notranslate"><span class="pre">Int</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.low"><code class="docutils literal notranslate"><span class="pre">Int.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.high"><code class="docutils literal notranslate"><span class="pre">Int.high</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.step"><code class="docutils literal notranslate"><span class="pre">Int.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.log"><code class="docutils literal notranslate"><span class="pre">Int.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Int.__init__"><code class="docutils literal notranslate"><span class="pre">Int.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float"><code class="docutils literal notranslate"><span class="pre">Float</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.low"><code class="docutils literal notranslate"><span class="pre">Float.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.high"><code class="docutils literal notranslate"><span class="pre">Float.high</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.step"><code class="docutils literal notranslate"><span class="pre">Float.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.log"><code class="docutils literal notranslate"><span class="pre">Float.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.Float.__init__"><code class="docutils literal notranslate"><span class="pre">Float.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.is_param_spec"><code class="docutils literal notranslate"><span class="pre">is_param_spec()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.to_categorical"><code class="docutils literal notranslate"><span class="pre">to_categorical()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamSpec.get_param_choices"><code class="docutils literal notranslate"><span class="pre">get_param_choices()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.ParamsResolver">panther.tuner.SkAutoTuner.Configs.ParamsResolver module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver"><code class="docutils literal notranslate"><span class="pre">ParamsResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.__init__"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.ParamsResolver.resolve"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs.TuningConfigs">panther.tuner.SkAutoTuner.Configs.TuningConfigs module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs"><code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.__init__"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.add"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.add()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.remove"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.remove()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.replace"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.replace()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.clone"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.clone()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.merge"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.merge()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.filter"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.filter()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.TuningConfigs.map"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.map()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.tuner.SkAutoTuner.Configs">Module contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig"><code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.layer_names"><code class="docutils literal notranslate"><span class="pre">LayerConfig.layer_names</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.params"><code class="docutils literal notranslate"><span class="pre">LayerConfig.params</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.separate"><code class="docutils literal notranslate"><span class="pre">LayerConfig.separate</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.copy_weights"><code class="docutils literal notranslate"><span class="pre">LayerConfig.copy_weights</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.__init__"><code class="docutils literal notranslate"><span class="pre">LayerConfig.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerConfig.clone"><code class="docutils literal notranslate"><span class="pre">LayerConfig.clone()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs"><code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.__init__"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.add"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.add()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.clone"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.clone()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.filter"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.filter()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.map"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.map()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.merge"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.merge()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.remove"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.remove()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.TuningConfigs.replace"><code class="docutils literal notranslate"><span class="pre">TuningConfigs.replace()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.__init__"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.LayerNameResolver.resolve"><code class="docutils literal notranslate"><span class="pre">LayerNameResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver"><code class="docutils literal notranslate"><span class="pre">ParamsResolver</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.__init__"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.ParamsResolver.resolve"><code class="docutils literal notranslate"><span class="pre">ParamsResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Categorical"><code class="docutils literal notranslate"><span class="pre">Categorical</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Categorical.__init__"><code class="docutils literal notranslate"><span class="pre">Categorical.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Categorical.choices"><code class="docutils literal notranslate"><span class="pre">Categorical.choices</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int"><code class="docutils literal notranslate"><span class="pre">Int</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.__init__"><code class="docutils literal notranslate"><span class="pre">Int.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.log"><code class="docutils literal notranslate"><span class="pre">Int.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.step"><code class="docutils literal notranslate"><span class="pre">Int.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.low"><code class="docutils literal notranslate"><span class="pre">Int.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Int.high"><code class="docutils literal notranslate"><span class="pre">Int.high</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float"><code class="docutils literal notranslate"><span class="pre">Float</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.__init__"><code class="docutils literal notranslate"><span class="pre">Float.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.log"><code class="docutils literal notranslate"><span class="pre">Float.log</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.step"><code class="docutils literal notranslate"><span class="pre">Float.step</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.low"><code class="docutils literal notranslate"><span class="pre">Float.low</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SkAutoTuner.Configs.Float.high"><code class="docutils literal notranslate"><span class="pre">Float.high</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

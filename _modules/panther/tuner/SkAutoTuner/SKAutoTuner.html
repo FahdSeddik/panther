@@ -1,0 +1,1298 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>panther.tuner.SkAutoTuner.SKAutoTuner &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/panther/tuner/SkAutoTuner/SKAutoTuner';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2F_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for panther.tuner.SkAutoTuner.SKAutoTuner</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">LayerNameResolver</span><span class="p">,</span> <span class="n">ParamsResolver</span><span class="p">,</span> <span class="n">TuningConfigs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Configs.ParamSpec</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_param_choices</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.layer_type_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">LAYER_TYPE_MAPPING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Searching</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptunaSearch</span><span class="p">,</span> <span class="n">SearchAlgorithm</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+
+<div class="viewcode-block" id="SKAutoTuner">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SKAutoTuner</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Auto-tuner for sketched neural network layers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SKAutoTuner.__init__">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">configs</span><span class="p">:</span> <span class="n">TuningConfigs</span><span class="p">,</span>
+        <span class="n">accuracy_eval_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span>
+        <span class="n">search_algorithm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SearchAlgorithm</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">accuracy_threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">optmization_eval_func</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_runs_per_param</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the autotuner.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: The neural network model to tune</span>
+<span class="sd">            configs: Configuration for the layers to tune</span>
+<span class="sd">            accuracy_eval_func: Evaluation function that takes a model and returns an accuracy score (higher is better)</span>
+<span class="sd">            search_algorithm: Search algorithm to use for finding optimal parameters</span>
+<span class="sd">            verbose: Whether to print progress during tuning</span>
+<span class="sd">            accuracy_threshold: Minimum acceptable accuracy (if None, will use accuracy_eval_func for optimization)</span>
+<span class="sd">            optmization_eval_func: Function to maxmimize (e.g., speed) after reaching the accuracy threshold</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_eval_func</span> <span class="o">=</span> <span class="n">accuracy_eval_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span> <span class="o">=</span> <span class="n">search_algorithm</span> <span class="ow">or</span> <span class="n">OptunaSearch</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_runs_per_param</span> <span class="o">=</span> <span class="n">num_runs_per_param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_threshold</span> <span class="o">=</span> <span class="n">accuracy_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optmization_eval_func</span> <span class="o">=</span> <span class="n">optmization_eval_func</span>
+        <span class="c1"># Dictionary to store results for each layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Dictionary to store best parameters for each layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Map from layer name to layer object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Initialize the layer name resolver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_layer_map</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span> <span class="o">=</span> <span class="n">LayerNameResolver</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">paramsResolver</span> <span class="o">=</span> <span class="n">ParamsResolver</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>
+        <span class="p">)</span>
+        <span class="c1"># Resolve layer names in configs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_configs_names</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_params_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_configs</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_configs_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="n">TuningConfigs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TuningConfigs</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve layer names in configs to actual layer names in the model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            configs: Configuration for the layers to tune</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated configuration with resolved layer names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resolved_configs</span> <span class="o">=</span> <span class="n">TuningConfigs</span><span class="p">([])</span>
+
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="o">.</span><span class="n">configs</span><span class="p">:</span>
+            <span class="c1"># Make a deep copy of the config to avoid modifying the original</span>
+            <span class="n">resolved_config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+                <span class="n">layer_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">),</span>
+                <span class="n">params</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+                <span class="n">separate</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">separate</span><span class="p">,</span>
+                <span class="n">copy_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">copy_weights</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">resolved_configs</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resolved_config</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resolved_configs</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_params_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="n">TuningConfigs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TuningConfigs</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolve parameter names in configs to actual parameter names in the model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            configs: Configuration for the layers to tune</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated configuration with resolved parameter names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resolved_configs</span> <span class="o">=</span> <span class="n">TuningConfigs</span><span class="p">([])</span>
+
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">configs</span><span class="o">.</span><span class="n">configs</span><span class="p">:</span>
+            <span class="c1"># Make a deep copy of the config to avoid modifying the original</span>
+            <span class="n">tmp_resolved_configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">paramsResolver</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+            <span class="c1"># this can return list of configs</span>
+            <span class="n">resolved_configs</span> <span class="o">=</span> <span class="n">resolved_configs</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tmp_resolved_configs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resolved_configs</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate configuration settings before tuning.</span>
+<span class="sd">        Checks:</span>
+<span class="sd">        1. No empty layer groups</span>
+<span class="sd">        2. No empty parameter spaces</span>
+<span class="sd">        3. Parameters are valid for layer types</span>
+<span class="sd">        4. Grouped layers (if not separate) have compatible parameters</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any configuration issue is found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">configs</span><span class="p">):</span>
+            <span class="c1"># Check for empty layer groups</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Config </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> has no layer names specified&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Check for empty parameter spaces</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Config </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> for layers </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="si">}</span><span class="s2"> has no parameters to tune&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Get actual layer objects and check compatibility</span>
+            <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">layer_name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_layer_by_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Layer &#39;</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2">&#39; in config </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> not found in model: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Check each parameter is valid for the layer types</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+                <span class="n">layer_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LAYER_TYPE_MAPPING</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Layer &#39;</span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2">&#39; is of type </span><span class="si">{</span><span class="n">layer_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, which is not supported for sketching&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="n">valid_params</span> <span class="o">=</span> <span class="n">LAYER_TYPE_MAPPING</span><span class="p">[</span><span class="n">layer_type</span><span class="p">][</span><span class="s2">&quot;params&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_params</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&#39; is not valid for layer type </span><span class="si">{</span><span class="n">layer_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Valid parameters are: </span><span class="si">{</span><span class="n">valid_params</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Check parameter compatibility across layers in the group</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">param_sets</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">set</span><span class="p">(</span><span class="n">LAYER_TYPE_MAPPING</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">)][</span><span class="s2">&quot;params&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span>
+                <span class="p">]</span>
+                <span class="n">common_params</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">param_sets</span><span class="p">)</span>
+
+                <span class="c1"># Check that all parameters in the config are valid for all layers</span>
+                <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_params</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Parameter &#39;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&#39; in config </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> is not compatible with all layers in the group. &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;For joint tuning, all layers must support the same parameters.&quot;</span>
+                        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_layer_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a mapping from layer names to layer objects.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_children</span><span class="p">():</span>
+            <span class="n">full_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">[</span><span class="n">full_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_layer_map</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">full_name</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_layer_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a layer by its name.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Layer </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> not found in the model&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_parent_module_and_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the parent module and attribute name for a layer.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">layer_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Layer </span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2"> not found in the model&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">layer_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">layer_name</span>
+
+        <span class="n">parent_name</span><span class="p">,</span> <span class="n">child_name</span> <span class="o">=</span> <span class="n">layer_name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_layer_by_name</span><span class="p">(</span><span class="n">parent_name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+
+        <span class="k">return</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child_name</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_replace_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Swap a layer in the model with a new layer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            layer_name: Name of the layer to swap</span>
+<span class="sd">            new_layer: New layer to replace the old one</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_module_and_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">new_layer</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;replaced </span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">new_layer</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sketch_layer</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">layer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">layer_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">copy_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace a layer with its sketched version.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            layer_name: Name of the layer to replace</span>
+<span class="sd">            layer_type: Type of the layer</span>
+<span class="sd">            params: Parameters for the sketched layer</span>
+<span class="sd">            copy_weights: Whether to copy the learnable parameters from the original</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if layer was replaced, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_module_and_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+        <span class="n">original_layer</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">sketched_layer</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Initialize sketched_layer</span>
+
+        <span class="c1"># Check if the layer type is supported</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">original_layer</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">LAYER_TYPE_MAPPING</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Layer type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">original_layer</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is not supported for sketching&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Get the sketched layer class and its parameters</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.layer_type_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_sketched_class</span>
+
+        <span class="n">sketched_class</span> <span class="o">=</span> <span class="n">get_sketched_class</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">original_layer</span><span class="p">))</span>
+
+        <span class="c1"># Create the sketched layer with original parameters and new sketching parameters</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+            <span class="n">sketched_layer</span> <span class="o">=</span> <span class="n">sketched_class</span><span class="p">(</span>
+                <span class="n">in_features</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">in_features</span><span class="p">,</span>
+                <span class="n">out_features</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">out_features</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">W_init</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">copy_weights</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">params</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Copy bias if needed</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">copy_weights</span>
+                <span class="ow">and</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">sketched_layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="n">sketched_layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">original_layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># for the weights its handled in the SKLinear constructor</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+            <span class="c1"># Create a new sketched convolution layer</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">panther.nn.conv2d</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKConv2d</span>
+
+            <span class="k">if</span> <span class="n">copy_weights</span><span class="p">:</span>
+                <span class="n">sketched_layer</span> <span class="o">=</span> <span class="n">SKConv2d</span><span class="o">.</span><span class="n">fromTorch</span><span class="p">(</span><span class="n">original_layer</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sketched_layer</span> <span class="o">=</span> <span class="n">sketched_class</span><span class="p">(</span>
+                    <span class="n">in_channels</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">in_channels</span><span class="p">,</span>
+                    <span class="n">out_channels</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span>
+                    <span class="n">kernel_size</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span>
+                    <span class="n">stride</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+                    <span class="n">padding</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">params</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">MultiheadAttention</span><span class="p">):</span>
+            <span class="c1"># Create a new sketched attention layer</span>
+            <span class="n">sketched_layer</span> <span class="o">=</span> <span class="n">sketched_class</span><span class="p">(</span>
+                <span class="n">embed_dim</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span><span class="p">,</span>
+                <span class="n">num_heads</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
+                <span class="n">dropout</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+                <span class="n">bias</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_weight</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_weight</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">params</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">copy_weights</span><span class="p">:</span>
+                <span class="c1"># Transfer learnable parameters from the original attention layer</span>
+                <span class="n">sketched_layer</span><span class="o">.</span><span class="n">Wq</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                    <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_weight</span><span class="p">[:</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="p">)</span>
+                <span class="n">sketched_layer</span><span class="o">.</span><span class="n">Wk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                    <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_weight</span><span class="p">[</span>
+                        <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span> <span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span><span class="p">,</span> <span class="p">:</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">sketched_layer</span><span class="o">.</span><span class="n">Wv</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                    <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_weight</span><span class="p">[</span>
+                        <span class="mi">2</span> <span class="o">*</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span><span class="p">,</span> <span class="p">:</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">sketched_layer</span><span class="o">.</span><span class="n">W0</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">original_layer</span><span class="o">.</span><span class="n">out_proj</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sketched_layer</span><span class="o">.</span><span class="n">bias</span><span class="p">:</span>
+                    <span class="n">sketched_layer</span><span class="o">.</span><span class="n">bq</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                        <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_bias</span><span class="p">[:</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span><span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">sketched_layer</span><span class="o">.</span><span class="n">bk</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                        <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_bias</span><span class="p">[</span>
+                            <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span> <span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">sketched_layer</span><span class="o">.</span><span class="n">bv</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                        <span class="n">original_layer</span><span class="o">.</span><span class="n">in_proj_bias</span><span class="p">[</span>
+                            <span class="mi">2</span> <span class="o">*</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">original_layer</span><span class="o">.</span><span class="n">embed_dim</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">sketched_layer</span><span class="o">.</span><span class="n">b0</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">original_layer</span><span class="o">.</span><span class="n">out_proj</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If the layer type is not nn.Linear, nn.Conv2d, or nn.MultiheadAttention,</span>
+            <span class="c1"># sketched_layer remains None, and we return it as is.</span>
+            <span class="k">return</span> <span class="n">sketched_layer</span>
+
+        <span class="c1"># Replace the layer</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sketched_layer</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Replaced </span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2"> with sketched version using parameters: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sketched_layer</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">accuracy_score</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the model and calculate the optimization score.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            accuracy_score: Accuracy score of the model</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (final_score, speed_score)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">speed_score</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">optmization_eval_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">accuracy_score</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_threshold</span><span class="p">:</span>
+                <span class="n">speed_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optmization_eval_func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="n">speed_score</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">accuracy_score</span>
+
+        <span class="k">return</span> <span class="n">score</span><span class="p">,</span> <span class="n">speed_score</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_try_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">copy_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply parameters to a layer, evaluate the model, and restore the original layer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            layer_name: Name of the layer to tune</span>
+<span class="sd">            params: Parameters to try</span>
+<span class="sd">            copy_weights: Whether to copy weights from original layer</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of (score, accuracy_score, speed_score, original_layer)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get and store original layer</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_layer_by_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+
+        <span class="c1"># Apply parameters</span>
+        <span class="n">new_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sketch_layer</span><span class="p">(</span>
+            <span class="n">layer_name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">),</span> <span class="n">params</span><span class="p">,</span> <span class="n">copy_weights</span><span class="o">=</span><span class="n">copy_weights</span>
+        <span class="p">)</span>
+
+        <span class="n">accuracy_score</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">speed_score</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># send resouce if its not none else it will be ignored</span>
+        <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Evaluate</span>
+            <span class="n">accuracy_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_eval_func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="n">score</span><span class="p">,</span> <span class="n">speed_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_model</span><span class="p">(</span><span class="n">accuracy_score</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Evaluate with resource</span>
+            <span class="n">accuracy_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_eval_func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">)</span>
+            <span class="n">score</span><span class="p">,</span> <span class="n">speed_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_model</span><span class="p">(</span><span class="n">accuracy_score</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">score</span><span class="p">,</span> <span class="n">accuracy_score</span><span class="p">,</span> <span class="n">speed_score</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">new_layer</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_tune_layer_group_seperate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">LayerConfig</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="n">layer_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">layer_name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tuning layer: </span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Initialize search algorithm for this layer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+            <span class="n">best_score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+            <span class="n">best_params</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">layer_results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">best_layer</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">get_next_params</span><span class="p">()</span>
+                <span class="c1"># mainly for hyperband search algorithms</span>
+                <span class="n">resource</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">get_resource</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="p">,</span> <span class="s2">&quot;get_resource&quot;</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">break</span>  <span class="c1"># No more parameter combinations to try</span>
+
+                <span class="n">best_score_across_param_runs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+                <span class="n">best_accuracy_score_across_param_runs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+                <span class="n">best_speed_score_across_param_runs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+                <span class="n">best_layer_across_param_runs</span> <span class="o">=</span> <span class="kc">None</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trying parameters: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">run_n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs_per_param</span><span class="p">):</span>
+                    <span class="c1"># Apply parameters and evaluate</span>
+                    <span class="n">score</span><span class="p">,</span> <span class="n">accuracy_score</span><span class="p">,</span> <span class="n">speed_score</span><span class="p">,</span> <span class="n">original_layer</span><span class="p">,</span> <span class="n">new_layer</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_try_parameters</span><span class="p">(</span>
+                            <span class="n">layer_name</span><span class="p">,</span>
+                            <span class="n">params</span><span class="p">,</span>
+                            <span class="n">copy_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">copy_weights</span><span class="p">,</span>
+                            <span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Restore original layer for next run</span>
+                    <span class="n">parent</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_module_and_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">original_layer</span><span class="p">)</span>
+
+                    <span class="c1"># update local things</span>
+                    <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score_across_param_runs</span><span class="p">:</span>
+                        <span class="n">best_score_across_param_runs</span> <span class="o">=</span> <span class="n">score</span>
+                        <span class="n">best_accuracy_score_across_param_runs</span> <span class="o">=</span> <span class="n">accuracy_score</span>
+                        <span class="n">best_speed_score_across_param_runs</span> <span class="o">=</span> <span class="n">speed_score</span>
+                        <span class="n">best_layer_across_param_runs</span> <span class="o">=</span> <span class="n">new_layer</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;run: </span><span class="si">{</span><span class="n">run_n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs_per_param</span><span class="si">}</span><span class="s2"> - accuracy_score: </span><span class="si">{</span><span class="n">accuracy_score</span><span class="si">}</span><span class="s2">, speed_score: </span><span class="si">{</span><span class="n">speed_score</span><span class="si">}</span><span class="s2">, final score: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+
+                <span class="c1"># Update search algorithm with average score</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">best_score_across_param_runs</span><span class="p">)</span>
+
+                <span class="c1"># Save result with full metrics</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
+                    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">best_score_across_param_runs</span><span class="p">,</span>
+                    <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">best_accuracy_score_across_param_runs</span><span class="p">,</span>
+                    <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="n">best_speed_score_across_param_runs</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="n">layer_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">best_score_across_param_runs</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                    <span class="n">best_score</span> <span class="o">=</span> <span class="n">best_score_across_param_runs</span>
+                    <span class="n">best_params</span> <span class="o">=</span> <span class="n">params</span>
+                    <span class="n">best_layer</span> <span class="o">=</span> <span class="n">best_layer_across_param_runs</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Tried parameters: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">, accuracy_score: </span><span class="si">{</span><span class="n">best_accuracy_score_across_param_runs</span><span class="si">}</span><span class="s2">, speed_score: </span><span class="si">{</span><span class="n">best_speed_score_across_param_runs</span><span class="si">}</span><span class="s2">, final score: </span><span class="si">{</span><span class="n">best_score_across_param_runs</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Store results for this layer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">layer_results</span>
+
+            <span class="c1"># Save best parameters for this layer</span>
+            <span class="n">layer_params</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">best_params</span><span class="p">,</span>
+                <span class="s2">&quot;copy_weights&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">copy_weights</span><span class="p">,</span>
+                <span class="s2">&quot;best_layer&quot;</span><span class="p">:</span> <span class="n">best_layer</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;  Best parameters for </span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">best_params</span><span class="si">}</span><span class="s2">, score: </span><span class="si">{</span><span class="n">best_score</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">layer_params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_tune_layer_group_joint</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">LayerConfig</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="c1"># Initialize search algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">best_score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+        <span class="n">best_params</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">all_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">best_layers</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">get_next_params</span><span class="p">()</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">get_resource</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="p">,</span> <span class="s2">&quot;get_resource&quot;</span><span class="p">)</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>  <span class="c1"># No more parameter combinations to try</span>
+
+            <span class="n">best_score_across_param_runs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+            <span class="n">best_accuracy_score_across_param_runs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+            <span class="n">best_speed_score_across_param_runs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+            <span class="n">best_layers_across_param_runs</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trying parameters: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">run_n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs_per_param</span><span class="p">):</span>
+                <span class="n">original_layers</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">new_layers</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># Apply parameters to all layers</span>
+                <span class="k">for</span> <span class="n">layer_name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">:</span>
+                    <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_layer_by_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+                    <span class="n">original_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+                    <span class="n">new_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sketch_layer</span><span class="p">(</span>
+                        <span class="n">layer_name</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">),</span>
+                        <span class="n">params</span><span class="p">,</span>
+                        <span class="n">copy_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">copy_weights</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">new_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_layer</span><span class="p">)</span>
+
+                <span class="n">accuracy_score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">speed_score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+
+                <span class="c1"># send resouce if its not none else it will be ignored</span>
+                <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Evaluate</span>
+                    <span class="n">accuracy_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_eval_func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                    <span class="n">score</span><span class="p">,</span> <span class="n">speed_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_model</span><span class="p">(</span><span class="n">accuracy_score</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Evaluate with resource</span>
+                    <span class="n">accuracy_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_eval_func</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="n">resource</span>
+                    <span class="p">)</span>
+                    <span class="n">score</span><span class="p">,</span> <span class="n">speed_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_model</span><span class="p">(</span>
+                        <span class="n">accuracy_score</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="n">resource</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># Restore original layers</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">):</span>
+                    <span class="n">parent</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_module_and_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+                    <span class="n">original_layer</span> <span class="o">=</span> <span class="n">original_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">original_layer</span><span class="p">)</span>
+
+                <span class="c1"># Check if this run is the best for the current parameter set</span>
+                <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score_across_param_runs</span><span class="p">:</span>
+                    <span class="n">best_score_across_param_runs</span> <span class="o">=</span> <span class="n">score</span>
+                    <span class="k">if</span> <span class="n">accuracy_score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">best_accuracy_score_across_param_runs</span> <span class="o">=</span> <span class="n">accuracy_score</span>
+                    <span class="k">if</span> <span class="n">speed_score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">best_speed_score_across_param_runs</span> <span class="o">=</span> <span class="n">speed_score</span>
+                    <span class="n">best_layers_across_param_runs</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">new_layers</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;run: </span><span class="si">{</span><span class="n">run_n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_runs_per_param</span><span class="si">}</span><span class="s2"> - accuracy_score: </span><span class="si">{</span><span class="n">accuracy_score</span><span class="si">}</span><span class="s2">, speed_score: </span><span class="si">{</span><span class="n">speed_score</span><span class="si">}</span><span class="s2">, final score: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="c1"># Update search algorithm with best score</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">best_score_across_param_runs</span><span class="p">)</span>
+
+            <span class="c1"># Save result with full metrics</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
+                <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">best_score_across_param_runs</span><span class="p">,</span>
+                <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">best_accuracy_score_across_param_runs</span><span class="p">,</span>
+                <span class="s2">&quot;speed&quot;</span><span class="p">:</span> <span class="n">best_speed_score_across_param_runs</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">all_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">best_score_across_param_runs</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                <span class="n">best_score</span> <span class="o">=</span> <span class="n">best_score_across_param_runs</span>
+                <span class="n">best_params</span> <span class="o">=</span> <span class="n">params</span>
+                <span class="n">best_layers</span> <span class="o">=</span> <span class="n">best_layers_across_param_runs</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tried parameters: </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2">, accuracy_score: </span><span class="si">{</span><span class="n">best_accuracy_score_across_param_runs</span><span class="si">}</span><span class="s2">, speed_score: </span><span class="si">{</span><span class="n">best_speed_score_across_param_runs</span><span class="si">}</span><span class="s2">, final score: </span><span class="si">{</span><span class="n">best_score_across_param_runs</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Store results</span>
+        <span class="n">group_key</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">group_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_results</span>
+
+        <span class="c1"># Return best parameters for all layers in the group</span>
+        <span class="n">result_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">layer_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">):</span>
+            <span class="n">result_dict</span><span class="p">[</span><span class="n">layer_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">best_params</span><span class="p">,</span>
+                <span class="s2">&quot;copy_weights&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">copy_weights</span><span class="p">,</span>
+                <span class="s2">&quot;best_layer&quot;</span><span class="p">:</span> <span class="n">best_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">best_layers</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">result_dict</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tune_layer_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">LayerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tune a group of layers according to the configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config: Layer configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of best parameters for each layer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If separate is False, tune all layers together with the same parameters</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">separate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_tune_layer_group_joint</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="c1"># If separate is True, tune each layer individually</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_tune_layer_group_seperate</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SKAutoTuner.tune">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.tune">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tune</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tune all layer groups according to their configurations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of best parameters for each layer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Tune each layer group</span>
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">configs</span><span class="p">:</span>
+            <span class="c1"># tune the layer group</span>
+            <span class="n">layer_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tune_layer_group</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">layer_params</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.apply_best_params">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.apply_best_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_best_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply the best parameters to the model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The model with the best parameters applied</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Apply best parameters to each layer</span>
+        <span class="k">for</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;best_layer&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># If no parameters were found, skip this layer</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No parameters found for layer </span><span class="si">{</span><span class="n">layer_name</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_layer_by_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>  <span class="c1"># noqa: F841</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_replace_layer</span><span class="p">(</span><span class="n">layer_name</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;best_layer&quot;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.replace_without_tuning">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.replace_without_tuning">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">replace_without_tuning</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace layers with their sketched versions using the first parameter values without tuning.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The model with layers replaced</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Replace each layer with the first parameter values</span>
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">configs</span><span class="p">:</span>
+            <span class="n">default_params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="n">get_param_choices</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">choices</span><span class="p">:</span>
+                    <span class="n">default_params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">layer_name</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">layer_names</span><span class="p">:</span>
+                <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_layer_by_name</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sketch_layer</span><span class="p">(</span>
+                    <span class="n">layer_name</span><span class="p">,</span>
+                    <span class="nb">type</span><span class="p">(</span><span class="n">layer</span><span class="p">),</span>
+                    <span class="n">default_params</span><span class="p">,</span>
+                    <span class="n">copy_weights</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">copy_weights</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.get_results_dataframe">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.get_results_dataframe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_results_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;pd.DataFrame&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the results of the tuning process as a pandas DataFrame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataFrame with columns for layer name, parameters, accuracy, speed, and scores</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Requires pandas to be installed. Install with: pip install pandas</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;pandas is required for get_results_dataframe(). &quot;</span>
+                <span class="s2">&quot;Install it with: pip install pandas&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">results</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;layer_name&quot;</span><span class="p">:</span> <span class="n">layer_name</span><span class="p">}</span>
+                <span class="n">row</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">])</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;accuracy&quot;</span><span class="p">)</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;speed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;speed&quot;</span><span class="p">)</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.get_best_params">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.get_best_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_best_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the best parameters for each layer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary of best parameters for each layer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.save_tuning_results">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.save_tuning_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_tuning_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save tuning results to a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path: Path to save the results</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">,</span>
+            <span class="s2">&quot;best_params&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span><span class="p">,</span>
+            <span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">directory</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tuning results saved to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.load_tuning_results">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.load_tuning_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_tuning_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load tuning results from a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path: Path to load the results from</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: If the file does not exist</span>
+<span class="sd">            ValueError: If the file contains invalid data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Results file </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="s2">&quot;results&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span>
+            <span class="ow">or</span> <span class="s2">&quot;best_params&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid data format in </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_params</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;best_params&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tuning results loaded from </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.getResolver">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.getResolver">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getResolver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the resolver for the model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The resolver for the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolver</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.getConfigs">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.getConfigs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getConfigs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TuningConfigs</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current tuning configurations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The current tuning configurations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span></div>
+
+
+<div class="viewcode-block" id="SKAutoTuner.setConfigs">
+<a class="viewcode-back" href="../../../../panther.tuner.SkAutoTuner.html#panther.tuner.SKAutoTuner.setConfigs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setConfigs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="n">TuningConfigs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the tuning configurations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            configs: The new tuning configurations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">configs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_configs_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_params_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_configs</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

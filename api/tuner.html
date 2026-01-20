@@ -1,0 +1,1517 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>AutoTuner API &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/tuner';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference: Utilities" href="utils.html" />
+    <link rel="prev" title="Sketching API" href="sketch.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sketch.html">Sketching API</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/api/tuner.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Fapi/tuner.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api/tuner.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>AutoTuner API</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-dependencies">Optional Dependencies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#public-exports">Public Exports</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#skautotuner-class">SKAutoTuner Class</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tuning-workflow-methods">Tuning Workflow Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.tune"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.tune()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.apply_best_params"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.apply_best_params()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.replace_without_tuning"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.replace_without_tuning()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-analysis-methods">Results and Analysis Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.get_best_params"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.get_best_params()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.get_results_dataframe"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.get_results_dataframe()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#persistence-methods">Persistence Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.save_tuning_results"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.save_tuning_results()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.load_tuning_results"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.load_tuning_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-accessors">Configuration Accessors</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.getResolver"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.getResolver()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.getConfigs"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.getConfigs()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.setConfigs"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.setConfigs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-classes">Configuration Classes</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#layerconfig">LayerConfig</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.LayerConfig"><code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tuningconfigs">TuningConfigs</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.TuningConfigs"><code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#layer-selectors">Layer Selectors</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#string-pattern">String Pattern</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#list-of-patterns">List of Patterns</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dictionary-selector">Dictionary Selector</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-specification-types">Parameter Specification Types</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#categorical">Categorical</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.Categorical"><code class="docutils literal notranslate"><span class="pre">Categorical</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#int">Int</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.Int"><code class="docutils literal notranslate"><span class="pre">Int</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#float">Float</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.Float"><code class="docutils literal notranslate"><span class="pre">Float</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#legacy-list-format">Legacy List Format</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-parameter-generation">Automatic Parameter Generation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-auto-works">How “auto” Works</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#search-algorithms">Search Algorithms</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#searchalgorithm-interface">SearchAlgorithm Interface</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.initialize"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.initialize()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_next_params"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_next_params()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.update"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.update()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.save_state"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.save_state()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.load_state"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.load_state()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_best_params"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_best_params()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_best_score"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_best_score()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.reset"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.reset()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.is_finished"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.is_finished()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_resource"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_resource()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optunasearch">OptunaSearch</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch"><code class="docutils literal notranslate"><span class="pre">OptunaSearch</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.study"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.study</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.get_trials_dataframe"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.get_trials_dataframe()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.set_user_attr"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.set_user_attr()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.report_intermediate"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.report_intermediate()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.should_prune"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.should_prune()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#search-sampler-examples">Search Sampler Examples</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modelvisualizer">ModelVisualizer</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.ModelVisualizer"><code class="docutils literal notranslate"><span class="pre">ModelVisualizer</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.ModelVisualizer.print_module_tree"><code class="docutils literal notranslate"><span class="pre">ModelVisualizer.print_module_tree()</span></code></a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="autotuner-api">
+<h1>AutoTuner API<a class="headerlink" href="#autotuner-api" title="Link to this heading">#</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">panther.tuner</span></code> module provides automatic hyperparameter optimization for sketching parameters using <a class="reference external" href="https://optuna.org/">Optuna</a>, a modern hyperparameter optimization framework.</p>
+<section id="optional-dependencies">
+<h2>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Package</p></th>
+<th class="head"><p>Install Command</p></th>
+<th class="head"><p>Required For</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>pandas</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pandas</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_results_dataframe()</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For tuning result visualization, use Optuna’s built-in plots on <code class="docutils literal notranslate"><span class="pre">tuner.search_algorithm.study</span></code>.
+See the <span class="xref std std-ref">external-tools</span> section for examples.</p>
+</div>
+</section>
+<section id="public-exports">
+<h2>Public Exports<a class="headerlink" href="#public-exports" title="Link to this heading">#</a></h2>
+<p>All recommended imports are available directly from <code class="docutils literal notranslate"><span class="pre">panther.tuner</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="c1"># Core tuner</span>
+    <span class="n">SKAutoTuner</span><span class="p">,</span>
+    <span class="c1"># Configuration</span>
+    <span class="n">LayerConfig</span><span class="p">,</span>
+    <span class="n">TuningConfigs</span><span class="p">,</span>
+    <span class="c1"># Parameter specification types</span>
+    <span class="n">Categorical</span><span class="p">,</span>
+    <span class="n">Int</span><span class="p">,</span>
+    <span class="n">Float</span><span class="p">,</span>
+    <span class="c1"># Search algorithms</span>
+    <span class="n">SearchAlgorithm</span><span class="p">,</span>
+    <span class="n">OptunaSearch</span><span class="p">,</span>
+    <span class="c1"># Visualization (optional)</span>
+    <span class="n">ModelVisualizer</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>For advanced/internal APIs not re-exported at the top level, use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner.SkAutoTuner.Configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerNameResolver</span><span class="p">,</span> <span class="n">ParamsResolver</span>
+</pre></div>
+</div>
+</section>
+<section id="skautotuner-class">
+<h2>SKAutoTuner Class<a class="headerlink" href="#skautotuner-class" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">SKAutoTuner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy_eval_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optmization_eval_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_runs_per_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner" title="Link to this definition">#</a></dt>
+<dd><p>Auto-tuner for sketched neural network layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The neural network model to tune (<code class="docutils literal notranslate"><span class="pre">nn.Module</span></code>)</p></li>
+<li><p><strong>configs</strong> – Configuration for the layers to tune (<code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code>)</p></li>
+<li><p><strong>accuracy_eval_func</strong> – Evaluation function that takes a model and returns an accuracy score (higher is better)</p></li>
+<li><p><strong>search_algorithm</strong> – Search algorithm to use (default: <code class="docutils literal notranslate"><span class="pre">OptunaSearch()</span></code>)</p></li>
+<li><p><strong>verbose</strong> – Whether to print progress during tuning</p></li>
+<li><p><strong>accuracy_threshold</strong> – Minimum acceptable accuracy. If set along with <code class="docutils literal notranslate"><span class="pre">optmization_eval_func</span></code>, the tuner maximizes speed while maintaining accuracy ≥ threshold</p></li>
+<li><p><strong>optmization_eval_func</strong> – Function to maximize (e.g., throughput) after reaching the accuracy threshold</p></li>
+<li><p><strong>num_runs_per_param</strong> – Number of runs per parameter combination (for averaging noisy evaluations)</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The parameter is spelled <code class="docutils literal notranslate"><span class="pre">optmization_eval_func</span></code> (not “optimization”) in the current implementation.</p>
+</div>
+</dd></dl>
+
+<section id="tuning-workflow-methods">
+<h3>Tuning Workflow Methods<a class="headerlink" href="#tuning-workflow-methods" title="Link to this heading">#</a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.tune">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">tune</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.tune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.tune" title="Link to this definition">#</a></dt>
+<dd><p>Run the tuning process for all configured layer groups.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary mapping layer names to their best parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.apply_best_params">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">apply_best_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">nn.Module</span></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.apply_best_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.apply_best_params" title="Link to this definition">#</a></dt>
+<dd><p>Apply the best found parameters to the model, replacing layers with their sketched versions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The model with optimized sketched layers</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.replace_without_tuning">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">replace_without_tuning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">nn.Module</span></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.replace_without_tuning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.replace_without_tuning" title="Link to this definition">#</a></dt>
+<dd><p>Replace layers with sketched versions using the first parameter value from each specification, without running any tuning trials. Useful for quick testing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The model with layers replaced</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="results-and-analysis-methods">
+<h3>Results and Analysis Methods<a class="headerlink" href="#results-and-analysis-methods" title="Link to this heading">#</a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.get_best_params">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">get_best_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.get_best_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.get_best_params" title="Link to this definition">#</a></dt>
+<dd><p>Get the best parameters found for each layer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary mapping layer names to their best parameter configurations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.get_results_dataframe">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">get_results_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.get_results_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.get_results_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>Get all tuning results as a pandas DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame with columns: <code class="docutils literal notranslate"><span class="pre">layer_name</span></code>, parameter columns, <code class="docutils literal notranslate"><span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">accuracy</span></code>, <code class="docutils literal notranslate"><span class="pre">speed</span></code></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ImportError" title="(in Python v3.14)"><strong>ImportError</strong></a> – If pandas is not installed</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">results_df</span> <span class="o">=</span> <span class="n">tuner</span><span class="o">.</span><span class="n">get_results_dataframe</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results_df</span><span class="p">[[</span><span class="s2">&quot;layer_name&quot;</span><span class="p">,</span> <span class="s2">&quot;num_terms&quot;</span><span class="p">,</span> <span class="s2">&quot;low_rank&quot;</span><span class="p">,</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">,</span> <span class="s2">&quot;speed&quot;</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="persistence-methods">
+<h3>Persistence Methods<a class="headerlink" href="#persistence-methods" title="Link to this heading">#</a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.save_tuning_results">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">save_tuning_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.save_tuning_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.save_tuning_results" title="Link to this definition">#</a></dt>
+<dd><p>Save tuning results to a pickle file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Path to save the results</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.load_tuning_results">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">load_tuning_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.load_tuning_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.load_tuning_results" title="Link to this definition">#</a></dt>
+<dd><p>Load tuning results from a pickle file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Path to load results from</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If the file does not exist</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the file contains invalid data</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="configuration-accessors">
+<h3>Configuration Accessors<a class="headerlink" href="#configuration-accessors" title="Link to this heading">#</a></h3>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.getResolver">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">getResolver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../panther.tuner.SkAutoTuner.Configs.html#panther.tuner.SkAutoTuner.Configs.LayerNameResolver" title="panther.tuner.SkAutoTuner.Configs.LayerNameResolver"><span class="pre">LayerNameResolver</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.getResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.getResolver" title="Link to this definition">#</a></dt>
+<dd><p>Get the layer name resolver for advanced layer inspection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.getConfigs">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">getConfigs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#panther.tuner.TuningConfigs" title="panther.tuner.TuningConfigs"><span class="pre">TuningConfigs</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.getConfigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.getConfigs" title="Link to this definition">#</a></dt>
+<dd><p>Get the current (resolved) tuning configurations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SKAutoTuner.setConfigs">
+<span class="sig-prename descclassname"><span class="pre">SKAutoTuner.</span></span><span class="sig-name descname"><span class="pre">setConfigs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#panther.tuner.TuningConfigs" title="panther.tuner.TuningConfigs"><span class="pre">TuningConfigs</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/SKAutoTuner.html#SKAutoTuner.setConfigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SKAutoTuner.setConfigs" title="Link to this definition">#</a></dt>
+<dd><p>Set new tuning configurations. Automatically resolves layer names and parameters.</p>
+</dd></dl>
+
+</section>
+</section>
+<section id="configuration-classes">
+<h2>Configuration Classes<a class="headerlink" href="#configuration-classes" title="Link to this heading">#</a></h2>
+<section id="layerconfig">
+<h3>LayerConfig<a class="headerlink" href="#layerconfig" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.LayerConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">LayerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Configs/LayerConfig.html#LayerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.LayerConfig" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for a single layer or group of layers to tune.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer_names</strong> – Layer selector (see <a class="reference internal" href="#layer-selectors"><span class="std std-ref">Layer Selectors</span></a>)</p></li>
+<li><p><strong>params</strong> – Dictionary of parameter specifications (see <a class="reference internal" href="#param-specs"><span class="std std-ref">Parameter Specification Types</span></a>)</p></li>
+<li><p><strong>separate</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, tune each layer independently. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, tune all layers jointly with shared parameters</p></li>
+<li><p><strong>copy_weights</strong> – Whether to copy weights from original layers when creating sketched versions</p></li>
+</ul>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">Categorical</span><span class="p">,</span> <span class="n">Int</span>
+
+<span class="c1"># Tune fc1 and fc2 separately with the same parameter space</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">,</span> <span class="s2">&quot;fc2&quot;</span><span class="p">],</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span>
+        <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">copy_weights</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="tuningconfigs">
+<h3>TuningConfigs<a class="headerlink" href="#tuningconfigs" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.TuningConfigs">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">TuningConfigs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#panther.tuner.LayerConfig" title="panther.tuner.LayerConfig"><span class="pre">LayerConfig</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Configs/TuningConfigs.html#TuningConfigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.TuningConfigs" title="Link to this definition">#</a></dt>
+<dd><p>Collection of <code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code> objects for tuning multiple layer groups.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>configs</strong> – List of <code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code> objects</p>
+</dd>
+</dl>
+<p><strong>Container Methods:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">__len__()</span></code> - Number of configs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__getitem__(index)</span></code> - Get config by index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__iter__()</span></code> - Iterate over configs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add(config)</span></code> - Add a config (returns new <code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove(index)</span></code> - Remove config at index (returns new <code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">replace(index,</span> <span class="pre">config)</span></code> - Replace config at index (returns new <code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clone()</span></code> - Deep copy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">merge(other)</span></code> - Combine with another <code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">filter(predicate)</span></code> - Filter configs by predicate function</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">map(transform)</span></code> - Transform each config</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">TuningConfigs</span><span class="p">,</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">Categorical</span>
+
+<span class="n">configs</span> <span class="o">=</span> <span class="n">TuningConfigs</span><span class="p">([</span>
+    <span class="n">LayerConfig</span><span class="p">(</span>
+        <span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;encoder.*&quot;</span><span class="p">],</span>
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])},</span>
+    <span class="p">),</span>
+    <span class="n">LayerConfig</span><span class="p">(</span>
+        <span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;decoder.*&quot;</span><span class="p">],</span>
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">])},</span>
+    <span class="p">),</span>
+<span class="p">])</span>
+
+<span class="c1"># Access individual configs</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">))</span>  <span class="c1"># 2</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">configs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>    <span class="c1"># First LayerConfig</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+</section>
+<section id="layer-selectors">
+<span id="id1"></span><h2>Layer Selectors<a class="headerlink" href="#layer-selectors" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">layer_names</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code> supports multiple selector formats for flexible layer targeting.</p>
+<section id="string-pattern">
+<h3>String Pattern<a class="headerlink" href="#string-pattern" title="Link to this heading">#</a></h3>
+<p>A single string is interpreted as a regex pattern or substring:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Match all layers containing &quot;encoder&quot;</span>
+<span class="n">LayerConfig</span><span class="p">(</span><span class="n">layer_names</span><span class="o">=</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+<span class="c1"># Match layers like &quot;encoder.layer0.attention&quot;, &quot;encoder.layer1.attention&quot;</span>
+<span class="n">LayerConfig</span><span class="p">(</span><span class="n">layer_names</span><span class="o">=</span><span class="s2">&quot;encoder.*attention&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="list-of-patterns">
+<h3>List of Patterns<a class="headerlink" href="#list-of-patterns" title="Link to this heading">#</a></h3>
+<p>A list of strings matches multiple patterns:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Match layers containing &quot;encoder&quot; OR &quot;decoder&quot;</span>
+<span class="n">LayerConfig</span><span class="p">(</span><span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="s2">&quot;decoder&quot;</span><span class="p">],</span> <span class="o">...</span><span class="p">)</span>
+
+<span class="c1"># Match specific layer names exactly</span>
+<span class="n">LayerConfig</span><span class="p">(</span><span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fc1&quot;</span><span class="p">,</span> <span class="s2">&quot;fc2&quot;</span><span class="p">,</span> <span class="s2">&quot;fc3&quot;</span><span class="p">],</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="dictionary-selector">
+<h3>Dictionary Selector<a class="headerlink" href="#dictionary-selector" title="Link to this heading">#</a></h3>
+<p>A dictionary enables advanced selection with multiple criteria:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Select by regex pattern</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="s2">&quot;encoder</span><span class="se">\\</span><span class="s2">.layer[0-5]</span><span class="se">\\</span><span class="s2">..*&quot;</span><span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Select by layer type</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>  <span class="c1"># All nn.Linear layers</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Multiple types</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Conv2d&quot;</span><span class="p">,</span> <span class="s2">&quot;ConvTranspose2d&quot;</span><span class="p">]},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Select by substring</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;contains&quot;</span><span class="p">:</span> <span class="s2">&quot;attention&quot;</span><span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Select specific indices from matched layers</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="s2">&quot;encoder.*&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>  <span class="c1"># First, third, and fifth matched layers</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Select a range of layers</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;range&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>      <span class="c1"># First 6 matched Linear layers</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Range with step</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;range&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># Every other layer from first 12</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># Combine multiple criteria (intersection)</span>
+<span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="s2">&quot;encoder.*&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Selector Keys:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pattern</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">List[str]</span></code></p></td>
+<td><p>Regex patterns to match layer names</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">type</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">List[str]</span></code></p></td>
+<td><p>Layer type names (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;Linear&quot;</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contains</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">List[str]</span></code></p></td>
+<td><p>Substrings that layer names must contain</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">indices</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code> or <code class="docutils literal notranslate"><span class="pre">List[int]</span></code></p></td>
+<td><p>Specific indices from matched layers</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">range</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[start,</span> <span class="pre">end]</span></code> or
+<code class="docutils literal notranslate"><span class="pre">[start,</span> <span class="pre">end,</span> <span class="pre">step]</span></code></p></td>
+<td><p>Range of indices (exclusive end)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">indices</span></code> and <code class="docutils literal notranslate"><span class="pre">range</span></code> cannot be used together. Multiple criteria (pattern, type, contains) are combined with AND logic (intersection).</p>
+</div>
+</section>
+</section>
+<section id="parameter-specification-types">
+<span id="param-specs"></span><h2>Parameter Specification Types<a class="headerlink" href="#parameter-specification-types" title="Link to this heading">#</a></h2>
+<p>Modern first-class parameter specifications for expressing search spaces:</p>
+<section id="categorical">
+<h3>Categorical<a class="headerlink" href="#categorical" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.Categorical">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">Categorical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">choices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Categorical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.Categorical" title="Link to this definition">#</a></dt>
+<dd><p>A categorical parameter that takes values from a fixed set of choices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>choices</strong> – Sequence of possible values (any type)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If choices is empty</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">Categorical</span>
+
+<span class="c1"># Integer choices</span>
+<span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+<span class="c1"># String choices</span>
+<span class="n">Categorical</span><span class="p">([</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="s2">&quot;gelu&quot;</span><span class="p">,</span> <span class="s2">&quot;silu&quot;</span><span class="p">])</span>
+
+<span class="c1"># Boolean choices</span>
+<span class="n">Categorical</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="int">
+<h3>Int<a class="headerlink" href="#int" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.Int">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">Int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.Int" title="Link to this definition">#</a></dt>
+<dd><p>An integer parameter within a range <code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high]</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> – Lower bound (inclusive)</p></li>
+<li><p><strong>high</strong> – Upper bound (inclusive)</p></li>
+<li><p><strong>step</strong> – Step size for discrete values (default: 1)</p></li>
+<li><p><strong>log</strong> – Whether to sample in log scale</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If low &gt; high, step &lt; 1, or log=True with low ≤ 0</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">Int</span>
+
+<span class="c1"># Integer from 1 to 100</span>
+<span class="n">Int</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="c1"># Multiples of 8 from 8 to 512</span>
+<span class="n">Int</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Log-scale integer sampling</span>
+<span class="n">Int</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="float">
+<h3>Float<a class="headerlink" href="#float" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.Float">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">Float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Configs/ParamSpec.html#Float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.Float" title="Link to this definition">#</a></dt>
+<dd><p>A floating-point parameter within a range <code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high]</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> – Lower bound (inclusive)</p></li>
+<li><p><strong>high</strong> – Upper bound (inclusive)</p></li>
+<li><p><strong>step</strong> – Step size for discrete values (<code class="docutils literal notranslate"><span class="pre">None</span></code> for continuous)</p></li>
+<li><p><strong>log</strong> – Whether to sample in log scale</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If low &gt; high, step ≤ 0, or log=True with low ≤ 0</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">Float</span>
+
+<span class="c1"># Continuous float from 0 to 1</span>
+<span class="n">Float</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+<span class="c1"># Log-scale float (e.g., learning rate)</span>
+<span class="n">Float</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Discrete float values</span>
+<span class="n">Float</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="legacy-list-format">
+<h3>Legacy List Format<a class="headerlink" href="#legacy-list-format" title="Link to this heading">#</a></h3>
+<p>For backward compatibility, plain lists are also supported and are interpreted as <code class="docutils literal notranslate"><span class="pre">Categorical</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Legacy format (still works)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="c1"># Equivalent modern format</span>
+<span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span>
+    <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="n">Categorical</span><span class="p">([</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">]),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="automatic-parameter-generation">
+<span id="auto-params"></span><h2>Automatic Parameter Generation<a class="headerlink" href="#automatic-parameter-generation" title="Link to this heading">#</a></h2>
+<p>The special value <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> for the <code class="docutils literal notranslate"><span class="pre">params</span></code> field enables automatic parameter space generation based on layer dimensions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerConfig</span><span class="p">,</span> <span class="n">TuningConfigs</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+    <span class="n">params</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>  <span class="c1"># Automatically determine parameter ranges</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<section id="how-auto-works">
+<h3>How “auto” Works<a class="headerlink" href="#how-auto-works" title="Link to this heading">#</a></h3>
+<p>When <code class="docutils literal notranslate"><span class="pre">params=&quot;auto&quot;</span></code> is specified, the tuner intelligently analyzes your model and generates optimal parameter search spaces:</p>
+<ul class="simple">
+<li><p><strong>Smart Grouping</strong>: Layers are automatically grouped by type, shape, and size to enable efficient tuning</p></li>
+<li><p><strong>Efficiency-Aware</strong>: Parameter ranges are computed using layer-specific efficiency equations that consider the mathematical properties of each layer type</p></li>
+<li><p><strong>Adaptive Ranges</strong>: The generated Parameter values are tailored to each layer’s dimensions to ensure only efficient configurations are explored</p></li>
+<li><p><strong>Layer-Specific Logic</strong>: Different layer types (Linear, Conv2d, etc.) use their own specialized parameter generation strategies</p></li>
+</ul>
+<p>The automatic parameter generation considers:</p>
+<ul class="simple">
+<li><p>Layer type and its specific implementation details</p></li>
+<li><p>Input/output dimensions and their relationships</p></li>
+<li><p>Theoretical efficiency bounds for sketched approximations</p></li>
+<li><p>Practical constraints to avoid degenerate configurations</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let the tuner figure out the best parameter ranges</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Linear&quot;</span><span class="p">},</span>
+    <span class="n">params</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">separate</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="c1"># The tuner will:</span>
+<span class="c1"># 1. Analyze each layer&#39;s dimensions</span>
+<span class="c1"># 2. Group similar layers together</span>
+<span class="c1"># 3. Generate efficient parameter ranges for each group</span>
+<span class="c1"># 4. Create appropriate LayerConfigs automatically</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> currently supports <code class="docutils literal notranslate"><span class="pre">nn.Linear</span></code> and <code class="docutils literal notranslate"><span class="pre">nn.Conv2d</span></code> layers. Unsupported layer types are skipped with a warning if <code class="docutils literal notranslate"><span class="pre">verbose=True</span></code>.</p>
+</div>
+</section>
+</section>
+<section id="search-algorithms">
+<h2>Search Algorithms<a class="headerlink" href="#search-algorithms" title="Link to this heading">#</a></h2>
+<section id="searchalgorithm-interface">
+<h3>SearchAlgorithm Interface<a class="headerlink" href="#searchalgorithm-interface" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">SearchAlgorithm</span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm" title="Link to this definition">#</a></dt>
+<dd><p>Abstract base class for search algorithms. Implement this interface to create custom search strategies.</p>
+<p><strong>Required Methods:</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.initialize" title="Link to this definition">#</a></dt>
+<dd><p>Initialize with the parameter space.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.get_next_params">
+<span class="sig-name descname"><span class="pre">get_next_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.get_next_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.get_next_params" title="Link to this definition">#</a></dt>
+<dd><p>Get the next parameters to try, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if finished.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.update" title="Link to this definition">#</a></dt>
+<dd><p>Update with trial results.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.save_state">
+<span class="sig-name descname"><span class="pre">save_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.save_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.save_state" title="Link to this definition">#</a></dt>
+<dd><p>Save algorithm state to file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.load_state">
+<span class="sig-name descname"><span class="pre">load_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.load_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.load_state" title="Link to this definition">#</a></dt>
+<dd><p>Load algorithm state from file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.get_best_params">
+<span class="sig-name descname"><span class="pre">get_best_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.get_best_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.get_best_params" title="Link to this definition">#</a></dt>
+<dd><p>Get the best parameters found.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.get_best_score">
+<span class="sig-name descname"><span class="pre">get_best_score</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.get_best_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.get_best_score" title="Link to this definition">#</a></dt>
+<dd><p>Get the best score achieved.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.reset" title="Link to this definition">#</a></dt>
+<dd><p>Reset to initial state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.is_finished">
+<span class="sig-name descname"><span class="pre">is_finished</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/SearchAlgorithm.html#SearchAlgorithm.is_finished"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.SearchAlgorithm.is_finished" title="Link to this definition">#</a></dt>
+<dd><p>Check if search is complete.</p>
+</dd></dl>
+
+<p><strong>Optional Methods:</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.SearchAlgorithm.get_resource">
+<span class="sig-name descname"><span class="pre">get_resource</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#panther.tuner.SearchAlgorithm.get_resource" title="Link to this definition">#</a></dt>
+<dd><p>Return a resource value for resource-aware algorithms (e.g., Hyperband). The <code class="docutils literal notranslate"><span class="pre">SKAutoTuner</span></code> will pass this to evaluation functions if present.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="optunasearch">
+<h3>OptunaSearch<a class="headerlink" href="#optunasearch" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.OptunaSearch">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">OptunaSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_trials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'maximize'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_if_exists</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/OptunaSearch.html#OptunaSearch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.OptunaSearch" title="Link to this definition">#</a></dt>
+<dd><p>Optuna-backed search algorithm with state-of-the-art samplers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_trials</strong> – Maximum number of trials (default: 100)</p></li>
+<li><p><strong>sampler</strong> – Optuna sampler (default: <code class="docutils literal notranslate"><span class="pre">TPESampler</span></code>)</p></li>
+<li><p><strong>direction</strong> – <code class="docutils literal notranslate"><span class="pre">&quot;maximize&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;minimize&quot;</span></code> (default: <code class="docutils literal notranslate"><span class="pre">&quot;maximize&quot;</span></code>)</p></li>
+<li><p><strong>study_name</strong> – Name for the Optuna study (useful for persistence)</p></li>
+<li><p><strong>storage</strong> – Optuna storage URL (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;sqlite:///study.db&quot;</span></code>) for persistence</p></li>
+<li><p><strong>load_if_exists</strong> – Whether to resume an existing study from storage</p></li>
+<li><p><strong>seed</strong> – Random seed for reproducibility</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Properties:</strong></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="panther.tuner.OptunaSearch.study">
+<span class="sig-name descname"><span class="pre">study</span></span><a class="headerlink" href="#panther.tuner.OptunaSearch.study" title="Link to this definition">#</a></dt>
+<dd><p>Access the underlying <code class="docutils literal notranslate"><span class="pre">optuna.Study</span></code> for advanced operations.</p>
+</dd></dl>
+
+<p><strong>Additional Methods:</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.OptunaSearch.get_trials_dataframe">
+<span class="sig-name descname"><span class="pre">get_trials_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/OptunaSearch.html#OptunaSearch.get_trials_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.OptunaSearch.get_trials_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>Get a DataFrame of all trials (requires pandas).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.OptunaSearch.set_user_attr">
+<span class="sig-name descname"><span class="pre">set_user_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/OptunaSearch.html#OptunaSearch.set_user_attr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.OptunaSearch.set_user_attr" title="Link to this definition">#</a></dt>
+<dd><p>Set a user attribute on the current pending trial.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.OptunaSearch.report_intermediate">
+<span class="sig-name descname"><span class="pre">report_intermediate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/OptunaSearch.html#OptunaSearch.report_intermediate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.OptunaSearch.report_intermediate" title="Link to this definition">#</a></dt>
+<dd><p>Report intermediate objective value for pruning.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.OptunaSearch.should_prune">
+<span class="sig-name descname"><span class="pre">should_prune</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Searching/OptunaSearch.html#OptunaSearch.should_prune"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.OptunaSearch.should_prune" title="Link to this definition">#</a></dt>
+<dd><p>Check if current trial should be pruned.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="search-sampler-examples">
+<h3>Search Sampler Examples<a class="headerlink" href="#search-sampler-examples" title="Link to this heading">#</a></h3>
+<p><strong>TPE Sampler (Default)</strong></p>
+<p>Tree-structured Parzen Estimator - excellent for most use cases:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">OptunaSearch</span>
+
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">tuning_configs</span><span class="p">,</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">accuracy_eval_func</span><span class="p">,</span>
+    <span class="n">search_algorithm</span><span class="o">=</span><span class="n">OptunaSearch</span><span class="p">(</span><span class="n">n_trials</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Random Search</strong></p>
+<p>Simple random sampling:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">OptunaSearch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">optuna.samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomSampler</span>
+
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">tuning_configs</span><span class="p">,</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">accuracy_eval_func</span><span class="p">,</span>
+    <span class="n">search_algorithm</span><span class="o">=</span><span class="n">OptunaSearch</span><span class="p">(</span>
+        <span class="n">n_trials</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">sampler</span><span class="o">=</span><span class="n">RandomSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Grid Search</strong></p>
+<p>Exhaustive search over all combinations (use for small parameter spaces):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">OptunaSearch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">optuna.samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">GridSampler</span>
+
+<span class="c1"># Define the full search space for GridSampler</span>
+<span class="n">search_space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;num_terms&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;low_rank&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">tuning_configs</span><span class="p">,</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">accuracy_eval_func</span><span class="p">,</span>
+    <span class="n">search_algorithm</span><span class="o">=</span><span class="n">OptunaSearch</span><span class="p">(</span>
+        <span class="n">sampler</span><span class="o">=</span><span class="n">GridSampler</span><span class="p">(</span><span class="n">search_space</span><span class="p">)</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>CMA-ES</strong></p>
+<p>Covariance Matrix Adaptation Evolution Strategy - excellent for continuous parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">SKAutoTuner</span><span class="p">,</span> <span class="n">OptunaSearch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">optuna.samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">CmaEsSampler</span>
+
+<span class="n">tuner</span> <span class="o">=</span> <span class="n">SKAutoTuner</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">configs</span><span class="o">=</span><span class="n">tuning_configs</span><span class="p">,</span>
+    <span class="n">accuracy_eval_func</span><span class="o">=</span><span class="n">accuracy_eval_func</span><span class="p">,</span>
+    <span class="n">search_algorithm</span><span class="o">=</span><span class="n">OptunaSearch</span><span class="p">(</span>
+        <span class="n">n_trials</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">sampler</span><span class="o">=</span><span class="n">CmaEsSampler</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="modelvisualizer">
+<h2>ModelVisualizer<a class="headerlink" href="#modelvisualizer" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.tuner.ModelVisualizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.tuner.</span></span><span class="sig-name descname"><span class="pre">ModelVisualizer</span></span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Visualizer/ModelVisualizer.html#ModelVisualizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.ModelVisualizer" title="Link to this definition">#</a></dt>
+<dd><p>Utility class for discovering layer names in PyTorch models. Use this to craft
+correct layer selectors for <code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code>. All methods are static.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="panther.tuner.ModelVisualizer.print_module_tree">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ModelVisualizer.</span></span><span class="sig-name descname"><span class="pre">print_module_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/tuner/SkAutoTuner/Visualizer/ModelVisualizer.html#ModelVisualizer.print_module_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.tuner.ModelVisualizer.print_module_tree" title="Link to this definition">#</a></dt>
+<dd><p>Print the module hierarchy as an ASCII tree with layer types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The PyTorch model to inspect</p></li>
+<li><p><strong>root_name</strong> – Display name for the root module</p></li>
+</ul>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.tuner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelVisualizer</span>
+
+<span class="n">ModelVisualizer</span><span class="o">.</span><span class="n">print_module_tree</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="c1"># Output:</span>
+<span class="c1"># model (MyModel)/</span>
+<span class="c1"># └─ encoder (Encoder)/</span>
+<span class="c1">#     ├─ layer0 (TransformerLayer)/</span>
+<span class="c1">#     │   ├─ attention (MultiheadAttention)/</span>
+<span class="c1">#     │   └─ fc (Linear)/</span>
+<span class="c1">#     └─ layer1 (TransformerLayer)/</span>
+<span class="c1">#         ...</span>
+</pre></div>
+</div>
+<p>Use the printed layer names directly in your <code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">config</span> <span class="o">=</span> <span class="n">LayerConfig</span><span class="p">(</span>
+    <span class="n">layer_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;encoder.layer0.fc&quot;</span><span class="p">,</span> <span class="s2">&quot;encoder.layer1.fc&quot;</span><span class="p">],</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-dependencies">Optional Dependencies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#public-exports">Public Exports</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#skautotuner-class">SKAutoTuner Class</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tuning-workflow-methods">Tuning Workflow Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.tune"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.tune()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.apply_best_params"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.apply_best_params()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.replace_without_tuning"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.replace_without_tuning()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#results-and-analysis-methods">Results and Analysis Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.get_best_params"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.get_best_params()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.get_results_dataframe"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.get_results_dataframe()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#persistence-methods">Persistence Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.save_tuning_results"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.save_tuning_results()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.load_tuning_results"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.load_tuning_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-accessors">Configuration Accessors</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.getResolver"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.getResolver()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.getConfigs"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.getConfigs()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SKAutoTuner.setConfigs"><code class="docutils literal notranslate"><span class="pre">SKAutoTuner.setConfigs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-classes">Configuration Classes</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#layerconfig">LayerConfig</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.LayerConfig"><code class="docutils literal notranslate"><span class="pre">LayerConfig</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tuningconfigs">TuningConfigs</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.TuningConfigs"><code class="docutils literal notranslate"><span class="pre">TuningConfigs</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#layer-selectors">Layer Selectors</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#string-pattern">String Pattern</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#list-of-patterns">List of Patterns</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dictionary-selector">Dictionary Selector</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-specification-types">Parameter Specification Types</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#categorical">Categorical</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.Categorical"><code class="docutils literal notranslate"><span class="pre">Categorical</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#int">Int</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.Int"><code class="docutils literal notranslate"><span class="pre">Int</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#float">Float</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.Float"><code class="docutils literal notranslate"><span class="pre">Float</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#legacy-list-format">Legacy List Format</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-parameter-generation">Automatic Parameter Generation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-auto-works">How “auto” Works</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#search-algorithms">Search Algorithms</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#searchalgorithm-interface">SearchAlgorithm Interface</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.initialize"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.initialize()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_next_params"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_next_params()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.update"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.update()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.save_state"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.save_state()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.load_state"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.load_state()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_best_params"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_best_params()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_best_score"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_best_score()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.reset"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.reset()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.is_finished"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.is_finished()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.SearchAlgorithm.get_resource"><code class="docutils literal notranslate"><span class="pre">SearchAlgorithm.get_resource()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optunasearch">OptunaSearch</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch"><code class="docutils literal notranslate"><span class="pre">OptunaSearch</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.study"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.study</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.get_trials_dataframe"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.get_trials_dataframe()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.set_user_attr"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.set_user_attr()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.report_intermediate"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.report_intermediate()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.OptunaSearch.should_prune"><code class="docutils literal notranslate"><span class="pre">OptunaSearch.should_prune()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#search-sampler-examples">Search Sampler Examples</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#modelvisualizer">ModelVisualizer</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.ModelVisualizer"><code class="docutils literal notranslate"><span class="pre">ModelVisualizer</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.tuner.ModelVisualizer.print_module_tree"><code class="docutils literal notranslate"><span class="pre">ModelVisualizer.print_module_tree()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

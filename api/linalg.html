@@ -1,0 +1,728 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Linear Algebra API &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/linalg';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Neural Networks API" href="nn.html" />
+    <link rel="prev" title="Sketched Conv2d" href="../benchmarking/sketched_convolutions.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/api/linalg.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Fapi/linalg.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api/linalg.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Linear Algebra API</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.linalg">Core Functions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.linalg.cqrrpt"><code class="docutils literal notranslate"><span class="pre">cqrrpt()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.linalg.randomized_svd"><code class="docutils literal notranslate"><span class="pre">randomized_svd()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distribution-families">Distribution Families</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.linalg.DistributionFamily"><code class="docutils literal notranslate"><span class="pre">DistributionFamily</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-support">GPU Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance-notes">Performance Notes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#theoretical-background">Theoretical Background</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="linear-algebra-api">
+<h1>Linear Algebra API<a class="headerlink" href="#linear-algebra-api" title="Link to this heading">#</a></h1>
+<p>The <a class="reference internal" href="#module-panther.linalg" title="panther.linalg"><code class="xref py py-mod docutils literal notranslate"><span class="pre">panther.linalg</span></code></a> module provides randomized linear algebra operations for efficient matrix decompositions.</p>
+<section id="module-panther.linalg">
+<span id="core-functions"></span><h2>Core Functions<a class="headerlink" href="#module-panther.linalg" title="Link to this heading">#</a></h2>
+<p>Linear algebra operations for randomized matrix decompositions and sketching.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="panther.linalg.cqrrpt">
+<span class="sig-prename descclassname"><span class="pre">panther.linalg.</span></span><span class="sig-name descname"><span class="pre">cqrrpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">pawX.DistributionFamily.Gaussian</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/linalg/core.html#cqrrpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.linalg.cqrrpt" title="Link to this definition">#</a></dt>
+<dd><p>Performs CholeskyQR with randomization and pivoting (CQRRPT) for tall matrices.</p>
+<p>This function implements a numerically stable QR decomposition for tall matrices using
+Cholesky factorization, randomization, and column pivoting. It is particularly useful
+for large-scale problems where standard QR decomposition may be computationally expensive
+or numerically unstable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>M</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)"><em>torch.Tensor</em></a>) – The input tall matrix of shape (m, n) with m &gt;= n.</p></li>
+<li><p><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Oversampling parameter to improve numerical stability.
+Default is 1.25.</p></li>
+<li><p><strong>F</strong> (<a class="reference internal" href="#panther.linalg.DistributionFamily" title="panther.linalg.DistributionFamily"><em>DistributionFamily</em></a><em>, </em><em>optional</em>) – The distribution family used for random projections.
+Default is DistributionFamily.Gaussian.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>Q (torch.Tensor): Orthonormal matrix of shape (m, n).</p></li>
+<li><p>R (torch.Tensor): Upper triangular matrix of shape (n, n).</p></li>
+<li><p>P (torch.Tensor): Permutation matrix or indices representing column pivoting.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)">torch.Tensor</a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)">torch.Tensor</a>, <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)">torch.Tensor</a>]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">cqrrpt</span><span class="p">,</span> <span class="n">DistributionFamily</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a random tall matrix</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Perform CQRRPT</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">cqrrpt</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">1.25</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">DistributionFamily</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Q is (m, n), R is (n, n), P is (n,)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Verify the decomposition: Q @ R should approximate M[:, P]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M_permuted</span> <span class="o">=</span> <span class="n">M</span><span class="p">[:,</span> <span class="n">P</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reconstruction</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">R</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reconstruction error:&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">reconstruction</span> <span class="o">-</span> <span class="n">M_permuted</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Q should be orthonormal: Q.T @ Q ≈ I</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Q orthogonality error:&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># R should be upper triangular</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;R upper triangular:&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">R</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Optionally, check relative error</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rel_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">reconstruction</span> <span class="o">-</span> <span class="n">M_permuted</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">M_permuted</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Relative error:&quot;</span><span class="p">,</span> <span class="n">rel_error</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This method is especially effective for matrices where m &gt;&gt; n.</p></li>
+<li><p>The randomization step improves the conditioning of the matrix before Cholesky factorization.</p></li>
+<li><p>Pivoting ensures numerical stability and accurate rank-revealing properties.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="panther.linalg.randomized_svd">
+<span class="sig-prename descclassname"><span class="pre">panther.linalg.</span></span><span class="sig-name descname"><span class="pre">randomized_svd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/panther/linalg/core.html#randomized_svd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panther.linalg.randomized_svd" title="Link to this definition">#</a></dt>
+<dd><p>Computes a truncated randomized Singular Value Decomposition (SVD) of a matrix.</p>
+<p>This function efficiently approximates the singular value decomposition of a given matrix <cite>A</cite> using randomized algorithms, which are particularly useful for large-scale matrices where traditional SVD is computationally expensive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> (<a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)"><em>torch.Tensor</em></a>) – The input matrix of shape (m, n) to decompose.</p></li>
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of singular values and vectors to compute (rank of the approximation).</p></li>
+<li><p><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Tolerance for convergence. Smaller values yield more accurate results but may require more computation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>U</strong> (<em>torch.Tensor</em>) – Left singular vectors of shape (m, k).</p></li>
+<li><p><strong>S</strong> (<em>torch.Tensor</em>) – Singular values of shape (k,).</p></li>
+<li><p><strong>V</strong> (<em>torch.Tensor</em>) – Right singular vectors of shape (n, k).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">panther.linalg.randomized_svd</span><span class="w"> </span><span class="kn">import</span> <span class="n">randomized_svd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">randomized_svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Reconstruct the approximation</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A_approx</span> <span class="o">=</span> <span class="n">U</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">@</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">A_approx</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="go">torch.Size([100, 50])</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Randomized SVD is especially useful for dimensionality reduction, principal component analysis (PCA), and latent semantic analysis (LSA) on large datasets.</p>
+</dd></dl>
+
+</section>
+<section id="distribution-families">
+<h2>Distribution Families<a class="headerlink" href="#distribution-families" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="panther.linalg.DistributionFamily">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">panther.linalg.</span></span><span class="sig-name descname"><span class="pre">DistributionFamily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#panther.linalg.DistributionFamily" title="Link to this definition">#</a></dt>
+<dd><p>Enumeration of available distribution families for linear algebra operations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class is provided by the pawX C++ extension and may not be available in all environments.</p>
+</div>
+</dd></dl>
+
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h2>
+<p><strong>Randomized QR Decomposition with Column Pivoting</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Create a matrix</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+
+<span class="c1"># Perform CQRRPT decomposition</span>
+<span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+
+<span class="c1"># Q is orthogonal, R is upper triangular</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Q shape: </span><span class="si">{</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># (1000, 500)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;R shape: </span><span class="si">{</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># (500, 500)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;J shape: </span><span class="si">{</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># (500,)</span>
+
+<span class="c1"># Verify decomposition: A[:, J] ≈ Q @ R</span>
+<span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span><span class="p">[:,</span> <span class="n">J</span><span class="p">]</span> <span class="o">-</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">R</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reconstruction error: </span><span class="si">{</span><span class="n">reconstruction_error</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Randomized SVD</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Create a large matrix</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1500</span><span class="p">)</span>
+
+<span class="c1"># Compute top 100 singular values/vectors</span>
+<span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;U shape: </span><span class="si">{</span><span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># (2000, 100)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;S shape: </span><span class="si">{</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># (100,)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;V shape: </span><span class="si">{</span><span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># (1500, 100)</span>
+
+<span class="c1"># Reconstruct approximation</span>
+<span class="n">A_approx</span> <span class="o">=</span> <span class="n">U</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">@</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span>
+<span class="n">approximation_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">-</span> <span class="n">A_approx</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Approximation error: </span><span class="si">{</span><span class="n">approximation_error</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="gpu-support">
+<h2>GPU Support<a class="headerlink" href="#gpu-support" title="Link to this heading">#</a></h2>
+<p>All linear algebra operations support GPU acceleration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># GPU computation</span>
+<span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">J</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="c1"># Results are on the same device</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Q device: </span><span class="si">{</span><span class="n">Q</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># cuda:0</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-notes">
+<h2>Performance Notes<a class="headerlink" href="#performance-notes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Matrix Size</strong>: Randomized algorithms are most beneficial for large matrices (&gt; 1000x1000)</p></li>
+<li><p><strong>Rank</strong>: For randomized SVD, choose k based on the desired accuracy vs. speed tradeoff</p></li>
+<li><p><strong>Tolerance</strong>: Lower tolerance values in randomized SVD provide higher accuracy but require more computation</p></li>
+<li><p><strong>GPU Memory</strong>: Large matrices may require significant GPU memory. Monitor usage with <code class="docutils literal notranslate"><span class="pre">torch.cuda.memory_allocated()</span></code></p></li>
+</ul>
+</section>
+<section id="theoretical-background">
+<h2>Theoretical Background<a class="headerlink" href="#theoretical-background" title="Link to this heading">#</a></h2>
+<p>The randomized algorithms implemented in Panther are based on:</p>
+<ul class="simple">
+<li><p><strong>CQRRPT</strong>: Randomized QR decomposition with column pivoting for numerical stability</p></li>
+<li><p><strong>Randomized SVD</strong>: Fast approximate SVD using random projections</p></li>
+<li><p><strong>Sketching</strong>: Dimensionality reduction techniques for large-scale linear algebra</p></li>
+</ul>
+<p>These methods provide:</p>
+<ul class="simple">
+<li><p><strong>Speed</strong>: Much faster than deterministic algorithms for large matrices</p></li>
+<li><p><strong>Memory Efficiency</strong>: Lower memory footprint through sketching</p></li>
+<li><p><strong>Accuracy</strong>: Theoretical guarantees on approximation quality</p></li>
+<li><p><strong>Scalability</strong>: Handle matrices that don’t fit in memory</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-panther.linalg">Core Functions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.linalg.cqrrpt"><code class="docutils literal notranslate"><span class="pre">cqrrpt()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.linalg.randomized_svd"><code class="docutils literal notranslate"><span class="pre">randomized_svd()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#distribution-families">Distribution Families</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#panther.linalg.DistributionFamily"><code class="docutils literal notranslate"><span class="pre">DistributionFamily</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-support">GPU Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance-notes">Performance Notes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#theoretical-background">Theoretical Background</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

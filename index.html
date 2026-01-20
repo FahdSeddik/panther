@@ -1,0 +1,684 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Quick Summary &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=969202b3"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation Guide" href="installation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/index.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Findex.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/index.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Quick Summary</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Quick Summary</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-features">🛠️ <strong>Key Features</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-panther">🎯 <strong>Why Panther?</strong></a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <script>
+   /* Mark this as the main page and hide sidebar by default on desktop */
+   document.body.classList.add('main-index-page');
+
+   // Only auto-hide sidebar on desktop screens
+   //if (window.innerWidth >= 960) {
+      // Wait for DOM to be ready
+   //   document.addEventListener('DOMContentLoaded', function() {
+   //      const primarySidebar = document.getElementById("__primary");
+   //      if (primarySidebar) {
+   //         primarySidebar.checked = false;
+   //      }
+   //   });
+
+      // If DOM is already loaded
+   //   if (document.readyState === 'loading') {
+         // Document still loading, wait for DOMContentLoaded
+   //   } else {
+         // Document already loaded
+   //    const primarySidebar = document.getElementById("__primary");
+   //      if (primarySidebar) {
+   //         primarySidebar.checked = false;
+   //      }
+   //   }
+   //}
+</script><div class="hero-container">
+    <div class="hero-content">
+        <div class="hero-main">
+            <h1 class="hero-title">
+                <span class="hero-highlight">Panther</span>: Faster & Cheaper Computations with RandNLA
+            </h1>
+            <p class="hero-subtitle">
+                High-performance randomized numerical linear algebra for PyTorch.
+                Reduce memory usage, accelerate training, and scale to larger models with sketching algorithms.
+            </p>
+            <div class="hero-buttons">
+                <a href="installation.html" class="btn btn-primary btn-lg"
+                    style="background-color: #0052cc; color: #fff;">
+                    Get Started
+                </a>
+                <a href="quickstart.html" class="btn btn-secondary btn-lg"
+                    style="background-color: #ff9800; color: #fff;">
+                    Quick Tutorial
+                </a>
+                <a href="https://github.com/FahdSeddik/panther" class="btn btn-outline btn-lg" style="color: #fff;">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+        </div>
+        <div class="hero-demo">
+            <div class="code-example">
+                <div class="code-header">
+                    <span class="code-title">Sketched Linear Layer</span>
+                    <div class="code-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <pre><code class="language-python">import torch
+import panther as pr
+
+# Replace standard linear layer
+# linear = torch.nn.Linear(4096, 4096)
+sketched = pr.nn.SKLinear(4096, 4096, num_terms=1, low_rank=64)
+
+# Memory reduction, faster training
+x = torch.randn(128, 4096)
+output = sketched(x)  # Same API, better performance</code></pre>
+            </div>
+        </div>
+    </div>
+</div><div class="sd-container-fluid sd-sphinx-override sd-m-0 sd-p-0 product-offerings docutils">
+<div class="sd-row sd-row-cols-3 sd-row-cols-xs-3 sd-row-cols-sm-3 sd-row-cols-md-3 sd-row-cols-lg-3 sd-g-0 sd-g-xs-0 sd-g-sm-0 sd-g-md-0 sd-g-lg-0 docutils">
+<div class="sd-col sd-d-flex-row sd-col-12 sd-col-xs-12 sd-col-sm-6 sd-col-md-6 sd-col-lg-4 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-border-0 docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Sketched Neural Networks</div>
+<p class="sd-card-text">Replace standard linear and convolutional layers with memory-efficient sketched alternatives that maintain accuracy while reducing computational cost.</p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row sd-col-12 sd-col-xs-12 sd-col-sm-6 sd-col-md-6 sd-col-lg-4 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-border-0 docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Randomized Algorithms</div>
+<p class="sd-card-text">Fast QR and SVD decompositions using randomized sketching, enabling efficient matrix operations on large-scale problems with theoretical guarantees.</p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row sd-col-12 sd-col-xs-12 sd-col-sm-6 sd-col-md-6 sd-col-lg-4 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-border-0 docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+GPU Acceleration</div>
+<p class="sd-card-text">Optimized CUDA kernels with Tensor Core support for maximum performance on modern GPUs, seamlessly integrated with PyTorch workflows.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 color-cards docutils">
+<div class="sd-row sd-row-cols-3 sd-row-cols-xs-3 sd-row-cols-sm-3 sd-row-cols-md-3 sd-row-cols-lg-3 docutils">
+<div class="sd-col sd-d-flex-row sd-col-12 sd-col-xs-12 sd-col-sm-6 sd-col-md-6 sd-col-lg-4 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover installation docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<svg version="4.0.0.63c5cb3" width="2.0em" height="2.0em" class="sd-material-icon sd-material-icon-download" viewBox="0 0 24 24" aria-hidden="true"><g><rect fill="none" height="24" width="24"></rect></g><g><path d="M5,20h14v-2H5V20z M19,9h-4V3H9v6H5l7,7L19,9z"></path></g></svg> Installation</div>
+<p class="sd-card-text">Get started with Panther installation instructions for CPU and GPU environments.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="installation.html"><span class="doc">Installation Guide</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row sd-col-12 sd-col-xs-12 sd-col-sm-6 sd-col-md-6 sd-col-lg-4 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover getting-started docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<svg version="4.0.0.63c5cb3" width="2.0em" height="2.0em" class="sd-material-icon sd-material-icon-rocket_launch" viewBox="0 0 24 24" aria-hidden="true"><g><rect fill="none" height="24" width="24"></rect></g><g><g><path d="M9.19,6.35c-2.04,2.29-3.44,5.58-3.57,5.89L2,10.69l4.05-4.05c0.47-0.47,1.15-0.68,1.81-0.55L9.19,6.35L9.19,6.35z M11.17,17c0,0,3.74-1.55,5.89-3.7c5.4-5.4,4.5-9.62,4.21-10.57c-0.95-0.3-5.17-1.19-10.57,4.21C8.55,9.09,7,12.83,7,12.83 L11.17,17z M17.65,14.81c-2.29,2.04-5.58,3.44-5.89,3.57L13.31,22l4.05-4.05c0.47-0.47,0.68-1.15,0.55-1.81L17.65,14.81 L17.65,14.81z M9,18c0,0.83-0.34,1.58-0.88,2.12C6.94,21.3,2,22,2,22s0.7-4.94,1.88-6.12C4.42,15.34,5.17,15,6,15 C7.66,15,9,16.34,9,18z M13,9c0-1.1,0.9-2,2-2s2,0.9,2,2s-0.9,2-2,2S13,10.1,13,9z"></path></g></g></svg> Quick Start</div>
+<p class="sd-card-text">Learn the basics with our quick start guide and first examples.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row sd-col-12 sd-col-xs-12 sd-col-sm-6 sd-col-md-6 sd-col-lg-4 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover user-guides docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<svg version="4.0.0.63c5cb3" width="2.0em" height="2.0em" class="sd-material-icon sd-material-icon-library_books" viewBox="0 0 24 24" aria-hidden="true"><path d="M0 0h24v24H0z" fill="none"></path><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"></path></svg> Tutorials</div>
+<p class="sd-card-text">Comprehensive tutorials covering all aspects of Panther from basics to advanced topics.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="tutorials/index.html"><span class="doc">Tutorials</span></a></div>
+</div>
+</div>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<section id="quick-summary">
+<h1>Quick Summary<a class="headerlink" href="#quick-summary" title="Link to this heading">#</a></h1>
+<p>Panther is a PyTorch library that leverages randomized numerical linear algebra (RandNLA) techniques to create sketched neural network layers, enabling significant memory savings and performance improvements for large-scale machine learning models. It provides efficient implementations of sketched linear layers, matrix decompositions, and GPU-accelerated operations, making it ideal for resource-constrained environments.</p>
+<section id="key-features">
+<h2>🛠️ <strong>Key Features</strong><a class="headerlink" href="#key-features" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Sketched Linear Layers</strong>: Memory-efficient alternatives to standard linear layers</p></li>
+<li><p><strong>Randomized Matrix Decompositions</strong>: Fast QR and SVD algorithms using sketching</p></li>
+<li><p><strong>Neural Network Operations</strong>: Optimized convolution and attention mechanisms</p></li>
+<li><p><strong>GPU Acceleration</strong>: CUDA kernels with Tensor Core support</p></li>
+<li><p><strong>AutoTuner</strong>: Automatic hyperparameter optimization for sketching parameters</p></li>
+</ul>
+</section>
+<section id="why-panther">
+<h2>🎯 <strong>Why Panther?</strong><a class="headerlink" href="#why-panther" title="Link to this heading">#</a></h2>
+<p>Panther enables you to:</p>
+<ul class="simple">
+<li><p><strong>Reduce Memory Usage</strong>: Sketched layers use significantly less memory than standard layers</p></li>
+<li><p><strong>Accelerate Training</strong>: Faster forward and backward passes with optimized kernels</p></li>
+<li><p><strong>Scale to Larger Models</strong>: Handle bigger networks with limited GPU memory</p></li>
+<li><p><strong>Maintain Accuracy</strong>: Randomized algorithms with theoretical guarantees</p></li>
+</ul>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Quick Summary</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-features">🛠️ <strong>Key Features</strong></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-panther">🎯 <strong>Why Panther?</strong></a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

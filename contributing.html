@@ -1,0 +1,949 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Contributing to Panther &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=969202b3"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'contributing';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="API Reference: Utilities" href="api/utils.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/contributing.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Fcontributing.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/contributing.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Contributing to Panther</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting Started</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-workflow">Development Workflow</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#coding-standards">Coding Standards</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#testing-guidelines">Testing Guidelines</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation-guidelines">Documentation Guidelines</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#areas-for-contribution">Areas for Contribution</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submitting-issues">Submitting Issues</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#release-process">Release Process</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recognition">Recognition</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="contributing-to-panther">
+<h1>Contributing to Panther<a class="headerlink" href="#contributing-to-panther" title="Link to this heading">#</a></h1>
+<p>We welcome contributions to Panther! This guide will help you get started with contributing to the project.</p>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
+<p><strong>1. Fork and Clone the Repository</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fork the repository on GitHub, then clone your fork</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/YOUR_USERNAME/panther.git
+<span class="nb">cd</span><span class="w"> </span>panther
+
+<span class="c1"># Add the original repository as upstream</span>
+git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>https://github.com/FahdSeddik/panther.git
+</pre></div>
+</div>
+<p><strong>2. Set Up Development Environment</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install development dependencies</span>
+poetry<span class="w"> </span>install<span class="w"> </span>--with<span class="w"> </span>dev
+
+<span class="c1"># Install pre-commit hooks</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pre-commit<span class="w"> </span>install
+
+<span class="c1"># Build the native backend</span>
+<span class="nb">cd</span><span class="w"> </span>pawX
+make<span class="w"> </span>all<span class="w">  </span><span class="c1"># Linux/macOS</span>
+<span class="c1"># or</span>
+.<span class="se">\b</span>uild.ps1<span class="w">  </span><span class="c1"># Windows</span>
+</pre></div>
+</div>
+<p><strong>3. Verify Installation</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run tests to ensure everything works</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/
+</pre></div>
+</div>
+</section>
+<section id="development-workflow">
+<h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading">#</a></h2>
+<p><strong>1. Create a Feature Branch</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/your-feature-name
+</pre></div>
+</div>
+<p><strong>2. Make Your Changes</strong></p>
+<ul class="simple">
+<li><p>Follow the coding standards (see below)</p></li>
+<li><p>Add tests for new functionality</p></li>
+<li><p>Update documentation as needed</p></li>
+<li><p>Ensure all tests pass</p></li>
+</ul>
+<p><strong>3. Run Tests and Checks</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/
+
+<span class="c1"># Run type checking</span>
+poetry<span class="w"> </span>run<span class="w"> </span>mypy<span class="w"> </span>panther/
+
+<span class="c1"># Run linting</span>
+poetry<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>panther/
+
+<span class="c1"># Run formatting</span>
+poetry<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>format<span class="w"> </span>panther/
+</pre></div>
+</div>
+<p><strong>4. Commit and Push</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add your feature description&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/your-feature-name
+</pre></div>
+</div>
+<p><strong>5. Create a Pull Request</strong></p>
+<ul class="simple">
+<li><p>Go to GitHub and create a pull request</p></li>
+<li><p>Describe your changes clearly</p></li>
+<li><p>Link any related issues</p></li>
+<li><p>Wait for review and address feedback</p></li>
+</ul>
+</section>
+<section id="coding-standards">
+<h2>Coding Standards<a class="headerlink" href="#coding-standards" title="Link to this heading">#</a></h2>
+<p><strong>Python Code Style</strong></p>
+<p>We use Ruff for linting and formatting:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good: Clear variable names and docstrings</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_sketched_linear</span><span class="p">(</span>
+    <span class="n">input_tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">sketch_matrices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute sketched linear transformation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_tensor: Input tensor of shape (batch_size, in_features)</span>
+<span class="sd">        sketch_matrices: List of sketching matrices</span>
+<span class="sd">        bias: Optional bias tensor</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Output tensor of shape (batch_size, out_features)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Implementation here</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p><strong>Type Hints</strong></p>
+<p>All functions should include type hints:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cqrrpt</span><span class="p">(</span>
+    <span class="n">matrix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.25</span><span class="p">,</span>
+    <span class="n">distribution</span><span class="p">:</span> <span class="n">DistributionFamily</span> <span class="o">=</span> <span class="n">DistributionFamily</span><span class="o">.</span><span class="n">Gaussian</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomized QR with column pivoting.&quot;&quot;&quot;</span>
+    <span class="c1"># Implementation</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p><strong>Documentation</strong></p>
+<p>All public functions and classes must have docstrings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SKLinear</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sketched linear layer using randomized low-rank approximation.</span>
+
+<span class="sd">    This layer approximates a standard linear transformation using a sum</span>
+<span class="sd">    of low-rank terms, reducing memory usage while maintaining performance.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        in_features: Number of input features</span>
+<span class="sd">        out_features: Number of output features</span>
+<span class="sd">        num_terms: Number of low-rank terms in the approximation</span>
+<span class="sd">        low_rank: Rank of each low-rank term</span>
+<span class="sd">        bias: If True, adds a learnable bias</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; layer = SKLinear(512, 256, num_terms=8, low_rank=64)</span>
+<span class="sd">        &gt;&gt;&gt; x = torch.randn(32, 512)</span>
+<span class="sd">        &gt;&gt;&gt; y = layer(x)  # Shape: (32, 256)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p><strong>C++/CUDA Code Style</strong></p>
+<p>For C++ and CUDA code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Good: Clear function documentation and naming</span>
+<span class="cm">/**</span>
+<span class="cm"> * @brief Compute sketched linear forward pass on GPU.</span>
+<span class="cm"> *</span>
+<span class="cm"> * @param input Input tensor with shape [batch_size, in_features]</span>
+<span class="cm"> * @param S1s First sketch matrices [num_terms, in_features, low_rank]</span>
+<span class="cm"> * @param S2s Second sketch matrices [num_terms, low_rank, out_features]</span>
+<span class="cm"> * @param U1s Fixed random matrices [num_terms, low_rank, out_features]</span>
+<span class="cm"> * @param U2s Fixed random matrices [num_terms, low_rank, in_features]</span>
+<span class="cm"> * @param bias Optional bias tensor [out_features]</span>
+<span class="cm"> * @return Output tensor [batch_size, out_features]</span>
+<span class="cm"> */</span>
+<span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="w"> </span><span class="nf">sketched_linear_forward_cuda</span><span class="p">(</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">input</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">S1s</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">S2s</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">U1s</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">U2s</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">torch</span><span class="o">::</span><span class="n">Tensor</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bias</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-guidelines">
+<h2>Testing Guidelines<a class="headerlink" href="#testing-guidelines" title="Link to this heading">#</a></h2>
+<p><strong>Test Structure</strong></p>
+<p>Organize tests by functionality:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>tests/
+├── test_linalg.py          # Linear algebra functions
+├── test_nn.py              # Neural network layers
+├── test_sketch.py          # Sketching operations
+├── test_cuda.py            # CUDA kernel tests
+└── test_integration.py     # End-to-end tests
+</pre></div>
+</div>
+<p><strong>Writing Tests</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestSKLinear</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test suite for SKLinear layer.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_forward_pass_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that forward pass produces correct output shape.&quot;&quot;&quot;</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span>
+            <span class="n">in_features</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+            <span class="n">out_features</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+            <span class="n">num_terms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">low_rank</span><span class="o">=</span><span class="mi">32</span>
+        <span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Expected (16, 64), got </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_backward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test that backward pass computes gradients correctly.&quot;&quot;&quot;</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+        <span class="c1"># Check that gradients were computed</span>
+        <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">layer</span><span class="o">.</span><span class="n">S1s</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">layer</span><span class="o">.</span><span class="n">S2s</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;device&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="s2">&quot;cuda&quot;</span><span class="p">])</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_device_compatibility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test layer works on different devices.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;CUDA not available&quot;</span><span class="p">)</span>
+
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">y</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">device</span>
+</pre></div>
+</div>
+<p><strong>Performance Tests</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sketched_layer_performance</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that sketched layers provide memory benefits.&quot;&quot;&quot;</span>
+    <span class="c1"># Create layers</span>
+    <span class="n">standard</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+    <span class="n">sketched</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">2048</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+
+    <span class="c1"># Compare parameter counts</span>
+    <span class="n">standard_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">standard</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+    <span class="n">sketched_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sketched</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+    <span class="k">assert</span> <span class="n">sketched_params</span> <span class="o">&lt;</span> <span class="n">standard_params</span><span class="p">,</span> <span class="s2">&quot;Sketched layer should use fewer parameters&quot;</span>
+
+    <span class="c1"># Compare memory usage</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span>
+
+    <span class="c1"># Time forward pass</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">standard</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">standard_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">sketched</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">sketched_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="c1"># Sketched should be competitive (within 2x)</span>
+    <span class="k">assert</span> <span class="n">sketched_time</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">standard_time</span>
+</pre></div>
+</div>
+</section>
+<section id="documentation-guidelines">
+<h2>Documentation Guidelines<a class="headerlink" href="#documentation-guidelines" title="Link to this heading">#</a></h2>
+<p><strong>Building Documentation</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs
+
+<span class="c1"># Clean previous build</span>
+make<span class="w"> </span>clean<span class="w">  </span><span class="c1"># Linux/macOS</span>
+.<span class="se">\m</span>ake.bat<span class="w"> </span>clean<span class="w">  </span><span class="c1"># Windows</span>
+
+<span class="c1"># Build HTML documentation</span>
+make<span class="w"> </span>html<span class="w">  </span><span class="c1"># Linux/macOS</span>
+.<span class="se">\m</span>ake.bat<span class="w"> </span>html<span class="w">  </span><span class="c1"># Windows</span>
+
+<span class="c1"># Open in browser</span>
+open<span class="w"> </span>_build/html/index.html<span class="w">  </span><span class="c1"># macOS</span>
+xdg-open<span class="w"> </span>_build/html/index.html<span class="w">  </span><span class="c1"># Linux</span>
+start<span class="w"> </span>_build/html/index.html<span class="w">  </span><span class="c1"># Windows</span>
+</pre></div>
+</div>
+<p><strong>Writing Documentation</strong></p>
+<p>Use reStructuredText format with clear examples:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">Function Name</span>
+<span class="gh">=============</span>
+
+Brief description of what the function does.
+
+<span class="gh">Parameters</span>
+<span class="gh">----------</span>
+param1 : type
+    Description of parameter 1
+param2 : type, optional
+    Description of parameter 2 (default: value)
+
+<span class="gh">Returns</span>
+<span class="gh">-------</span>
+return_type
+    Description of return value
+
+<span class="gh">Examples</span>
+<span class="gh">--------</span>
+&gt;&gt;&gt; import panther as pr
+&gt;&gt;&gt; result = pr.function_name(param1, param2)
+&gt;&gt;&gt; print(result.shape)
+</pre></div>
+</div>
+</section>
+<section id="areas-for-contribution">
+<h2>Areas for Contribution<a class="headerlink" href="#areas-for-contribution" title="Link to this heading">#</a></h2>
+<p><strong>1. Core Algorithms</strong></p>
+<ul class="simple">
+<li><p>New sketching methods</p></li>
+<li><p>Improved randomized algorithms</p></li>
+<li><p>Memory optimization techniques</p></li>
+</ul>
+<p><strong>2. Neural Network Layers</strong></p>
+<ul class="simple">
+<li><p>Sketched versions of more PyTorch layers</p></li>
+<li><p>Custom activation functions</p></li>
+<li><p>Attention mechanisms</p></li>
+</ul>
+<p><strong>3. CUDA Kernels</strong></p>
+<ul class="simple">
+<li><p>Performance optimizations</p></li>
+<li><p>Support for new GPU architectures</p></li>
+<li><p>Memory-efficient implementations</p></li>
+</ul>
+<p><strong>4. AutoTuner Improvements</strong></p>
+<ul class="simple">
+<li><p>Better hyperparameter search strategies</p></li>
+<li><p>Multi-objective optimization</p></li>
+<li><p>Integration with popular ML frameworks</p></li>
+</ul>
+<p><strong>5. Documentation and Examples</strong></p>
+<ul class="simple">
+<li><p>Tutorial improvements</p></li>
+<li><p>Real-world examples</p></li>
+<li><p>Performance benchmarks</p></li>
+</ul>
+<p><strong>6. Testing and CI</strong></p>
+<ul class="simple">
+<li><p>Expanded test coverage</p></li>
+<li><p>Performance regression tests</p></li>
+<li><p>Cross-platform compatibility</p></li>
+</ul>
+</section>
+<section id="submitting-issues">
+<h2>Submitting Issues<a class="headerlink" href="#submitting-issues" title="Link to this heading">#</a></h2>
+<p>When submitting bug reports or feature requests:</p>
+<p><strong>Bug Reports</strong></p>
+<p>Include:</p>
+<ul class="simple">
+<li><p>Clear description of the problem</p></li>
+<li><p>Minimal code to reproduce the issue</p></li>
+<li><p>Error messages and stack traces</p></li>
+<li><p>Environment information (OS, Python version, CUDA version)</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example bug report template</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Environment</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Python: </span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PyTorch: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Panther: </span><span class="si">{</span><span class="n">pr</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Minimal reproduction case</span>
+<span class="n">layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+
+<span class="c1"># This causes the error:</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># Error occurs here</span>
+</pre></div>
+</div>
+<p><strong>Feature Requests</strong></p>
+<p>Include:</p>
+<ul class="simple">
+<li><p>Clear description of the desired feature</p></li>
+<li><p>Use cases and motivation</p></li>
+<li><p>Proposed API design (if applicable)</p></li>
+<li><p>Willingness to implement</p></li>
+</ul>
+</section>
+<section id="release-process">
+<h2>Release Process<a class="headerlink" href="#release-process" title="Link to this heading">#</a></h2>
+<p>For maintainers:</p>
+<p><strong>1. Version Bumping</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Update version in pyproject.toml</span>
+poetry<span class="w"> </span>version<span class="w"> </span>patch<span class="w">  </span><span class="c1"># or minor, major</span>
+
+<span class="c1"># Update version in __init__.py</span>
+<span class="c1"># Update CHANGELOG.md</span>
+</pre></div>
+</div>
+<p><strong>2. Testing</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run full test suite</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/
+
+<span class="c1"># Run tests on different Python versions</span>
+tox
+</pre></div>
+</div>
+<p><strong>3. Building</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build Python package</span>
+poetry<span class="w"> </span>build
+
+<span class="c1"># Build documentation</span>
+<span class="nb">cd</span><span class="w"> </span>docs<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>make<span class="w"> </span>html
+</pre></div>
+</div>
+<p><strong>4. Release</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Tag release</span>
+git<span class="w"> </span>tag<span class="w"> </span>v0.1.3
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.3
+
+<span class="c1"># Publish to PyPI</span>
+poetry<span class="w"> </span>publish
+</pre></div>
+</div>
+</section>
+<section id="recognition">
+<h2>Recognition<a class="headerlink" href="#recognition" title="Link to this heading">#</a></h2>
+<p>Contributors will be recognized in:</p>
+<ul class="simple">
+<li><p>CONTRIBUTORS.md file</p></li>
+<li><p>Release notes</p></li>
+<li><p>Documentation acknowledgments</p></li>
+</ul>
+<p>Thank you for contributing to Panther!</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started">Getting Started</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-workflow">Development Workflow</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#coding-standards">Coding Standards</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#testing-guidelines">Testing Guidelines</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation-guidelines">Documentation Guidelines</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#areas-for-contribution">Areas for Contribution</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submitting-issues">Submitting Issues</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#release-process">Release Process</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recognition">Recognition</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

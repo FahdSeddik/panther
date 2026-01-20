@@ -1,0 +1,1334 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Matrix Decompositions &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/matrix_decompositions';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Neural Networks with Sketching" href="neural_networks.html" />
+    <link rel="prev" title="Sketched Linear Layers" href="sketched_linear_layers.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/tutorials/matrix_decompositions.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Ftutorials/matrix_decompositions.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/matrix_decompositions.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Matrix Decompositions</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choleskyqr-with-randomized-pivoting-cqrrpt">CholeskyQR with Randomized Pivoting (CQRRPT)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#randomized-svd-rsvd">Randomized SVD (RSVD)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-acceleration">GPU Acceleration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#practical-applications">Practical Applications</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#computational-complexity-and-algorithm-comparison">Computational Complexity and Algorithm Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance-tips-and-best-practices">Performance Tips and Best Practices</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="matrix-decompositions">
+<h1>Matrix Decompositions<a class="headerlink" href="#matrix-decompositions" title="Link to this heading">#</a></h1>
+<p>This tutorial covers Panther’s randomized matrix decomposition algorithms: CQRRPT and RSVD.</p>
+<p>Introduction to Randomized Matrix Decomposition**Mathematical Background**</p>
+<p>RSVD computes a low-rank approximation of the SVD: <span class="math notranslate nohighlight">\(A \approx U \Sigma V^T\)</span> where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(U\)</span> has orthonormal columns</p></li>
+<li><p><span class="math notranslate nohighlight">\(\Sigma\)</span> is diagonal with singular values</p></li>
+<li><p><span class="math notranslate nohighlight">\(V\)</span> has orthonormal columns</p></li>
+</ul>
+<p>The algorithm uses random sampling to efficiently compute the dominant singular vectors.</p>
+<p><strong>Internal Algorithm Details</strong></p>
+<p>RSVD’s implementation uses a sophisticated blocked approach:</p>
+<ol class="arabic">
+<li><p><strong>Power Iteration Sketching</strong>: Creates initial random sketch <span class="math notranslate nohighlight">\(\Omega \in \mathbb{R}^{n \times k}\)</span> and applies alternating power iterations:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+Y^{(0)} &amp;= A \Omega \\
+Y^{(1)} &amp;= A^T Y^{(0)} \\
+Y^{(2)} &amp;= A Y^{(1)} \\
+&amp;\vdots
+\end{align}\end{split}\]</div>
+<p>with periodic orthonormalization for numerical stability</p>
+</li>
+<li><p><strong>Range Finding</strong>: Computes orthonormal basis <span class="math notranslate nohighlight">\(Q\)</span> spanning the approximate range of <span class="math notranslate nohighlight">\(A\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[Y = A \Omega \quad \text{and} \quad Q, R = \text{QR}(Y)\]</div>
+</li>
+<li><p><strong>Blocked QB Decomposition</strong>: Uses adaptive blocking to build factorization <span class="math notranslate nohighlight">\(A \approx Q B\)</span>:</p>
+<ul class="simple">
+<li><p>Processes matrix in blocks of size 64 (or smaller near target rank)</p></li>
+<li><p>For each block, finds range of current residual: <span class="math notranslate nohighlight">\(A_{res} - Q_i B_i\)</span></p></li>
+<li><p>Re-orthogonalizes against existing <span class="math notranslate nohighlight">\(Q\)</span> to maintain orthogonality</p></li>
+<li><p>Updates residual: <span class="math notranslate nohighlight">\(A_{res} \leftarrow A_{res} - Q_i B_i\)</span></p></li>
+</ul>
+</li>
+<li><p><strong>Adaptive Termination</strong>: Monitors approximation error using matrix norms:</p>
+<div class="math notranslate nohighlight">
+\[\text{error} = \sqrt{|\|A\|_F^2 - \|B\|_F^2|} \cdot \frac{\sqrt{\|A\|_F^2 + \|B\|_F^2}}{\|A\|_F}\]</div>
+<p>Terminates when error stops decreasing or falls below tolerance</p>
+</li>
+<li><p><strong>Final SVD</strong>: Performs exact SVD on the much smaller matrix <span class="math notranslate nohighlight">\(B\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[B = \tilde{U} \Sigma V^T\]</div>
+<p>Then reconstructs: <span class="math notranslate nohighlight">\(U = Q \tilde{U}\)</span></p>
+</li>
+</ol>
+<p>This blocked approach is more memory-efficient and numerically stable than standard randomized SVD, especially for matrices where the target rank is a significant fraction of the matrix dimensions.——————————————-</p>
+<p>Traditional matrix decompositions like QR and SVD have <span class="math notranslate nohighlight">\(O(n^3)\)</span> complexity for <span class="math notranslate nohighlight">\(n \\times n\)</span> matrices. Randomized methods can achieve near-optimal results with <span class="math notranslate nohighlight">\(O(n^2)\)</span> complexity, making them suitable for large-scale problems.</p>
+<p>Panther provides two main randomized decompositions:</p>
+<ul class="simple">
+<li><p><strong>CQRRPT</strong>: CholeskyQR with Randomized column Pivoting for tall matrices</p></li>
+<li><p><strong>RSVD</strong>: Randomized Singular Value Decomposition</p></li>
+</ul>
+<section id="choleskyqr-with-randomized-pivoting-cqrrpt">
+<h2>CholeskyQR with Randomized Pivoting (CQRRPT)<a class="headerlink" href="#choleskyqr-with-randomized-pivoting-cqrrpt" title="Link to this heading">#</a></h2>
+<p><strong>Mathematical Background</strong></p>
+<p>CQRRPT computes a QR decomposition <span class="math notranslate nohighlight">\(A = QR\)</span> where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(Q\)</span> has orthonormal columns</p></li>
+<li><p><span class="math notranslate nohighlight">\(R\)</span> is upper triangular</p></li>
+<li><p>Column pivoting improves numerical stability</p></li>
+</ul>
+<p>The algorithm uses random sampling and tournament pivoting to reduce communication costs.</p>
+<p><strong>Internal Algorithm Details</strong></p>
+<p>CQRRPT’s implementation follows this detailed process:</p>
+<ol class="arabic">
+<li><p><strong>Random Sketching Phase</strong>: First computes <span class="math notranslate nohighlight">\(M_{sk} = S \cdot M\)</span> where <span class="math notranslate nohighlight">\(S\)</span> is a <span class="math notranslate nohighlight">\(d \times m\)</span> sketching matrix with <span class="math notranslate nohighlight">\(d = \lceil \gamma \cdot n \rceil\)</span> (compression ratio)</p></li>
+<li><p><strong>Pivoted QR on Sketch</strong>: Performs QR with column pivoting on the much smaller sketched matrix using LAPACK’s <code class="docutils literal notranslate"><span class="pre">GEQP3</span></code> routine:</p>
+<div class="math notranslate nohighlight">
+\[M_{sk} \Pi = Q_{sk} R_{sk}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Pi\)</span> is the permutation matrix encoding column pivots</p>
+</li>
+<li><p><strong>Rank Estimation</strong>: Estimates numerical rank by examining diagonal elements of <span class="math notranslate nohighlight">\(R_{sk}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[k = |\{i : |R_{sk}(i,i)| &gt; \epsilon\}|\]</div>
+<p>with <span class="math notranslate nohighlight">\(\epsilon = 10^{-6}\)</span> for float32, <span class="math notranslate nohighlight">\(10^{-12}\)</span> for float64</p>
+</li>
+<li><p><strong>Column Selection</strong>: Selects the <span class="math notranslate nohighlight">\(k\)</span> most important columns: <span class="math notranslate nohighlight">\(M_k = M[:, \Pi[:k]]\)</span></p></li>
+<li><p><strong>Triangular Solve</strong>: Solves <span class="math notranslate nohighlight">\(R_{sk}[:k,:k] \cdot M_{pre} = M_k^T\)</span> to get preliminary factorization</p></li>
+<li><p><strong>Cholesky Refinement</strong>: Computes <span class="math notranslate nohighlight">\(G = M_{pre}^T M_{pre}\)</span> and its Cholesky factorization <span class="math notranslate nohighlight">\(G = L L^T\)</span></p></li>
+<li><p><strong>Adaptive Rank Refinement</strong>: Monitors condition number via Cholesky diagonal:</p>
+<div class="math notranslate nohighlight">
+\[\text{condition} = \frac{\max(|L_{ii}|)}{\min(|L_{ii}|)} \leq \sqrt{\frac{\epsilon}{u}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(u\)</span> is machine epsilon, stopping when condition becomes too large</p>
+</li>
+<li><p><strong>Final Factorization</strong>: Computes final <span class="math notranslate nohighlight">\(Q_k\)</span> and <span class="math notranslate nohighlight">\(R_k\)</span> using the refined rank</p></li>
+</ol>
+<p><strong>Basic Usage</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Create a test matrix</span>
+<span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">500</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+<span class="c1"># Standard CQRRPT</span>
+<span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original matrix: </span><span class="si">{</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Q matrix: </span><span class="si">{</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;R matrix: </span><span class="si">{</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Permutation: </span><span class="si">{</span><span class="n">P</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verify decomposition: A[:, P] ≈ Q @ R</span>
+<span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span><span class="p">[:,</span> <span class="n">P</span><span class="p">]</span> <span class="o">-</span> <span class="n">Q</span> <span class="o">@</span> <span class="n">R</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reconstruction error: </span><span class="si">{</span><span class="n">reconstruction_error</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Customizing CQRRPT Parameters</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># CQRRPT with custom parameters</span>
+<span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">,</span>
+    <span class="n">gamma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>                                    <span class="c1"># Oversampling parameter</span>
+    <span class="n">F</span><span class="o">=</span><span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">DistributionFamily</span><span class="o">.</span><span class="n">Gaussian</span>       <span class="c1"># Distribution family</span>
+<span class="p">)</span>
+
+<span class="c1"># Check orthogonality of Q</span>
+<span class="n">orthogonality_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Q orthogonality error: </span><span class="si">{</span><span class="n">orthogonality_error</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Performance Comparison</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_qr_methods</span><span class="p">(</span><span class="n">matrix_sizes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare CQRRPT with standard QR.&quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">matrix_sizes</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Testing </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> matrix:&quot;</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Standard PyTorch QR</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">Q_torch</span><span class="p">,</span> <span class="n">R_torch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">torch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="c1"># Panther CQRRPT</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">Q_cqrrpt</span><span class="p">,</span> <span class="n">R_cqrrpt</span><span class="p">,</span> <span class="n">P_cqrrpt</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">cqrrpt_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="c1"># Compare accuracy</span>
+        <span class="n">torch_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">-</span> <span class="n">Q_torch</span> <span class="o">@</span> <span class="n">R_torch</span><span class="p">)</span>
+        <span class="n">cqrrpt_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span><span class="p">[:,</span> <span class="n">P_cqrrpt</span><span class="p">]</span> <span class="o">-</span> <span class="n">Q_cqrrpt</span> <span class="o">@</span> <span class="n">R_cqrrpt</span><span class="p">)</span>
+
+        <span class="c1"># Store results</span>
+        <span class="n">results</span><span class="p">[(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;torch_time&#39;</span><span class="p">:</span> <span class="n">torch_time</span><span class="p">,</span>
+            <span class="s1">&#39;cqrrpt_time&#39;</span><span class="p">:</span> <span class="n">cqrrpt_time</span><span class="p">,</span>
+            <span class="s1">&#39;speedup&#39;</span><span class="p">:</span> <span class="n">torch_time</span> <span class="o">/</span> <span class="n">cqrrpt_time</span><span class="p">,</span>
+            <span class="s1">&#39;torch_error&#39;</span><span class="p">:</span> <span class="n">torch_error</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s1">&#39;cqrrpt_error&#39;</span><span class="p">:</span> <span class="n">cqrrpt_error</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Print results</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  PyTorch QR: </span><span class="si">{</span><span class="n">torch_time</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s, error: </span><span class="si">{</span><span class="n">torch_error</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  CQRRPT:    </span><span class="si">{</span><span class="n">cqrrpt_time</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s, error: </span><span class="si">{</span><span class="n">cqrrpt_error</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Speedup:   </span><span class="si">{</span><span class="n">torch_time</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">cqrrpt_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span>
+
+
+<span class="c1"># Test different matrix sizes</span>
+<span class="n">sizes</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span> <span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)]</span>
+<span class="n">comparison_results</span> <span class="o">=</span> <span class="n">compare_qr_methods</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Using CQRRPT for Least Squares</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">solve_least_squares_cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solve least squares problem using CQRRPT.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Compute CQRRPT decomposition</span>
+    <span class="n">Q</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="c1"># Solve R x = Q^T b for the permuted variables</span>
+    <span class="n">QtB</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">b</span>
+    <span class="n">QtB</span> <span class="o">=</span> <span class="n">QtB</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">x_permuted</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">QtB</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Unpermute the solution</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x_permuted</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">P</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_permuted</span>
+
+    <span class="k">return</span> <span class="n">x</span>
+
+<span class="c1"># Example: Solve linear regression problem</span>
+<span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">200</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">x_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">A</span> <span class="o">@</span> <span class="n">x_true</span> <span class="o">+</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+<span class="c1"># Solve using CQRRPT</span>
+<span class="n">x_estimated</span> <span class="o">=</span> <span class="n">solve_least_squares_cqrrpt</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="c1"># Compare with true solution</span>
+<span class="n">solution_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x_estimated</span> <span class="o">-</span> <span class="n">x_true</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Solution error: </span><span class="si">{</span><span class="n">solution_error</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Verify residual</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">@</span> <span class="n">x_estimated</span> <span class="o">-</span> <span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residual norm: </span><span class="si">{</span><span class="n">residual</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="randomized-svd-rsvd">
+<h2>Randomized SVD (RSVD)<a class="headerlink" href="#randomized-svd-rsvd" title="Link to this heading">#</a></h2>
+<p><strong>Mathematical Background</strong></p>
+<p>RSVD computes a low-rank approximation of the SVD: <span class="math notranslate nohighlight">\(A \approx U \Sigma V^T\)</span> where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(U\)</span> has orthonormal columns</p></li>
+<li><p><span class="math notranslate nohighlight">\(\Sigma\)</span> is diagonal with singular values</p></li>
+<li><p><span class="math notranslate nohighlight">\(V\)</span> has orthonormal columns</p></li>
+</ul>
+<p>The algorithm uses random sampling to efficiently compute the dominant singular vectors.</p>
+<p><strong>Basic RSVD Usage</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a low-rank matrix plus noise</span>
+<span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">50</span>
+
+<span class="c1"># Generate low-rank matrix</span>
+<span class="n">U_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+<span class="n">V_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+<span class="n">sigma_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>  <span class="c1"># Decreasing singular values</span>
+
+<span class="n">A_lowrank</span> <span class="o">=</span> <span class="n">U_true</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">sigma_true</span><span class="p">)</span> <span class="o">@</span> <span class="n">V_true</span><span class="o">.</span><span class="n">T</span>
+<span class="n">noise</span> <span class="o">=</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">A_lowrank</span> <span class="o">+</span> <span class="n">noise</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matrix shape: </span><span class="si">{</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;True rank: </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Compute RSVD</span>
+<span class="n">target_rank</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># Slightly higher than true rank</span>
+<span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">target_rank</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+
+<span class="c1"># Note: RSVD uses blocked QB internally:</span>
+<span class="c1"># - Processes in blocks of min(64, target_rank)</span>
+<span class="c1"># - Adaptively determines actual rank based on tolerance</span>
+<span class="c1"># - May return fewer than target_rank components if early termination occurs</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nRSVD results:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;U shape: </span><span class="si">{</span><span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;S shape: </span><span class="si">{</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;V shape: </span><span class="si">{</span><span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Reconstruct and check error</span>
+<span class="n">A_reconstructed</span> <span class="o">=</span> <span class="n">U</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">@</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span>
+<span class="n">reconstruction_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">-</span> <span class="n">A_reconstructed</span><span class="p">)</span>
+<span class="n">frobenius_norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nReconstruction error: </span><span class="si">{</span><span class="n">reconstruction_error</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relative error: </span><span class="si">{</span><span class="n">reconstruction_error</span><span class="o">/</span><span class="n">frobenius_norm</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Advanced RSVD Parameters</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># RSVD with custom tolerance for higher accuracy</span>
+<span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+
+<span class="c1"># Analyze singular values</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Top 10 singular values:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">))):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  σ_</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Compare with exact SVD (for smaller matrices)</span>
+<span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">500</span><span class="p">:</span>
+    <span class="n">U_exact</span><span class="p">,</span> <span class="n">S_exact</span><span class="p">,</span> <span class="n">V_exact</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Compare singular values</span>
+    <span class="n">rank_to_compare</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">S_exact</span><span class="p">))</span>
+    <span class="n">sv_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">S</span><span class="p">[:</span><span class="n">rank_to_compare</span><span class="p">]</span> <span class="o">-</span> <span class="n">S_exact</span><span class="p">[:</span><span class="n">rank_to_compare</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nSingular value error: </span><span class="si">{</span><span class="n">sv_error</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Adaptive Rank Selection</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">adaptive_rsvd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">energy_threshold</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> <span class="n">max_rank</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Automatically determine rank based on energy threshold.&quot;&quot;&quot;</span>
+
+    <span class="n">max_rank</span> <span class="o">=</span> <span class="n">max_rank</span> <span class="ow">or</span> <span class="nb">min</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="c1"># Compute RSVD with generous rank</span>
+    <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">max_rank</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+    <span class="c1"># Find rank that captures desired energy</span>
+    <span class="n">total_energy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">S</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">cumulative_energy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">S</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">energy_ratio</span> <span class="o">=</span> <span class="n">cumulative_energy</span> <span class="o">/</span> <span class="n">total_energy</span>
+
+    <span class="c1"># Find first index where energy threshold is exceeded</span>
+    <span class="n">rank_needed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">((</span><span class="n">energy_ratio</span> <span class="o">&gt;=</span> <span class="n">energy_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adaptive rank selection:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Energy threshold: </span><span class="si">{</span><span class="n">energy_threshold</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Selected rank: </span><span class="si">{</span><span class="n">rank_needed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Energy captured: </span><span class="si">{</span><span class="n">energy_ratio</span><span class="p">[</span><span class="n">rank_needed</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Return truncated decomposition</span>
+    <span class="k">return</span> <span class="n">U</span><span class="p">[:,</span> <span class="p">:</span><span class="n">rank_needed</span><span class="p">],</span> <span class="n">S</span><span class="p">[:</span><span class="n">rank_needed</span><span class="p">],</span> <span class="n">V</span><span class="p">[:,</span> <span class="p">:</span><span class="n">rank_needed</span><span class="p">],</span> <span class="n">rank_needed</span>
+
+<span class="c1"># Example usage</span>
+<span class="n">U_adaptive</span><span class="p">,</span> <span class="n">S_adaptive</span><span class="p">,</span> <span class="n">V_adaptive</span><span class="p">,</span> <span class="n">optimal_rank</span> <span class="o">=</span> <span class="n">adaptive_rsvd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">energy_threshold</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
+
+<span class="n">A_adaptive</span> <span class="o">=</span> <span class="n">U_adaptive</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S_adaptive</span><span class="p">)</span> <span class="o">@</span> <span class="n">V_adaptive</span><span class="o">.</span><span class="n">T</span>
+<span class="n">adaptive_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">-</span> <span class="n">A_adaptive</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adaptive reconstruction error: </span><span class="si">{</span><span class="n">adaptive_error</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>RSVD for Principal Component Analysis</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">rsvd_pca</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">center_data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w"> </span><span class="sd">&quot;&quot;&quot;Perform PCA using randomized SVD.&quot;&quot;&quot;</span>
+
+ <span class="c1"># Center data</span>
+ <span class="k">if</span> <span class="n">center_data</span><span class="p">:</span>
+     <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+     <span class="n">X_centered</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="n">mean</span>
+ <span class="k">else</span><span class="p">:</span>
+     <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+     <span class="n">X_centered</span> <span class="o">=</span> <span class="n">X</span>
+
+ <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">X_centered</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+ <span class="n">components</span> <span class="o">=</span> <span class="n">V</span>
+ <span class="n">explained_variance</span> <span class="o">=</span> <span class="n">S</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+ <span class="n">total_variance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">X_centered</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+ <span class="n">explained_variance_ratio</span> <span class="o">=</span> <span class="n">explained_variance</span> <span class="o">/</span> <span class="n">total_variance</span>
+
+ <span class="n">X_transformed</span> <span class="o">=</span> <span class="n">X_centered</span> <span class="o">@</span> <span class="n">components</span>
+
+ <span class="k">return</span> <span class="p">{</span>
+     <span class="s1">&#39;components&#39;</span><span class="p">:</span> <span class="n">components</span><span class="p">,</span>
+     <span class="s1">&#39;explained_variance&#39;</span><span class="p">:</span> <span class="n">explained_variance</span><span class="p">,</span>
+     <span class="s1">&#39;explained_variance_ratio&#39;</span><span class="p">:</span> <span class="n">explained_variance_ratio</span><span class="p">,</span>
+     <span class="s1">&#39;singular_values&#39;</span><span class="p">:</span> <span class="n">S</span><span class="p">,</span>
+     <span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mean</span><span class="p">,</span>
+     <span class="s1">&#39;X_transformed&#39;</span><span class="p">:</span> <span class="n">X_transformed</span>
+ <span class="p">}</span>
+
+<span class="c1"># Example: PCA on synthetic data</span>
+<span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">200</span>
+
+<span class="c1"># Generate data with known structure</span>
+<span class="n">latent_dim</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">latent_factors</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">)</span>
+<span class="n">loading_matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">latent_factors</span> <span class="o">@</span> <span class="n">loading_matrix</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+
+<span class="c1"># Perform RSVD-PCA</span>
+<span class="n">pca_result</span> <span class="o">=</span> <span class="n">rsvd_pca</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transformed shape: </span><span class="si">{</span><span class="n">pca_result</span><span class="p">[</span><span class="s1">&#39;X_transformed&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cumulative explained variance: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">pca_result</span><span class="p">[</span><span class="s1">&#39;explained_variance_ratio&#39;</span><span class="p">],</span><span class="w"> </span><span class="mi">0</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Matrix Completion with RSVD</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">matrix_completion_rsvd</span><span class="p">(</span><span class="n">A_observed</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">n_iterations</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple matrix completion using iterative RSVD.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize missing entries with column means</span>
+    <span class="n">A_filled</span> <span class="o">=</span> <span class="n">A_observed</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A_filled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">col_mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">col_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">col_mean</span> <span class="o">=</span> <span class="n">A_observed</span><span class="p">[</span><span class="n">col_mask</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">A_filled</span><span class="p">[</span><span class="o">~</span><span class="n">col_mask</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">col_mean</span>
+
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iterations</span><span class="p">):</span>
+        <span class="c1"># Compute low-rank approximation</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A_filled</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="n">A_lowrank</span> <span class="o">=</span> <span class="n">U</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">@</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="c1"># Keep observed entries, update missing ones</span>
+        <span class="n">A_filled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">A_observed</span><span class="p">,</span> <span class="n">A_lowrank</span><span class="p">)</span>
+
+        <span class="c1"># Compute objective (only on observed entries)</span>
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">objective</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">((</span><span class="n">A_observed</span> <span class="o">-</span> <span class="n">A_lowrank</span><span class="p">)[</span><span class="n">mask</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">: Objective = </span><span class="si">{</span><span class="n">objective</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">A_filled</span>
+
+<span class="c1"># Example: Matrix completion</span>
+<span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">true_rank</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">10</span>
+
+<span class="c1"># Generate low-rank matrix</span>
+<span class="n">U_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">true_rank</span><span class="p">)</span>
+<span class="n">V_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">true_rank</span><span class="p">)</span>
+<span class="n">A_complete</span> <span class="o">=</span> <span class="n">U_true</span> <span class="o">@</span> <span class="n">V_true</span><span class="o">.</span><span class="n">T</span>
+
+<span class="c1"># Create random mask (observe 60% of entries)</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.6</span>
+<span class="n">A_observed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">A_complete</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matrix completion problem:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Matrix size: </span><span class="si">{</span><span class="n">A_complete</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  True rank: </span><span class="si">{</span><span class="n">true_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Observed entries: </span><span class="si">{</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="mi">100</span><span class="o">*</span><span class="n">mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Perform matrix completion</span>
+<span class="n">A_completed</span> <span class="o">=</span> <span class="n">matrix_completion_rsvd</span><span class="p">(</span><span class="n">A_observed</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">n_iterations</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+<span class="c1"># Evaluate completion quality</span>
+<span class="n">test_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask</span>
+<span class="n">completion_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">((</span><span class="n">A_complete</span> <span class="o">-</span> <span class="n">A_completed</span><span class="p">)[</span><span class="n">test_mask</span><span class="p">])</span>
+<span class="n">test_norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A_complete</span><span class="p">[</span><span class="n">test_mask</span><span class="p">])</span>
+<span class="n">relative_error</span> <span class="o">=</span> <span class="n">completion_error</span> <span class="o">/</span> <span class="n">test_norm</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Completion results:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Test error: </span><span class="si">{</span><span class="n">completion_error</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Relative test error: </span><span class="si">{</span><span class="n">relative_error</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="gpu-acceleration">
+<h2>GPU Acceleration<a class="headerlink" href="#gpu-acceleration" title="Link to this heading">#</a></h2>
+<p><strong>Using CUDA for Large Matrices</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Large matrix on GPU</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">3000</span>
+    <span class="n">A_gpu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU matrix shape: </span><span class="si">{</span><span class="n">A_gpu</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU memory used: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">memory_allocated</span><span class="p">()</span><span class="o">/</span><span class="mi">1024</span><span class="o">**</span><span class="mi">2</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
+
+    <span class="c1"># RSVD on GPU</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">U_gpu</span><span class="p">,</span> <span class="n">S_gpu</span><span class="p">,</span> <span class="n">V_gpu</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A_gpu</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+    <span class="n">gpu_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU RSVD time: </span><span class="si">{</span><span class="n">gpu_time</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Memory cleanup</span>
+    <span class="k">del</span> <span class="n">A_gpu</span><span class="p">,</span> <span class="n">U_gpu</span><span class="p">,</span> <span class="n">S_gpu</span><span class="p">,</span> <span class="n">V_gpu</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Memory-Efficient Large Matrix Processing</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">chunked_rsvd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process very large matrices in chunks.&quot;&quot;&quot;</span>
+
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">chunk_size</span><span class="p">:</span>
+        <span class="c1"># Small enough to process directly</span>
+        <span class="k">return</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+    <span class="c1"># Process in chunks and combine</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="c1"># Tall matrix: chunk rows</span>
+        <span class="n">Q_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">):</span>
+            <span class="n">end_i</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+            <span class="n">A_chunk</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">end_i</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="c1"># Random projection</span>
+            <span class="n">Omega</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">rank</span> <span class="o">+</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="n">Y_chunk</span> <span class="o">=</span> <span class="n">A_chunk</span> <span class="o">@</span> <span class="n">Omega</span>
+            <span class="n">Q_chunk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">Y_chunk</span><span class="p">)</span>
+            <span class="n">Q_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Q_chunk</span><span class="p">)</span>
+
+        <span class="c1"># Combine Q matrices</span>
+        <span class="n">Q_combined</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">Q_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Final RSVD on smaller matrix</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">Q_combined</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">A</span>
+        <span class="n">U_B</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">Q_combined</span> <span class="o">@</span> <span class="n">U_B</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Wide matrix: chunk columns</span>
+        <span class="c1"># Similar process but transpose operations</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">chunked_rsvd</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">return</span> <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span>
+</pre></div>
+</div>
+</section>
+<section id="practical-applications">
+<h2>Practical Applications<a class="headerlink" href="#practical-applications" title="Link to this heading">#</a></h2>
+<p><strong>1. Image Compression</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compress_image_rsvd</span><span class="p">(</span><span class="n">image_tensor</span><span class="p">,</span> <span class="n">compression_ratio</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compress image using RSVD.&quot;&quot;&quot;</span>
+
+    <span class="c1"># image_tensor should be (height, width, channels)</span>
+    <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">image_tensor</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">compressed_channels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+        <span class="c1"># Extract channel</span>
+        <span class="n">channel_data</span> <span class="o">=</span> <span class="n">image_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">channel</span><span class="p">]</span>
+
+        <span class="c1"># Determine rank for compression</span>
+        <span class="n">max_rank</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="n">target_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_rank</span> <span class="o">*</span> <span class="n">compression_ratio</span><span class="p">)</span>
+
+        <span class="c1"># Apply RSVD</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">channel_data</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">target_rank</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+        <span class="c1"># Reconstruct channel</span>
+        <span class="n">compressed_channel</span> <span class="o">=</span> <span class="n">U</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">@</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">compressed_channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compressed_channel</span><span class="p">)</span>
+
+    <span class="c1"># Combine channels</span>
+    <span class="n">compressed_image</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">compressed_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Calculate compression statistics</span>
+    <span class="n">original_elements</span> <span class="o">=</span> <span class="n">h</span> <span class="o">*</span> <span class="n">w</span> <span class="o">*</span> <span class="n">c</span>
+    <span class="n">compressed_elements</span> <span class="o">=</span> <span class="n">c</span> <span class="o">*</span> <span class="n">target_rank</span> <span class="o">*</span> <span class="p">(</span><span class="n">h</span> <span class="o">+</span> <span class="n">w</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">actual_ratio</span> <span class="o">=</span> <span class="n">compressed_elements</span> <span class="o">/</span> <span class="n">original_elements</span>
+
+    <span class="k">return</span> <span class="n">compressed_image</span><span class="p">,</span> <span class="n">actual_ratio</span><span class="p">,</span> <span class="n">target_rank</span>
+
+<span class="c1"># Example usage (requires PIL/torchvision for real images)</span>
+<span class="c1"># For demonstration, create a synthetic image</span>
+<span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span>
+<span class="n">synthetic_image</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+<span class="n">compressed</span><span class="p">,</span> <span class="n">ratio</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">compress_image_rsvd</span><span class="p">(</span><span class="n">synthetic_image</span><span class="p">,</span> <span class="n">compression_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image compression:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Original size: </span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Compression ratio: </span><span class="si">{</span><span class="n">ratio</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Rank used: </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">compression_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">synthetic_image</span> <span class="o">-</span> <span class="n">compressed</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Reconstruction error: </span><span class="si">{</span><span class="n">compression_error</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>2. Dimensionality Reduction Pipeline</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RSVDDimensionalityReducer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete dimensionality reduction pipeline using RSVD.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="o">=</span> <span class="n">n_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span> <span class="o">=</span> <span class="n">whiten</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">singular_values_</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model with X.&quot;&quot;&quot;</span>
+        <span class="c1"># Center data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">X_centered</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span>
+
+        <span class="c1"># Compute RSVD</span>
+        <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">X_centered</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">singular_values_</span> <span class="o">=</span> <span class="n">S</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components_</span> <span class="o">=</span> <span class="n">V</span>  <span class="c1"># Components as columns</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply dimensionality reduction to X.&quot;&quot;&quot;</span>
+        <span class="n">X_centered</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span>
+        <span class="n">X_transformed</span> <span class="o">=</span> <span class="n">X_centered</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+            <span class="n">X_transformed</span> <span class="o">=</span> <span class="n">X_transformed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">singular_values_</span>
+
+        <span class="k">return</span> <span class="n">X_transformed</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit model and transform X.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_transformed</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform back to original space.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">:</span>
+            <span class="n">X_transformed</span> <span class="o">=</span> <span class="n">X_transformed</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">singular_values_</span>
+
+        <span class="n">X_reconstructed</span> <span class="o">=</span> <span class="n">X_transformed</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_</span>
+        <span class="k">return</span> <span class="n">X_reconstructed</span>
+
+<span class="c1"># Example: Dimensionality reduction on synthetic data</span>
+<span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">500</span>
+<span class="n">n_informative</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="c1"># Generate data with structure</span>
+<span class="n">informative_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_informative</span><span class="p">)</span>
+<span class="n">random_projection</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_informative</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">informative_data</span> <span class="o">@</span> <span class="n">random_projection</span> <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+
+<span class="c1"># Apply dimensionality reduction</span>
+<span class="n">reducer</span> <span class="o">=</span> <span class="n">RSVDDimensionalityReducer</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">X_reduced</span> <span class="o">=</span> <span class="n">reducer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">X_reconstructed</span> <span class="o">=</span> <span class="n">reducer</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">X_reduced</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dimensionality reduction results:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Original shape: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Reduced shape: </span><span class="si">{</span><span class="n">X_reduced</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Reconstruction error: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">X</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">X_reconstructed</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Explained variance: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">reducer</span><span class="o">.</span><span class="n">singular_values_</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="computational-complexity-and-algorithm-comparison">
+<h2>Computational Complexity and Algorithm Comparison<a class="headerlink" href="#computational-complexity-and-algorithm-comparison" title="Link to this heading">#</a></h2>
+<p><strong>Complexity Analysis</strong></p>
+<p>Both algorithms achieve significant computational savings over classical methods:</p>
+<div class="pst-scrollable-table-container"><table class="table" id="id1">
+<caption><span class="caption-text">Complexity Comparison</span><a class="headerlink" href="#id1" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Algorithm</p></th>
+<th class="head"><p>Classical</p></th>
+<th class="head"><p>CQRRPT</p></th>
+<th class="head"><p>RSVD</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>QR Decomposition</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn^2)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mnd + d^3)\)</span></p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SVD</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn \min(m,n))\)</span></p></td>
+<td><p>N/A</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mnk + k^3)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Memory</p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn + dn)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(O(mn + mk)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Where:
+- <span class="math notranslate nohighlight">\(m, n\)</span>: matrix dimensions
+- <span class="math notranslate nohighlight">\(d\)</span>: sketch size (<span class="math notranslate nohighlight">\(d \approx 1.2n\)</span> to <span class="math notranslate nohighlight">\(2n\)</span> for CQRRPT)
+- <span class="math notranslate nohighlight">\(k\)</span>: target rank (typically <span class="math notranslate nohighlight">\(k \ll \min(m,n)\)</span>)</p>
+<p><strong>Key Algorithmic Differences</strong></p>
+<ol class="arabic simple">
+<li><p><strong>CQRRPT Features</strong>:</p>
+<ul class="simple">
+<li><p><strong>Exact decomposition</strong> with column pivoting for numerical stability</p></li>
+<li><p><strong>Adaptive rank detection</strong> using Cholesky-based condition monitoring</p></li>
+<li><p><strong>Randomized sketching</strong> design reduces computational complexity</p></li>
+<li><p><strong>Best for</strong>: Full-rank problems, least squares, when exact QR is needed</p></li>
+</ul>
+</li>
+<li><p><strong>RSVD Features</strong>:</p>
+<ul class="simple">
+<li><p><strong>Low-rank approximation</strong> optimized for dominant singular vectors</p></li>
+<li><p><strong>Blocked processing</strong> with adaptive error monitoring</p></li>
+<li><p><strong>Power iterations</strong> enhance accuracy for well-separated singular values</p></li>
+<li><p><strong>Best for</strong>: Dimensionality reduction, PCA, matrix completion</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Choosing the Right Algorithm</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">choose_algorithm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">use_case</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Guide for selecting between CQRRPT and RSVD.&quot;&quot;&quot;</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="n">use_case</span> <span class="o">==</span> <span class="s2">&quot;least_squares&quot;</span><span class="p">:</span>
+        <span class="c1"># CQRRPT provides exact QR with pivoting</span>
+        <span class="k">return</span> <span class="s2">&quot;CQRRPT&quot;</span><span class="p">,</span> <span class="s2">&quot;Exact solution with numerical stability&quot;</span>
+
+    <span class="k">elif</span> <span class="n">use_case</span> <span class="o">==</span> <span class="s2">&quot;dimensionality_reduction&quot;</span><span class="p">:</span>
+        <span class="c1"># RSVD excels at low-rank approximations</span>
+        <span class="k">return</span> <span class="s2">&quot;RSVD&quot;</span><span class="p">,</span> <span class="s2">&quot;Efficient low-rank approximation&quot;</span>
+
+    <span class="k">elif</span> <span class="n">use_case</span> <span class="o">==</span> <span class="s2">&quot;matrix_completion&quot;</span><span class="p">:</span>
+        <span class="c1"># RSVD&#39;s iterative nature suits completion algorithms</span>
+        <span class="k">return</span> <span class="s2">&quot;RSVD&quot;</span><span class="p">,</span> <span class="s2">&quot;Low-rank structure assumption&quot;</span>
+
+    <span class="k">elif</span> <span class="n">use_case</span> <span class="o">==</span> <span class="s2">&quot;numerical_rank&quot;</span><span class="p">:</span>
+        <span class="c1"># CQRRPT&#39;s rank detection is more reliable</span>
+        <span class="k">return</span> <span class="s2">&quot;CQRRPT&quot;</span><span class="p">,</span> <span class="s2">&quot;Robust rank estimation via pivoting&quot;</span>
+
+    <span class="c1"># Matrix shape considerations</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Classical&quot;</span><span class="p">,</span> <span class="s2">&quot;Small matrices: use standard algorithms&quot;</span>
+    <span class="k">elif</span> <span class="n">m</span> <span class="o">&gt;&gt;</span> <span class="n">n</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">&gt;&gt;</span> <span class="n">m</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;CQRRPT&quot;</span><span class="p">,</span> <span class="s2">&quot;Rectangular matrices benefit from sketching&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;RSVD&quot;</span><span class="p">,</span> <span class="s2">&quot;Square-ish matrices: target rank matters&quot;</span>
+
+<span class="c1"># Example usage</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">800</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">use_case</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;least_squares&quot;</span><span class="p">,</span> <span class="s2">&quot;dimensionality_reduction&quot;</span><span class="p">,</span> <span class="s2">&quot;matrix_completion&quot;</span><span class="p">]:</span>
+    <span class="n">alg</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">choose_algorithm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">use_case</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">use_case</span><span class="si">}</span><span class="s2">: Use </span><span class="si">{</span><span class="n">alg</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-tips-and-best-practices">
+<h2>Performance Tips and Best Practices<a class="headerlink" href="#performance-tips-and-best-practices" title="Link to this heading">#</a></h2>
+<p><strong>1. Choosing Parameters</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">recommend_parameters</span><span class="p">(</span><span class="n">matrix_shape</span><span class="p">,</span> <span class="n">target_rank</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recommend RSVD parameters based on matrix properties.&quot;&quot;&quot;</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">matrix_shape</span>
+    <span class="n">min_dim</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="c1"># Tolerance recommendations based on target rank</span>
+    <span class="k">if</span> <span class="n">target_rank</span> <span class="o">&lt;</span> <span class="n">min_dim</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">:</span>
+        <span class="n">tolerance</span> <span class="o">=</span> <span class="mf">1e-8</span>  <span class="c1"># High accuracy for low-rank approximations</span>
+    <span class="k">elif</span> <span class="n">target_rank</span> <span class="o">&lt;</span> <span class="n">min_dim</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">tolerance</span> <span class="o">=</span> <span class="mf">1e-6</span>  <span class="c1"># Balanced accuracy</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tolerance</span> <span class="o">=</span> <span class="mf">1e-4</span>  <span class="c1"># Faster computation for high-rank</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;k&#39;</span><span class="p">:</span> <span class="n">target_rank</span><span class="p">,</span>
+        <span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="n">tolerance</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>2. Error Analysis</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_decomposition_error</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Vt</span><span class="p">,</span> <span class="n">rank_range</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyze approximation error vs rank.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">rank_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rank_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">//</span> <span class="mi">20</span><span class="p">))</span>
+
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rank_range</span><span class="p">:</span>
+        <span class="n">A_approx</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="p">:</span><span class="n">r</span><span class="p">]</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S</span><span class="p">[:</span><span class="n">r</span><span class="p">])</span> <span class="o">@</span> <span class="n">V</span><span class="p">[:</span><span class="n">r</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A</span> <span class="o">-</span> <span class="n">A_approx</span><span class="p">)</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">rank_range</span><span class="p">),</span> <span class="n">errors</span>
+</pre></div>
+</div>
+<p><strong>3. Numerical Stability Analysis</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">numerical_stability_test</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare numerical stability of CQRRPT vs RSVD.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Create ill-conditioned matrix</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">300</span>
+    <span class="n">U_cond</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="c1"># Create exponentially decaying singular values</span>
+    <span class="n">singular_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>  <span class="c1"># condition number ≈ 10^10</span>
+    <span class="n">V_cond</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">A_ill</span> <span class="o">=</span> <span class="n">U_cond</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">singular_values</span><span class="p">)</span> <span class="o">@</span> <span class="n">V_cond</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matrix condition number: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">A_ill</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Test CQRRPT stability</span>
+    <span class="n">Q_cqrrpt</span><span class="p">,</span> <span class="n">R_cqrrpt</span><span class="p">,</span> <span class="n">P_cqrrpt</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cqrrpt</span><span class="p">(</span><span class="n">A_ill</span><span class="p">)</span>
+    <span class="n">cqrrpt_ortho</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Q_cqrrpt</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q_cqrrpt</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">Q_cqrrpt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">cqrrpt_recon</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A_ill</span><span class="p">[:,</span> <span class="n">P_cqrrpt</span><span class="p">]</span> <span class="o">-</span> <span class="n">Q_cqrrpt</span> <span class="o">@</span> <span class="n">R_cqrrpt</span><span class="p">)</span>
+
+    <span class="c1"># Test RSVD stability</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># Conservative rank</span>
+    <span class="n">U_rsvd</span><span class="p">,</span> <span class="n">S_rsvd</span><span class="p">,</span> <span class="n">V_rsvd</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">randomized_svd</span><span class="p">(</span><span class="n">A_ill</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+    <span class="n">rsvd_ortho_u</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">U_rsvd</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">U_rsvd</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">U_rsvd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">rsvd_ortho_v</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">V_rsvd</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">V_rsvd</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">V_rsvd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">rsvd_recon</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">A_ill</span> <span class="o">-</span> <span class="n">U_rsvd</span> <span class="o">@</span> <span class="n">torch</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">S_rsvd</span><span class="p">)</span> <span class="o">@</span> <span class="n">V_rsvd</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nOrthogonality errors:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  CQRRPT Q^T Q: </span><span class="si">{</span><span class="n">cqrrpt_ortho</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  RSVD U^T U: </span><span class="si">{</span><span class="n">rsvd_ortho_u</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  RSVD V^T V: </span><span class="si">{</span><span class="n">rsvd_ortho_v</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nReconstruction errors:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  CQRRPT: </span><span class="si">{</span><span class="n">cqrrpt_recon</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  RSVD: </span><span class="si">{</span><span class="n">rsvd_recon</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Rank detection comparison</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nRank detection:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  CQRRPT effective rank: </span><span class="si">{</span><span class="n">Q_cqrrpt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  RSVD computed rank: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">S_rsvd</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  True numerical rank (σ &gt; 1e-12): </span><span class="si">{</span><span class="p">(</span><span class="n">singular_values</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">1e-12</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">numerical_stability_test</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>4. Precision and Tolerance Guidelines</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">precision_guidelines</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Guidelines for choosing tolerances and precision.&quot;&quot;&quot;</span>
+
+    <span class="n">guidelines</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;float32&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;cqrrpt_eps&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+            <span class="s2">&quot;rsvd_tol&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+            <span class="s2">&quot;use_case&quot;</span><span class="p">:</span> <span class="s2">&quot;Memory-constrained, moderate accuracy&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max_reliable_condition&quot;</span><span class="p">:</span> <span class="mf">1e6</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;float64&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;cqrrpt_eps&quot;</span><span class="p">:</span> <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;rsvd_tol&quot;</span><span class="p">:</span> <span class="mf">1e-8</span><span class="p">,</span>
+            <span class="s2">&quot;use_case&quot;</span><span class="p">:</span> <span class="s2">&quot;High accuracy requirements&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;max_reliable_condition&quot;</span><span class="p">:</span> <span class="mf">1e12</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Precision Guidelines:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">guidelines</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">n</span><span class="si">{</span><span class="n">dtype</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nAdaptive tolerance selection:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  For condition number C:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    - Low (C &lt; 1e6): Use default tolerances&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    - Medium (1e6 ≤ C &lt; 1e10): Increase tolerance 10x&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    - High (C ≥ 1e10): Consider regularization&quot;</span><span class="p">)</span>
+
+<span class="n">precision_guidelines</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This tutorial provides a comprehensive guide to using Panther’s matrix decomposition algorithms. The next tutorial will cover building complete neural networks with sketched layers.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choleskyqr-with-randomized-pivoting-cqrrpt">CholeskyQR with Randomized Pivoting (CQRRPT)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#randomized-svd-rsvd">Randomized SVD (RSVD)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-acceleration">GPU Acceleration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#practical-applications">Practical Applications</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#computational-complexity-and-algorithm-comparison">Computational Complexity and Algorithm Comparison</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance-tips-and-best-practices">Performance Tips and Best Practices</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

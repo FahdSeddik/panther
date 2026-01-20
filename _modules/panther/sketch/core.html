@@ -1,0 +1,829 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>panther.sketch.core &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/panther/sketch/core';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/sketched_linear_layers.html">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../../../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2F_modules/panther/sketch/core.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for panther.sketch.core</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axis</span><span class="p">,</span> <span class="n">DistributionFamily</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">count_skop</span> <span class="k">as</span> <span class="n">_count_skop</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">dense_sketch_operator</span> <span class="k">as</span> <span class="n">_dense_sketch_operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_skop</span> <span class="k">as</span> <span class="n">_gaussian_skop</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">scaled_sign_sketch</span> <span class="k">as</span> <span class="n">_scaled_sign_sketch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">sjlt_skop</span> <span class="k">as</span> <span class="n">_sjlt_skop</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">sketch_tensor</span> <span class="k">as</span> <span class="n">_sketch_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">sparse_sketch_operator</span> <span class="k">as</span> <span class="n">_sparse_sketch_operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pawX</span><span class="w"> </span><span class="kn">import</span> <span class="n">srht</span> <span class="k">as</span> <span class="n">_srht</span>
+
+
+<div class="viewcode-block" id="scaled_sign_sketch">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.scaled_sign_sketch">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scaled_sign_sketch</span><span class="p">(</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a scaled sign sketch matrix as a PyTorch tensor.</span>
+
+<span class="sd">    A scaled sign sketch is a random projection matrix where each entry is independently set to +1 or -1,</span>
+<span class="sd">    scaled by a normalization factor. This is commonly used in randomized linear algebra and sketching algorithms.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m (int): Number of rows in the output tensor (sketch dimension).</span>
+<span class="sd">        n (int): Number of columns in the output tensor (original dimension).</span>
+<span class="sd">        device (Optional[torch.device], optional): The device on which to create the tensor. Defaults to None (uses current device).</span>
+<span class="sd">        dtype (Optional[torch.dtype], optional): The desired data type of returned tensor. Defaults to None (uses default dtype).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: A tensor of shape (m, n) containing the scaled sign sketch matrix.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import torch</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch import scaled_sign_sketch</span>
+<span class="sd">        &gt;&gt;&gt; m, n = 32, 128</span>
+<span class="sd">        &gt;&gt;&gt; S = scaled_sign_sketch(m, n)</span>
+<span class="sd">        &gt;&gt;&gt; print(S.shape)</span>
+<span class="sd">        torch.Size([32, 128])</span>
+<span class="sd">        &gt;&gt;&gt; # Each entry is either +1/sqrt(m) or -1/sqrt(m)</span>
+<span class="sd">        &gt;&gt;&gt; print(torch.unique(S))</span>
+<span class="sd">        tensor([-0.1768,  0.1768])  # For m=32, 1/sqrt(32) ≈ 0.1768</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_scaled_sign_sketch</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dense_sketch_operator">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.dense_sketch_operator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dense_sketch_operator</span><span class="p">(</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">distribution</span><span class="p">:</span> <span class="n">DistributionFamily</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a dense sketch operator matrix with entries sampled from a specified distribution.</span>
+<span class="sd">    This function generates a dense random matrix of shape `(m, n)` where each entry is drawn independently from the given `distribution`. Such sketch operators are commonly used in randomized linear algebra, dimensionality reduction, and compressed sensing to project high-dimensional data into a lower-dimensional space while preserving certain geometric properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m : int</span>
+<span class="sd">            The number of rows of the sketch operator (i.e., the target dimension after sketching).</span>
+<span class="sd">        n : int</span>
+<span class="sd">            The number of columns of the sketch operator (i.e., the original dimension of the data).</span>
+<span class="sd">        distribution : DistributionFamily</span>
+<span class="sd">            The distribution family from which to sample the entries of the sketch operator.</span>
+<span class="sd">            This could be, for example, a standard normal distribution, a uniform distribution, or any other supported distribution.</span>
+<span class="sd">        device : Optional[torch.device], default=None</span>
+<span class="sd">            The device on which to allocate the resulting tensor (e.g., &#39;cpu&#39; or &#39;cuda&#39;). If None, defaults to the current device.</span>
+<span class="sd">        dtype : Optional[torch.dtype], default=None</span>
+<span class="sd">            The desired data type of the returned tensor. If None, defaults to the default dtype of the current torch device.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            A dense tensor of shape `(m, n)` with entries sampled from the specified distribution.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import torch</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch import dense_sketch_operator</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch import DistributionFamily</span>
+<span class="sd">        &gt;&gt;&gt; m, n = 100, 500</span>
+<span class="sd">        &gt;&gt;&gt; sketch = dense_sketch_operator(m, n, DistributionFamily.GAUSSIAN)</span>
+<span class="sd">        &gt;&gt;&gt; print(sketch.shape)</span>
+<span class="sd">        torch.Size([100, 500])</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The choice of distribution affects the properties of the sketch operator. For example, using a standard normal distribution yields a Johnson-Lindenstrauss transform.</span>
+<span class="sd">    - For large matrices, consider using sparse sketch operators for improved efficiency.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_dense_sketch_operator</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">distribution</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sketch_tensor">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.sketch_tensor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sketch_tensor</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">new_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">distribution</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DistributionFamily</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sketch_matrix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sketches a given input tensor along a specified axis using a randomized projection technique.</span>
+
+<span class="sd">    This function reduces the dimensionality of the input tensor along the specified axis to `new_size`</span>
+<span class="sd">    by applying a sketching (random projection) operation. The type of random projection is determined</span>
+<span class="sd">    by the `distribution_or_sketch_matrix` parameter, which can be either a distribution family or a precomputed sketching matrix.</span>
+<span class="sd">    If a distribution family is provided, the function returns a tuple (sketched_tensor, sketch_matrix).</span>
+<span class="sd">    If a sketching matrix (torch.Tensor) is provided, only the sketched tensor is returned.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        input (torch.Tensor):</span>
+<span class="sd">            The input tensor to be sketched. Can be of any shape, but the dimension along `axis` will be reduced.</span>
+<span class="sd">        axis (int):</span>
+<span class="sd">            The axis along which to apply the sketching operation. Must be a valid axis for `input`.</span>
+<span class="sd">        new_size (int):</span>
+<span class="sd">            The target size for the specified axis after sketching. Must be less than or equal to the original size.</span>
+<span class="sd">        distribution_or_sketch_matrix (Union[DistributionFamily, torch.Tensor]):</span>
+<span class="sd">            Either the distribution family to use for generating the sketching matrix (e.g., Gaussian, Rademacher),</span>
+<span class="sd">            or a precomputed sketching matrix (torch.Tensor) to use directly.</span>
+<span class="sd">        device (Optional[torch.device], default=None):</span>
+<span class="sd">            The device on which to perform the computation and allocate the sketching matrix. If None, uses the device of `input`.</span>
+<span class="sd">        dtype (Optional[torch.dtype], default=None):</span>
+<span class="sd">            The desired data type of the output tensor and sketching matrix. If None, uses the dtype of `input`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:</span>
+<span class="sd">            If a distribution family is provided, returns a tuple (sketched_tensor, sketch_matrix).</span>
+<span class="sd">            If a sketching matrix is provided, returns only the sketched tensor.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import torch</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch.core import sketch_tensor, DistributionFamily</span>
+<span class="sd">        &gt;&gt;&gt; x = torch.randn(10, 100)</span>
+<span class="sd">        &gt;&gt;&gt; # Using a distribution family</span>
+<span class="sd">        &gt;&gt;&gt; sketched_x, sketch_matrix = sketch_tensor(</span>
+<span class="sd">        ...     input=x,</span>
+<span class="sd">        ...     axis=1,</span>
+<span class="sd">        ...     new_size=20,</span>
+<span class="sd">        ...     distribution_or_sketch_matrix=DistributionFamily.GAUSSIAN</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; print(sketched_x.shape)</span>
+<span class="sd">        torch.Size([10, 20])</span>
+<span class="sd">        &gt;&gt;&gt; print(sketch_matrix.shape)</span>
+<span class="sd">        torch.Size([20, 100])</span>
+<span class="sd">        &gt;&gt;&gt; # Using a precomputed sketching matrix</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch import dense_sketch_operator</span>
+<span class="sd">        &gt;&gt;&gt; S = dense_sketch_operator(100, 20, DistributionFamily.GAUSSIAN)</span>
+<span class="sd">        &gt;&gt;&gt; sketched_x = sketch_tensor(</span>
+<span class="sd">        ...     input=x,</span>
+<span class="sd">        ...     axis=1,</span>
+<span class="sd">        ...     new_size=20,</span>
+<span class="sd">        ...     distribution_or_sketch_matrix=S</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; print(sketched_x.shape)</span>
+<span class="sd">        torch.Size([10, 20])</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - The sketching operation is commonly used for dimensionality reduction, speeding up computations,</span>
+<span class="sd">          and preserving essential structure in large-scale machine learning and signal processing tasks.</span>
+<span class="sd">        - The choice of distribution affects the quality and properties of the sketch.</span>
+<span class="sd">        - The returned sketching matrix can be reused for consistent projections or analysis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># enforce exactly one path</span>
+    <span class="k">if</span> <span class="n">distribution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sketch_matrix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cannot specify both `distribution` and `sketch_matrix`, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got distribution=</span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2"> and sketch_matrix=</span><span class="si">{</span><span class="n">sketch_matrix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># dispatch to the low-level binding</span>
+    <span class="k">if</span> <span class="n">distribution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># distribution path: return both sketched tensor and sketch matrix</span>
+        <span class="k">return</span> <span class="n">_sketch_tensor</span><span class="p">(</span>
+            <span class="nb">input</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+            <span class="n">new_size</span><span class="o">=</span><span class="n">new_size</span><span class="p">,</span>
+            <span class="n">distribution</span><span class="o">=</span><span class="n">distribution</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sketch_matrix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># sketch_matrix path: only return sketched tensor</span>
+        <span class="k">return</span> <span class="n">_sketch_tensor</span><span class="p">(</span>
+            <span class="nb">input</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+            <span class="n">new_size</span><span class="o">=</span><span class="n">new_size</span><span class="p">,</span>
+            <span class="n">sketch_matrix</span><span class="o">=</span><span class="n">sketch_matrix</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Must specify exactly one of `distribution` or `sketch_matrix`, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got distribution=</span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2"> and sketch_matrix=</span><span class="si">{</span><span class="n">sketch_matrix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sparse_sketch_operator">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.sparse_sketch_operator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sparse_sketch_operator</span><span class="p">(</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">vec_nnz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Axis</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a sparse sketch operator matrix with specified number of non-zero entries per vector.</span>
+
+<span class="sd">    This function generates a sparse random matrix of shape `(m, n)` where each row or column (depending on the `axis`)</span>
+<span class="sd">    has exactly `vec_nnz` non-zero entries. This is commonly used in randomized linear algebra and sketching algorithms</span>
+<span class="sd">    to project high-dimensional data into a lower-dimensional space while preserving certain geometric properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m : int</span>
+<span class="sd">            The number of rows of the sketch operator (i.e., the target dimension after sketching).</span>
+<span class="sd">        n : int</span>
+<span class="sd">            The number of columns of the sketch operator (i.e., the original dimension of the data).</span>
+<span class="sd">        vec_nnz : int</span>
+<span class="sd">            The number of non-zero entries per vector (row or column) in the sketch operator.</span>
+<span class="sd">        axis : Axis</span>
+<span class="sd">            The axis along which to create the sparse sketch operator. Can be either `Axis.Short` or `Axis.Long`.</span>
+<span class="sd">        device : Optional[torch.device], default=None</span>
+<span class="sd">            The device on which to allocate the resulting tensor (e.g., &#39;cpu&#39; or &#39;cuda&#39;). If None, defaults to the current device.</span>
+<span class="sd">        dtype : Optional[torch.dtype], default=None</span>
+<span class="sd">            The desired data type of the returned tensor. If None, defaults to the default dtype of the current torch device.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            A sparse COO tensor of shape `(m, n)` with exactly `vec_nnz` non-zero entries per vector along the specified axis.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import torch</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch import sparse_sketch_operator, Axis</span>
+<span class="sd">        &gt;&gt;&gt; m, n = 100, 500</span>
+<span class="sd">        &gt;&gt;&gt; vec_nnz = 5</span>
+<span class="sd">        &gt;&gt;&gt; sketch = sparse_sketch_operator(m, n, vec_nnz, Axis.Short)</span>
+<span class="sd">        &gt;&gt;&gt; print(sketch.shape)</span>
+<span class="sd">        torch.Size([100, 500])</span>
+<span class="sd">        &gt;&gt;&gt; print(sketch._nnz())  # Number of non-zero entries in the sparse tensor</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_sparse_sketch_operator</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">vec_nnz</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="srht">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.srht">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">srht</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Subsampled Randomized Hadamard Transform (SRHT).</span>
+
+<span class="sd">    This function computes a Subsampled Randomized Hadamard Transform of a 1D input tensor `x` of length `n`</span>
+<span class="sd">    (where `n` must be a power of 2). It performs the following steps:</span>
+
+<span class="sd">    1. Multiply the input by a random diagonal matrix with ±1 entries (random sign flipping).</span>
+<span class="sd">    2. Apply the Fast Walsh-Hadamard Transform (FWHT).</span>
+<span class="sd">    3. Uniformly subsample `m` rows from the result.</span>
+
+<span class="sd">    This is commonly used in randomized numerical linear algebra and compressed sensing to reduce</span>
+<span class="sd">    dimensionality while approximately preserving distances.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : torch.Tensor</span>
+<span class="sd">        A 1D input tensor of shape `(n,)` where `n` is a power of 2.</span>
+<span class="sd">        The tensor must reside on the CPU and be of floating point type.</span>
+
+<span class="sd">    m : int</span>
+<span class="sd">        The number of rows to subsample from the Hadamard-transformed output.</span>
+<span class="sd">        Must satisfy `0 &lt; m &lt;= n`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.Tensor</span>
+<span class="sd">        A 1D tensor of shape `(m,)` containing the subsampled rows from the Hadamard-transformed vector.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If `x` is not on CPU, is not 1-dimensional, or `n` is not a power of 2.</span>
+<span class="sd">        If `m` is greater than `n`.</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; import torch</span>
+<span class="sd">    &gt;&gt;&gt; from panther.sketch import srht</span>
+<span class="sd">    &gt;&gt;&gt; x = torch.randn(8)</span>
+<span class="sd">    &gt;&gt;&gt; y = srht(x, 4)</span>
+<span class="sd">    &gt;&gt;&gt; print(y.shape)</span>
+<span class="sd">    torch.Size([4])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_srht</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="count_skop">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.count_skop">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">count_skop</span><span class="p">(</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a CountSketch sketching matrix of shape (m, d).</span>
+
+<span class="sd">    Each column of the sketching matrix has exactly one non-zero entry,</span>
+<span class="sd">    which is randomly assigned to a row via a simple hash (uniform random),</span>
+<span class="sd">    and assigned a value of ±1 with equal probability. The result is a sparse</span>
+<span class="sd">    sketching operator used to project high-dimensional data into a lower-dimensional</span>
+<span class="sd">    space while approximately preserving inner products.</span>
+
+<span class="sd">    This is commonly used in streaming and randomized linear algebra algorithms.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m (int): Number of rows in the sketching matrix (target dimension).</span>
+<span class="sd">        d (int): Number of columns in the sketching matrix (original dimension).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: A sparse sketching matrix of shape (m, d) with exactly one</span>
+<span class="sd">                      non-zero entry per column (either +1 or -1).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import torch</span>
+<span class="sd">        &gt;&gt;&gt; from panther.sketch import count_sketch_operator</span>
+<span class="sd">        &gt;&gt;&gt; m, d = 100, 1000</span>
+<span class="sd">        &gt;&gt;&gt; S = count_skop(m, d)</span>
+<span class="sd">        &gt;&gt;&gt; X = torch.randn(50, d)  # Input data</span>
+<span class="sd">        &gt;&gt;&gt; X_sketched = X @ S.t()</span>
+<span class="sd">        &gt;&gt;&gt; X_sketched.shape</span>
+<span class="sd">        torch.Size([50, 100])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_count_skop</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="gaussian_skop">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.gaussian_skop">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gaussian_skop</span><span class="p">(</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a Gaussian random projection matrix of shape (m, d).</span>
+
+<span class="sd">    Each entry in the sketching matrix is an independent sample from</span>
+<span class="sd">    the normal distribution N(0, 1/m). This type of projection approximately</span>
+<span class="sd">    preserves Euclidean distances and inner products with high probability.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m (int): Number of rows in the sketching matrix (target dimension).</span>
+<span class="sd">        d (int): Number of columns in the sketching matrix (original dimension).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: A dense sketching matrix of shape (m, d) with entries ~ N(0, 1/m).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; S = gaussian_skop(100, 1000)</span>
+<span class="sd">        &gt;&gt;&gt; X = torch.randn(64, 1000)</span>
+<span class="sd">        &gt;&gt;&gt; X_sketched = X @ S.t()</span>
+<span class="sd">        &gt;&gt;&gt; X_sketched.shape</span>
+<span class="sd">        torch.Size([64, 100])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_gaussian_skop</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sjlt_skop">
+<a class="viewcode-back" href="../../../api/sketch.html#panther.sketch.sjlt_skop">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sjlt_skop</span><span class="p">(</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">sparsity</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a sparse Johnson-Lindenstrauss Transform (SJLT) sketching matrix.</span>
+
+<span class="sd">    Each column of the matrix has exactly `sparsity` non-zero entries, chosen uniformly</span>
+<span class="sd">    at random among the rows, with values ±1. The matrix is scaled by 1/√sparsity.</span>
+<span class="sd">    This sketch is ideal for fast projections with low memory usage.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m (int): Number of rows in the sketching matrix (target dimension).</span>
+<span class="sd">        d (int): Number of columns in the sketching matrix (original dimension).</span>
+<span class="sd">        sparsity (int, optional): Number of non-zero entries per column. Defaults to 2.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: A sparse sketching matrix of shape (m, d), entries ∈ {±1/√sparsity}.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; S = sjlt_skop(200, 1000, sparsity=3)</span>
+<span class="sd">        &gt;&gt;&gt; X = torch.randn(32, 1000)</span>
+<span class="sd">        &gt;&gt;&gt; X_sketched = X @ S.t()</span>
+<span class="sd">        &gt;&gt;&gt; X_sketched.shape</span>
+<span class="sd">        torch.Size([32, 200])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_sjlt_skop</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">sparsity</span><span class="o">=</span><span class="n">sparsity</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

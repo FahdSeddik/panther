@@ -1,0 +1,1008 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Sketched Linear Layers &#8212; Panther Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a5a97845" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=969202b3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/sketched_linear_layers';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Matrix Decompositions" href="matrix_decompositions.html" />
+    <link rel="prev" title="Tutorials" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/panther-logo.png" class="logo__image only-light" alt="Panther Documentation - Home"/>
+    <script>document.write(`<img src="../_static/panther-logo.png" class="logo__image only-dark" alt="Panther Documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Tutorials</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Sketched Linear Layers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="matrix_decompositions.html">Matrix Decompositions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neural_networks.html">Neural Networks with Sketching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance_optimization.html">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_sketching.html">Custom Sketching Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autotuning.html">Autotuning for Maximum Performance</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../benchmarking/index.html">Benchmarking</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_linear_layers.html">Sketched linear layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/Attention.html">Attention</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/RandNLA.html">CQRRPT and RSVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../benchmarking/sketched_convolutions.html">Sketched Conv2d</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../api/linalg.html">Linear Algebra API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/nn.html">Neural Networks API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sketch.html">Sketching API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/tuner.html">AutoTuner API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">API Reference: Utilities</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to Panther</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/edit/main/docs/tutorials/sketched_linear_layers.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/FahdSeddik/panther/issues/new?title=Issue%20on%20page%20%2Ftutorials/sketched_linear_layers.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials/sketched_linear_layers.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Sketched Linear Layers</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-are-sketched-linear-layers">What are Sketched Linear Layers?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-use-sketched-layers">Why Use Sketched Layers?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-the-parameters">Understanding the Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-selection-guidelines">Parameter Selection Guidelines</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-your-first-sketched-network">Building Your First Sketched Network</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-usage-patterns">Advanced Usage Patterns</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#debugging-and-optimization">Debugging and Optimization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="sketched-linear-layers">
+<h1>Sketched Linear Layers<a class="headerlink" href="#sketched-linear-layers" title="Link to this heading">#</a></h1>
+<p>This tutorial covers the fundamentals of sketched linear layers in Panther, explaining how they work and when to use them.</p>
+<section id="what-are-sketched-linear-layers">
+<h2>What are Sketched Linear Layers?<a class="headerlink" href="#what-are-sketched-linear-layers" title="Link to this heading">#</a></h2>
+<p>Traditional linear layers in neural networks compute:</p>
+<div class="math notranslate nohighlight">
+\[y = Wx + b\]</div>
+<p><span class="math notranslate nohighlight">\(W\)</span> is a <span class="math notranslate nohighlight">\(d_{out} \times d_{in}\)</span> weight matrix.</p>
+<p>Sketched linear layers approximate this computation using a sum of low-rank terms:</p>
+<div class="math notranslate nohighlight">
+\[y \approx \frac{1}{2L} \sum_{i=1}^{L} \left( U_{1,i}^T S_{1,i} x + S_{2,i} U_{2,i} x \right) + b\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(L\)</span> is the number of terms (<code class="docutils literal notranslate"><span class="pre">num_terms</span></code>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(k\)</span> is the rank of each term (<code class="docutils literal notranslate"><span class="pre">low_rank</span></code>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(U_{1,i}, U_{2,i}\)</span> are fixed random matrices</p></li>
+<li><p><span class="math notranslate nohighlight">\(S_{1,i}, S_{2,i}\)</span> are learnable parameter matrices</p></li>
+</ul>
+</section>
+<section id="why-use-sketched-layers">
+<h2>Why Use Sketched Layers?<a class="headerlink" href="#why-use-sketched-layers" title="Link to this heading">#</a></h2>
+<p><strong>Memory Efficiency</strong></p>
+<p>Standard linear layer parameters: <span class="math notranslate nohighlight">\(d_{out} \times d_{in} + d_{out}\)</span></p>
+<p>Sketched layer parameters: <span class="math notranslate nohighlight">\(2L \times k \times (d_{out} + d_{in}) + d_{out}\)</span></p>
+<p>For large layers, this can be a significant reduction.</p>
+<p><strong>Example Comparison</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Large layer dimensions</span>
+<span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span> <span class="mi">4096</span>
+
+<span class="c1"># Standard linear layer</span>
+<span class="n">standard_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">)</span>
+<span class="n">standard_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">standard_layer</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+<span class="c1"># Sketched linear layer</span>
+<span class="n">sketched_layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span>
+    <span class="n">in_features</span><span class="o">=</span><span class="n">in_features</span><span class="p">,</span>
+    <span class="n">out_features</span><span class="o">=</span><span class="n">out_features</span><span class="p">,</span>
+    <span class="n">num_terms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">low_rank</span><span class="o">=</span><span class="mi">128</span>
+<span class="p">)</span>
+<span class="n">sketched_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sketched_layer</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Standard layer parameters: </span><span class="si">{</span><span class="n">standard_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sketched layer parameters: </span><span class="si">{</span><span class="n">sketched_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Memory reduction: </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sketched_params</span><span class="o">/</span><span class="n">standard_params</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># Standard layer parameters: 16,781,312</span>
+<span class="c1"># Sketched layer parameters: 4,194,304</span>
+<span class="c1"># Memory reduction: 75.0%</span>
+</pre></div>
+</div>
+</section>
+<section id="understanding-the-parameters">
+<h2>Understanding the Parameters<a class="headerlink" href="#understanding-the-parameters" title="Link to this heading">#</a></h2>
+<p><strong>num_terms (L)</strong></p>
+<p>The number of low-rank terms in the approximation.</p>
+<ul class="simple">
+<li><p><strong>More terms</strong>: Better approximation, more parameters</p></li>
+<li><p><strong>Fewer terms</strong>: Faster computation, less memory</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Conservative: Fast but less accurate</span>
+<span class="n">conservative</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+
+<span class="c1"># Aggressive: Slower but more accurate</span>
+<span class="n">aggressive</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>low_rank (k)</strong></p>
+<p>The rank of each low-rank term.</p>
+<ul class="simple">
+<li><p><strong>Higher rank</strong>: Better approximation per term, more parameters</p></li>
+<li><p><strong>Lower rank</strong>: More compression, potentially less accurate</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Low rank: High compression</span>
+<span class="n">high_compression</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+
+<span class="c1"># High rank: Better approximation</span>
+<span class="n">better_approx</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="parameter-selection-guidelines">
+<h2>Parameter Selection Guidelines<a class="headerlink" href="#parameter-selection-guidelines" title="Link to this heading">#</a></h2>
+<p><strong>Rule of Thumb</strong></p>
+<p>Ensure the sketched layer uses fewer parameters than the standard layer:</p>
+<div class="math notranslate nohighlight">
+\[2 \times L \times k \times (d_{in} + d_{out}) &lt; d_{in} \times d_{out}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">check_parameter_efficiency</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span> <span class="n">num_terms</span><span class="p">,</span> <span class="n">low_rank</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if sketched layer uses fewer parameters.&quot;&quot;&quot;</span>
+    <span class="n">standard_params</span> <span class="o">=</span> <span class="n">in_features</span> <span class="o">*</span> <span class="n">out_features</span>
+    <span class="n">sketched_params</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">num_terms</span> <span class="o">*</span> <span class="n">low_rank</span> <span class="o">*</span> <span class="p">(</span><span class="n">in_features</span> <span class="o">+</span> <span class="n">out_features</span><span class="p">)</span>
+
+    <span class="n">efficient</span> <span class="o">=</span> <span class="n">sketched_params</span> <span class="o">&lt;</span> <span class="n">standard_params</span>
+    <span class="n">reduction</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sketched_params</span> <span class="o">/</span> <span class="n">standard_params</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+
+    <span class="k">return</span> <span class="n">efficient</span><span class="p">,</span> <span class="n">reduction</span>
+
+<span class="c1"># Test different configurations</span>
+<span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>   <span class="c1"># Conservative</span>
+    <span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>   <span class="c1"># Balanced</span>
+<span class="p">]</span>
+
+<span class="k">for</span> <span class="n">in_feat</span><span class="p">,</span> <span class="n">out_feat</span><span class="p">,</span> <span class="n">terms</span><span class="p">,</span> <span class="n">rank</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+    <span class="n">efficient</span><span class="p">,</span> <span class="n">reduction</span> <span class="o">=</span> <span class="n">check_parameter_efficiency</span><span class="p">(</span><span class="n">in_feat</span><span class="p">,</span> <span class="n">out_feat</span><span class="p">,</span> <span class="n">terms</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Terms=</span><span class="si">{</span><span class="n">terms</span><span class="si">}</span><span class="s2">, Rank=</span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">: Efficient=</span><span class="si">{</span><span class="n">efficient</span><span class="si">}</span><span class="s2">, Reduction=</span><span class="si">{</span><span class="n">reduction</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Suggested Starting Points</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Layer Size</p></th>
+<th class="head"><p>num_terms</p></th>
+<th class="head"><p>low_rank</p></th>
+<th class="head"><p>Memory Reduction</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Small (&lt; 512)</p></td>
+<td><p>2-4</p></td>
+<td><p>16-32</p></td>
+<td><p>50-70%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Medium (512-2048)</p></td>
+<td><p>4-8</p></td>
+<td><p>32-64</p></td>
+<td><p>60-80%</p></td>
+</tr>
+<tr class="row-even"><td><p>Large (&gt; 2048)</p></td>
+<td><p>8-16</p></td>
+<td><p>64-128</p></td>
+<td><p>70-90%</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="building-your-first-sketched-network">
+<h2>Building Your First Sketched Network<a class="headerlink" href="#building-your-first-sketched-network" title="Link to this heading">#</a></h2>
+<p><strong>Step 1: Replace Linear Layers</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">panther</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pr</span>
+
+<span class="c1"># Original network</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OriginalNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">784</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+<span class="c1"># Sketched version</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SketchedNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">784</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p><strong>Step 2: Training Comparison</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">TensorDataset</span>
+
+<span class="c1"># Generate sample data</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">784</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,))</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">TensorDataset</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Create models</span>
+<span class="n">original_model</span> <span class="o">=</span> <span class="n">OriginalNet</span><span class="p">()</span>
+<span class="n">sketched_model</span> <span class="o">=</span> <span class="n">SketchedNet</span><span class="p">()</span>
+
+<span class="c1"># Optimizers</span>
+<span class="n">original_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">original_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="n">sketched_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sketched_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+
+<span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+
+<span class="c1"># Training function</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">):</span>
+        <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch_x</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">batch_y</span><span class="p">)</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="n">avg_loss</span> <span class="o">=</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataloader</span><span class="p">)</span>
+        <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_loss</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">avg_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">losses</span>
+
+<span class="c1"># Train both models</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training original model:&quot;</span><span class="p">)</span>
+<span class="n">original_losses</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">original_model</span><span class="p">,</span> <span class="n">original_optimizer</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nTraining sketched model:&quot;</span><span class="p">)</span>
+<span class="n">sketched_losses</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">sketched_model</span><span class="p">,</span> <span class="n">sketched_optimizer</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Step 3: Evaluate Performance</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">evaluate_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">correct</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch_x</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">predicted</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">outputs</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">batch_y</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted</span> <span class="o">==</span> <span class="n">batch_y</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span>
+    <span class="k">return</span> <span class="n">accuracy</span>
+
+<span class="c1"># Evaluate both models</span>
+<span class="n">original_acc</span> <span class="o">=</span> <span class="n">evaluate_model</span><span class="p">(</span><span class="n">original_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">)</span>
+<span class="n">sketched_acc</span> <span class="o">=</span> <span class="n">evaluate_model</span><span class="p">(</span><span class="n">sketched_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nFinal Results:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original model accuracy: </span><span class="si">{</span><span class="n">original_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sketched model accuracy: </span><span class="si">{</span><span class="n">sketched_acc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accuracy difference: </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">original_acc</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sketched_acc</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="advanced-usage-patterns">
+<h2>Advanced Usage Patterns<a class="headerlink" href="#advanced-usage-patterns" title="Link to this heading">#</a></h2>
+<p><strong>1. Layer-Specific Parameters</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveSketchedNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># First layer: More terms for better approximation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">784</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+
+        <span class="c1"># Middle layer: Balanced approach</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">48</span><span class="p">)</span>
+
+        <span class="c1"># Output layer: Fewer parameters, higher precision</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p><strong>2. Gradual Parameter Increase</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ProgressiveSketchedLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Layer that increases complexity during training.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span>
+                 <span class="n">initial_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_terms</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                 <span class="n">initial_rank</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">max_rank</span><span class="o">=</span><span class="mi">128</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_features</span> <span class="o">=</span> <span class="n">in_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_features</span> <span class="o">=</span> <span class="n">out_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_terms</span> <span class="o">=</span> <span class="n">max_terms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_rank</span> <span class="o">=</span> <span class="n">max_rank</span>
+
+        <span class="c1"># Start with minimal complexity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span>
+            <span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span>
+            <span class="n">num_terms</span><span class="o">=</span><span class="n">initial_terms</span><span class="p">,</span>
+            <span class="n">low_rank</span><span class="o">=</span><span class="n">initial_rank</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">increase_complexity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Double the number of terms and rank (up to maximum).&quot;&quot;&quot;</span>
+        <span class="n">current_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="o">.</span><span class="n">num_terms</span>
+        <span class="n">current_rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="o">.</span><span class="n">low_rank</span>
+
+        <span class="n">new_terms</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">current_terms</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_terms</span><span class="p">)</span>
+        <span class="n">new_rank</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">current_rank</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_rank</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">new_terms</span> <span class="o">&gt;</span> <span class="n">current_terms</span> <span class="ow">or</span> <span class="n">new_rank</span> <span class="o">&gt;</span> <span class="n">current_rank</span><span class="p">:</span>
+            <span class="c1"># Create new layer with increased parameters</span>
+            <span class="n">new_layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">in_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_features</span><span class="p">,</span>
+                <span class="n">num_terms</span><span class="o">=</span><span class="n">new_terms</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="n">new_rank</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Transfer bias if it exists</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                    <span class="n">new_layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span> <span class="o">=</span> <span class="n">new_layer</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>3. Conditional Sketching</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConditionalSketchedLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use sketching only for large inputs.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span>
+                 <span class="n">sketch_threshold</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sketch_threshold</span> <span class="o">=</span> <span class="n">sketch_threshold</span>
+
+        <span class="c1"># Standard layer for small inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">standard_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">)</span>
+
+        <span class="c1"># Sketched layer for large inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sketched_layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span>
+            <span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span>
+            <span class="n">num_terms</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">64</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sketch_threshold</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">standard_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sketched_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="debugging-and-optimization">
+<h2>Debugging and Optimization<a class="headerlink" href="#debugging-and-optimization" title="Link to this heading">#</a></h2>
+<p><strong>1. Parameter Analysis</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analyze_sketched_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyze sketched layer parameters and statistics.&quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Layer: </span><span class="si">{</span><span class="n">layer</span><span class="o">.</span><span class="n">in_features</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">layer</span><span class="o">.</span><span class="n">out_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;num_terms: </span><span class="si">{</span><span class="n">layer</span><span class="o">.</span><span class="n">num_terms</span><span class="si">}</span><span class="s2">, low_rank: </span><span class="si">{</span><span class="n">layer</span><span class="o">.</span><span class="n">low_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Parameter counts</span>
+    <span class="n">s1_params</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">S1s</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="n">s2_params</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">S2s</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="n">u1_params</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">U1s</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="n">u2_params</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">U2s</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="n">bias_params</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;S1s parameters: </span><span class="si">{</span><span class="n">s1_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;S2s parameters: </span><span class="si">{</span><span class="n">s2_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;U1s parameters (fixed): </span><span class="si">{</span><span class="n">u1_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;U2s parameters (fixed): </span><span class="si">{</span><span class="n">u2_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bias parameters: </span><span class="si">{</span><span class="n">bias_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total learnable: </span><span class="si">{</span><span class="n">s1_params</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s2_params</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">bias_params</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Parameter statistics</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">s1_mean</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">S1s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">s1_std</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">S1s</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">s2_mean</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">S2s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">s2_std</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">S2s</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;S1s: mean=</span><span class="si">{</span><span class="n">s1_mean</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="n">s1_std</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;S2s: mean=</span><span class="si">{</span><span class="n">s2_mean</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="n">s2_std</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example usage</span>
+<span class="n">layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">num_terms</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">48</span><span class="p">)</span>
+<span class="n">analyze_sketched_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>2. Approximation Quality</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_approximation_quality</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span>
+                               <span class="n">num_terms</span><span class="p">,</span> <span class="n">low_rank</span><span class="p">,</span> <span class="n">num_tests</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test how well sketched layer approximates standard layer.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Create layers</span>
+    <span class="n">standard</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">)</span>
+    <span class="n">sketched</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="n">in_features</span><span class="p">,</span> <span class="n">out_features</span><span class="p">,</span>
+                             <span class="n">num_terms</span><span class="o">=</span><span class="n">num_terms</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="n">low_rank</span><span class="p">)</span>
+
+    <span class="c1"># Initialize sketched layer to approximate standard layer</span>
+    <span class="c1"># (This is a simplified initialization)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">standard</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span>  <span class="c1"># (out_features, in_features)</span>
+
+        <span class="c1"># Simple initialization: distribute weight across terms</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_terms</span><span class="p">):</span>
+            <span class="c1"># Initialize S1s and S2s to approximate W/num_terms</span>
+            <span class="n">sketched</span><span class="o">.</span><span class="n">S1s</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+            <span class="n">sketched</span><span class="o">.</span><span class="n">S2s</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="c1"># Test approximation quality</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tests</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">in_features</span><span class="p">)</span>
+
+        <span class="n">y_standard</span> <span class="o">=</span> <span class="n">standard</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y_sketched</span> <span class="o">=</span> <span class="n">sketched</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">y_standard</span> <span class="o">-</span> <span class="n">y_sketched</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">y_standard</span><span class="p">)</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+    <span class="n">avg_error</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">avg_error</span>
+
+<span class="c1"># Test different configurations</span>
+<span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="k">for</span> <span class="n">in_feat</span><span class="p">,</span> <span class="n">out_feat</span><span class="p">,</span> <span class="n">terms</span><span class="p">,</span> <span class="n">rank</span> <span class="ow">in</span> <span class="n">configs</span><span class="p">:</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">test_approximation_quality</span><span class="p">(</span><span class="n">in_feat</span><span class="p">,</span> <span class="n">out_feat</span><span class="p">,</span> <span class="n">terms</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Config (</span><span class="si">{</span><span class="n">terms</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">): Average error = </span><span class="si">{</span><span class="n">error</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Start Conservative</strong>: Begin with fewer terms and lower rank, then increase if needed</p></li>
+<li><p><strong>Monitor Training</strong>: Sketched layers may have different training dynamics</p></li>
+<li><p><strong>Layer-Specific Tuning</strong>: Different layers may benefit from different parameters</p></li>
+<li><p><strong>Parameter Efficiency</strong>: Always ensure sketched layers use fewer parameters</p></li>
+<li><p><strong>Gradient Clipping</strong>: May be helpful due to the approximation nature</p></li>
+<li><p><strong>Learning Rate</strong>: Consider using different learning rates for S1s and S2s</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example of best practices</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_optimized_sketched_model</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dims</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">):</span>
+    <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">current_dim</span> <span class="o">=</span> <span class="n">input_dim</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hidden_dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hidden_dims</span><span class="p">):</span>
+        <span class="c1"># Gradually decrease complexity for deeper layers</span>
+        <span class="n">num_terms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">8</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">low_rank</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span>
+            <span class="n">current_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span>
+            <span class="n">num_terms</span><span class="o">=</span><span class="n">num_terms</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="n">low_rank</span>
+        <span class="p">)</span>
+
+        <span class="n">layers</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)])</span>
+        <span class="n">current_dim</span> <span class="o">=</span> <span class="n">hidden_dim</span>
+
+    <span class="c1"># Output layer with minimal sketching</span>
+    <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pr</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">SKLinear</span><span class="p">(</span><span class="n">current_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span>
+                                <span class="n">num_terms</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">low_rank</span><span class="o">=</span><span class="mi">16</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+
+<span class="c1"># Usage</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">create_optimized_sketched_model</span><span class="p">(</span><span class="mi">784</span><span class="p">,</span> <span class="p">[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="c1"># Specialized optimizer with different learning rates</span>
+<span class="n">s_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">()</span> <span class="k">if</span> <span class="s1">&#39;S1s&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;S2s&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">]</span>
+<span class="n">other_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;S1s&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;S2s&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">)]</span>
+
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">([</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">s_params</span><span class="p">,</span> <span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">other_params</span><span class="p">,</span> <span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="mf">0.0005</span><span class="p">}</span>
+<span class="p">])</span>
+</pre></div>
+</div>
+<p>This tutorial provides a comprehensive introduction to sketched linear layers. The next tutorial will cover matrix decompositions in more detail.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-are-sketched-linear-layers">What are Sketched Linear Layers?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-use-sketched-layers">Why Use Sketched Layers?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-the-parameters">Understanding the Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-selection-guidelines">Parameter Selection Guidelines</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-your-first-sketched-network">Building Your First Sketched Network</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-usage-patterns">Advanced Usage Patterns</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#debugging-and-optimization">Debugging and Optimization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The Panther Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, The Panther Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
