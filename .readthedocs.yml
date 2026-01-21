@@ -9,19 +9,18 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
-    # You can also specify other tools here, like nodejs or rust
+  jobs:
+    pre_build:
+      # Generate API documentation
+      - sphinx-apidoc -o docs ./panther
 
-# Build documentation in the "docs/" directory with Sphinx
 sphinx:
   configuration: docs/conf.py
-  fail_on_warning: false
 
-# Optionally declare the Python requirements required to build your docs
+formats:
+  - htmlzip
+  # - pdf
+
 python:
   install:
     - requirements: docs/requirements.txt
-
-# Optional but recommended, declare the Python requirements required to build your docs
-formats:
-  - pdf
-  - htmlzip

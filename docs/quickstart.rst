@@ -27,6 +27,12 @@ Build from source (for CPU-only systems or custom builds):
    # OR
    make install   # Linux/macOS
 
+Using Docker (all dependencies included) for GPU systems:
+
+.. code-block:: bash
+
+   docker pull fahdseddik/panther-dev
+
 Your First Panther Program
 ---------------------------
 
@@ -72,14 +78,14 @@ Replace standard linear layers with memory-efficient sketched versions:
    
    # Sketched linear layer (uses less memory)
    sketched_layer = pr.nn.SKLinear(
-       in_features=512,
-       out_features=256,
+       in_features=8192,
+       out_features=8192,
        num_terms=2,      # Number of sketching terms
-       low_rank=32       # Rank of each sketch
+       low_rank=64       # Rank of each sketch
    )
    
    # Both layers work identically
-   x = torch.randn(32, 512)  # batch_size=32
+   x = torch.randn(32, 8192)  # batch_size=32
    
    y1 = standard_layer(x)
    y2 = sketched_layer(x)
@@ -127,14 +133,14 @@ Here's how to build a simple neural network using Panther's sketched layers:
            self.layer1 = pr.nn.SKLinear(
                in_features=input_dim,
                out_features=hidden_dim,
-               num_terms=4,
+               num_terms=3,
                low_rank=32
            )
            
            self.layer2 = pr.nn.SKLinear(
                in_features=hidden_dim,
                out_features=hidden_dim,
-               num_terms=4,
+               num_terms=3,
                low_rank=32
            )
            
@@ -142,7 +148,7 @@ Here's how to build a simple neural network using Panther's sketched layers:
                in_features=hidden_dim,
                out_features=output_dim,
                num_terms=2,
-               low_rank=2
+               low_rank=16
            )
            
            self.relu = nn.ReLU()
@@ -157,10 +163,10 @@ Here's how to build a simple neural network using Panther's sketched layers:
            return x
    
    # Create model
-   model = SketchedMLP(input_dim=784, hidden_dim=512, output_dim=10)
+   model = SketchedMLP(input_dim=8192, hidden_dim=1024, output_dim=10)
    
    # Test with sample data
-   x = torch.randn(64, 784)  # batch of 64 samples
+   x = torch.randn(64, 8192)  # batch of 64 samples
    output = model(x)
    print(f"Output shape: {output.shape}")
 
@@ -180,15 +186,15 @@ Panther automatically uses GPU acceleration when available:
    
    # Create model on GPU
    model = pr.nn.SKLinear(
-       in_features=1024,
-       out_features=512,
-       num_terms=2,
-       low_rank=64,
+       in_features=8192,
+       out_features=1024,
+       num_terms=1,
+       low_rank=128,
        device=device
    )
    
    # Create input on GPU
-   x = torch.randn(128, 1024, device=device)
+   x = torch.randn(128, 8192, device=device)
    
    # Forward pass (automatically uses CUDA kernels)
    output = model(x)
@@ -206,14 +212,14 @@ For maximum performance on modern GPUs with Tensor Cores, ensure dimensions are 
    
    # Optimized for Tensor Cores (all dimensions are multiples of 16)
    model = SKLinear(
-       in_features=1024,    # Multiple of 16 ✓
-       out_features=1024,    # Multiple of 16 ✓  
-       num_terms=3,
-       low_rank=64          # Multiple of 16 ✓
+       in_features=512,    # Multiple of 16 ✓
+       out_features=256,    # Multiple of 16 ✓  
+       num_terms=2,
+       low_rank=32          # Multiple of 16 ✓
    )
    
    # Batch size should also be multiple of 16 for best performance
-   x = torch.randn(128, 1024)  # batch_size=128 (multiple of 16) ✓
+   x = torch.randn(128, 512)  # batch_size=128 (multiple of 16) ✓
    output = model(x)
 
 Working with Different Data Types
@@ -227,9 +233,9 @@ Panther's sketched layers work with standard PyTorch data types. Usage is simila
    import torch
    
    # Create layer with specific dtype
-   model_fp32 = SKLinear(512, 256, num_terms=2, low_rank=32, 
+   model_fp32 = SKLinear(8192, 512, num_terms=1, low_rank=128, 
                          dtype=torch.float32)
-   model_fp16 = SKLinear(512, 256, num_terms=2, low_rank=32,
+   model_fp16 = SKLinear(8192, 512, num_terms=1, low_rank=128,
                          dtype=torch.float16)
 
 Common Patterns and Best Practices
@@ -247,7 +253,7 @@ Common Patterns and Best Practices
    # - Total parameters: 2 * num_terms * low_rank * (in_features + out_features)
    #   should be less than in_features * out_features
    
-   in_features, out_features = 1024, 1024
+   in_features, out_features = 8192, 8192
    
    # Conservative choice (fewer parameters, faster)
    conservative = SKLinear(in_features, out_features, 
@@ -255,7 +261,7 @@ Common Patterns and Best Practices
    
    # Balanced choice (good accuracy-speed tradeoff)
    balanced = SKLinear(in_features, out_features,
-                      num_terms=2, low_rank=64)
+                      num_terms=1, low_rank=64)
    
    # Aggressive choice (more parameters but better approximation)  
    aggressive = SKLinear(in_features, out_features,
@@ -272,7 +278,7 @@ Use standard PyTorch memory monitoring:
    
    if torch.cuda.is_available():
        device = torch.device('cuda')
-       model = SKLinear(4096, 4096, num_terms=8, low_rank=128, device=device)
+       model = SKLinear(8192, 8192, num_terms=2, low_rank=128, device=device)
        
        allocated = torch.cuda.memory_allocated() / 1024**3
        print(f"GPU Memory Allocated: {allocated:.2f}GB")

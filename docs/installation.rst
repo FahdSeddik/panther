@@ -58,6 +58,18 @@ For CPU-only systems or custom builds (works on both CPU-only and GPU systems):
    # Make sure you have build-essential installed
    make setup
 
+**Option 3: Docker Image**
+
+Use our pre-built Docker image with all dependencies included:
+
+.. code-block:: bash
+
+   docker pull fahdseddik/panther-dev
+
+.. note::
+   The Docker image includes all necessary dependencies and works on GPU systems.
+   Simply pull the image and start using Panther without any manual setup.
+
 Manual Installation
 -------------------
 

@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   docs:
+    if: false  # Workflow disabled
     runs-on: ubuntu-latest
 
     steps:
