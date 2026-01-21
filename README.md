@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/_static/panther-logo.png" alt="Panther Logo" width="400"/>
+  <img src="docs/_static/panther-logo.png" alt="Panther Logo" width="200"/>
 </div>
 
 # Panther: Faster & Cheaper Computations with RandNLA
@@ -297,3 +297,4 @@ poetry run pre-commit install
 ---
 
 For more details, browse the source code and in-line documentation in each module.
+
