@@ -1,4 +1,112 @@
+<div align="center">
+  <img src="docs/_static/panther-logo.png" alt="Panther Logo" width="400"/>
+</div>
+
 # Panther: Faster & Cheaper Computations with RandNLA
+
+## Why Panther?
+
+Panther makes it incredibly easy to accelerate your existing PyTorch models with minimal code changes. Simply replace standard layers with Panther's sketched equivalents to get significant speedups and memory reductions.
+
+### 🚀 Quick Example: Drop-in Replacement
+
+<table>
+<tr>
+<th>Standard PyTorch</th>
+<th>With Panther (2-3x faster)</th>
+</tr>
+<tr>
+<td>
+
+```python
+import torch.nn as nn
+
+class StandardModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(8192, 8192)
+```
+
+</td>
+<td>
+
+```python
+import torch.nn as nn
+import panther as pr
+
+class PantherModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = pr.nn.SKLinear(8192, 8192, 
+            num_terms=1, low_rank=16)
+```
+
+</td>
+</tr>
+</table>
+
+**Result:** 2-3x speedup with minimal code changes on the example hyperparameters above.
+
+### 🤖 Automatic Optimization with AutoTuner
+
+For complex models like BERT, Panther can automatically find optimal configurations:
+
+```python
+from transformers import BertForMaskedLM
+from panther.tuner import SKAutoTuner, LayerConfig, TuningConfigs
+
+# Load pre-trained BERT
+model = BertForMaskedLM.from_pretrained("bert-base-uncased")
+
+# Configure automatic layer discovery and tuning
+config = LayerConfig(
+    layer_names={"type": "Linear"},
+    params="auto",  # Automatic search space
+    separate=True,  # Optimize each layer independently
+    copy_weights=True  # Preserve trained weights
+)
+
+# Create tuner with a quality metric constraint
+tuner = SKAutoTuner(
+    model=model,
+    configs=TuningConfigs([config]),
+    accuracy_eval_func=eval_quality,
+    accuracy_threshold=thresh,  # Based on eval_quality
+    optmization_eval_func=speed_eval_func,
+    search_algorithm=OptunaSearch(n_trials=10)
+)
+
+# Search and apply optimal configuration
+tuner.tune()
+optimized_model = tuner.apply_best_params()
+```
+
+**Result:** Up to 75% memory reduction while maintaining model quality.
+
+### 📊 Try It Yourself
+
+- **Interactive Demo:** Run [tests/notebooks/demo_notebook.ipynb](tests/notebooks/demo_notebook.ipynb) with our Docker container
+- **Benchmarks:** See detailed performance comparisons in the [documentation](docs/benchmarking/)
+
+---
+
+## Table of Contents
+
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start (Install & Use)](#quick-start-install--use)
+  - [Using Docker](#using-docker)
+- [Manual Setup (Optional)](#manual-setup-optional)
+  - [Installing Dependencies](#installing-dependencies)
+  - [Building the Native Backend (pawX)](#building-the-native-backend-pawx)
+- [Running Panther](#running-panther)
+- [Running Tests](#running-tests)
+- [Generating Documentation (Optional)](#generating-documentation-optional)
+- [Building a Python Wheel (Optional)](#building-a-python-wheel-optional)
+- [Project Structure](#project-structure)
+- [Pre-commit Hooks (Optional)](#pre-commit-hooks-optional)
+
+---
 
 ## Getting Started
 

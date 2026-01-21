@@ -12,7 +12,6 @@ System Requirements
 
 * **CPU**: Any modern x86-64 processor (CPU-only operation fully supported)
 * **GPU**: NVIDIA GPU with CUDA 12.4+ (optional, for GPU acceleration)
-* **Memory**: Minimum 8GB RAM recommended
 
 **Dependencies**:
 

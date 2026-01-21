@@ -32,17 +32,6 @@ Current Limitations
 - CUDA 12.4+ required for GPU operations (optional)
 - All core features available in CPU-only mode
 - Tensor Core optimizations work best with dimensions that are multiples of 16
-- Some operations may fall back to CPU on older GPUs
-
-**Memory Usage**
-
-- Initial CUDA context allocation may use significant memory
-- Very large sketching operations may exceed available GPU memory
-
-**Platform Support**
-
-- macOS support is experimental (CPU-only mode)
-- ARM64 support not yet available
 
 **Performance**
 
@@ -70,10 +59,10 @@ Panther builds upon excellent open source projects:
 - **PyTorch**: Deep learning framework
 - **OpenBLAS**: Optimized linear algebra routines  
 - **CUDA**: GPU computing platform
-- **BoTorch**: Bayesian optimization
+- **Optuna**: Bayesian optimization
 - **Poetry**: Python dependency management
 
 License
 =======
 
-Panther is released under the Apache 2.0 License. See the LICENSE file in the repository for details.
+Panther is released under the MIT License. See the LICENSE file in the repository for details.
