@@ -37,7 +37,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
           .value("Long", Axis::Long)
           .export_values();
 
-      m.def("cqrrpt", &cqrrpt, py::arg("M"), py::arg("gamma") = 1.25, py::arg("F") = DistributionFamily::Gaussian);
+      m.def("cqrrpt", &cqrrpt, py::arg("M"), py::arg("gamma") = 1.25);
       m.def("randomized_svd", &randomized_svd, py::arg("A"), py::arg("k"), py::arg("tol"));
 
       m.def("dense_sketch_operator", &dense_sketch_operator,

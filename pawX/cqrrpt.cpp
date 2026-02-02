@@ -1,3 +1,33 @@
+// Portions of this file are derived from RandLAPACK (https://github.com/BallisticLA/RandLAPACK)
+// Copyright, 2024. See LICENSE for copyright holder information.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+
 #include "cqrrpt.h"
 
 extern "C" {
@@ -187,31 +217,23 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt_core(
 }
 
 /**
- * @brief Computes a Cholesky QR decomposition with randomized projection.
+ * @brief Computes a Cholesky QR decomposition
  *
- * This function applies a sketching operator to the input matrix M based on the specified
- * distribution family, and then performs a core CQRRPT (Cholesky QR with Random Projection and Truncation)
- * operation. Currently, only the Gaussian distribution family is supported for the sketching operator.
+ * This function applies a sketching operator to the input matrix M
+ * and then performs a core CQRRPT (Cholesky QR with Randomization and Pivoting for Tall matrices)
+ * operation.
  *
  * @param M The input matrix as a torch::Tensor of shape (m, n).
  * @param gamma The compression ratio, used to determine the sketch size (d = ceil(gamma * n)).
- * @param F The distribution family for the sketching operator (only DistributionFamily::Gaussian is supported).
  * @return A tuple of three torch::Tensor objects resulting from the CQRRPT core operation.
- *
- * @throws torch::TorchCheckError if an unsupported distribution family is provided.
  */
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt(const torch::Tensor& M, double gamma, const DistributionFamily& F) {
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt(const torch::Tensor& M, double gamma) {
     const int64_t n = M.size(1);
     const int64_t m = M.size(0);
     const int64_t d = static_cast<int64_t>(std::ceil(gamma * n));
     const auto opts = M.options().dtype(M.scalar_type());
 
-    torch::Tensor S;
-    if (F == DistributionFamily::Gaussian) {
-        S = sparse_sketch_operator(d, m, 4, Axis::Short, opts.device(), M.scalar_type());
-    } else {
-        TORCH_CHECK(false, "Unsupported distribution family");
-    }
+    torch::Tensor S = sparse_sketch_operator(d, m, 4, Axis::Short, opts.device(), M.scalar_type());
 
     return cqrrpt_core(M, S);
 }

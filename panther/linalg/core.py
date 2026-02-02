@@ -4,7 +4,6 @@ from typing import Tuple
 
 import torch
 
-from pawX import DistributionFamily
 from pawX import cqrrpt as _cqrrpt
 from pawX import randomized_svd as _randomized_svd
 
@@ -12,7 +11,6 @@ from pawX import randomized_svd as _randomized_svd
 def cqrrpt(
     M: torch.Tensor,
     gamma: float = 1.25,
-    F: DistributionFamily = DistributionFamily.Gaussian,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Performs CholeskyQR with randomization and pivoting (CQRRPT) for tall matrices.
@@ -26,8 +24,6 @@ def cqrrpt(
         M (torch.Tensor): The input tall matrix of shape (m, n) with m >= n.
         gamma (float, optional): Oversampling parameter to improve numerical stability.
             Default is 1.25.
-        F (DistributionFamily, optional): The distribution family used for random projections.
-            Default is DistributionFamily.Gaussian.
 
     Returns:
         Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -37,12 +33,12 @@ def cqrrpt(
 
     Example:
         >>> import torch
-        >>> from panther.linalg import cqrrpt, DistributionFamily
+        >>> from panther.linalg import cqrrpt
         >>> # Create a random tall matrix
         >>> m, n = 100, 20
         >>> M = torch.randn(m, n)
         >>> # Perform CQRRPT
-        >>> Q, R, P = cqrrpt(M, gamma=1.25, F=DistributionFamily.Gaussian)
+        >>> Q, R, P = cqrrpt(M, gamma=1.25)
         >>> # Q is (m, n), R is (n, n), P is (n,)
         >>> # Verify the decomposition: Q @ R should approximate M[:, P]
         >>> M_permuted = M[:, P]
@@ -61,7 +57,7 @@ def cqrrpt(
         - The randomization step improves the conditioning of the matrix before Cholesky factorization.
         - Pivoting ensures numerical stability and accurate rank-revealing properties.
     """
-    return _cqrrpt(M, gamma, F)
+    return _cqrrpt(M, gamma)
 
 
 def randomized_svd(

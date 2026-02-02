@@ -40,7 +40,6 @@ def sketched_linear_backward(
 def cqrrpt(
     M: torch.Tensor,
     gamma: float = 1.25,
-    F: DistributionFamily = DistributionFamily.Gaussian,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
 def randomized_svd(
     A: torch.Tensor, k: int, tol: float

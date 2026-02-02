@@ -296,5 +296,11 @@ poetry run pre-commit install
 
 ---
 
+## Acknowledgments
+
+Panther's implementation of sparse sketching operators and the CQRRPT algorithm are derived from the [RandBLAS](https://github.com/BallisticLA/RandBLAS) and [RandLAPACK](https://github.com/BallisticLA/RandLAPACK) libraries, respectively. We gratefully acknowledge the RandBLAS and RandLAPACK teams for their foundational work in randomized numerical linear algebra. These libraries are distributed under the BSD-3-Clause license, and portions of our `pawX/` backend retain their copyright notices as required.
+
+---
+
 For more details, browse the source code and in-line documentation in each module.
 

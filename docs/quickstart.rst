@@ -47,7 +47,7 @@ Let's start with a simple example that demonstrates Panther's core functionality
    A = torch.randn(1000, 800, dtype=torch.float32)
    
    # Perform randomized QR decomposition with column pivoting
-   Q, R, P = pr.linalg.cqrrpt(A, gamma=1.25, F=pr.linalg.DistributionFamily.Gaussian)
+   Q, R, P = pr.linalg.cqrrpt(A, gamma=1.25)
    
    print(f"Original matrix: {A.shape}")
    print(f"Q (orthogonal): {Q.shape}")

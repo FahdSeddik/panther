@@ -142,8 +142,7 @@ CQRRPT's implementation follows this detailed process:
    # CQRRPT with custom parameters
    Q, R, P = pr.linalg.cqrrpt(
        A,
-       gamma=1.5,                                    # Oversampling parameter
-       F=pr.linalg.DistributionFamily.Gaussian       # Distribution family
+       gamma=1.5  # Oversampling parameter
    )
    
    # Check orthogonality of Q
