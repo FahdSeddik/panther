@@ -105,6 +105,8 @@ optimized_model = tuner.apply_best_params()
 - [Building a Python Wheel (Optional)](#building-a-python-wheel-optional)
 - [Project Structure](#project-structure)
 - [Pre-commit Hooks (Optional)](#pre-commit-hooks-optional)
+- [Acknowledgements](#acknowledgments)
+- [Citation](#-citation)
 
 ---
 
@@ -300,7 +302,24 @@ poetry run pre-commit install
 
 Panther's implementation of sparse sketching operators and the CQRRPT algorithm are derived from the [RandBLAS](https://github.com/BallisticLA/RandBLAS) and [RandLAPACK](https://github.com/BallisticLA/RandLAPACK) libraries, respectively. We gratefully acknowledge the RandBLAS and RandLAPACK teams for their foundational work in randomized numerical linear algebra. These libraries are distributed under the BSD-3-Clause license, and portions of our `pawX/` backend retain their copyright notices as required.
 
+
+## 📜 Citation
+
+If you use this code, please cite our paper:
+```bibtex
+@misc{seddik2026pantherfastercheapercomputations,
+      title={Panther: Faster and Cheaper Computations with Randomized Numerical Linear Algebra}, 
+      author={Fahd Seddik and Abdulrahman Elbedewy and Gaser Sami and Mohamed Abdelmoniem and Yahia Zakaria},
+      year={2026},
+      eprint={2601.15473},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2601.15473}, 
+}
+```
+
 ---
 
 For more details, browse the source code and in-line documentation in each module.
+
 
