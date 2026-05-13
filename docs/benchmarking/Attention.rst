@@ -1,21 +1,6 @@
 Randomized Multi-Head Attention
 ================================
 
-These benchmarks compare :class:`panther.nn.RandMultiHeadAttention` against
-:class:`torch.nn.MultiheadAttention` across four embedding dimensions (128, 256, 512, 1024) and two
-activation kernels (ReLU and Softmax). Timings are averaged over 200 repeated trials on NVIDIA Tesla
-T4 and P100 GPUs. Each configuration measures:
-
-* **Forward time** — wall-clock time (ms) for a single forward pass
-* **Backward time** — wall-clock time (ms) for a backward pass
-* **Forward memory** — peak GPU memory allocated (MB) during the forward pass
-* **Backward memory** — peak GPU memory allocated (MB) during the backward pass
-
-Random feature dimensions tested: :math:`\{64, 128, 256\}`. Head counts tested: :math:`\{4, 8, 16\}`.
-Sequence lengths: up to 8 192 tokens. Lower is better for all metrics.
-
-----
-
 Embedding dimension 128 — ReLU activation
 ------------------------------------------
 
@@ -263,22 +248,3 @@ Backward memory for attention embed=1024 Softmax
    :alt: Backward pass peak GPU memory (MB) for RandMultiHeadAttention vs nn.MultiheadAttention, embed=1024, Softmax kernel
    :width: 600px
    :align: center
-
-----
-
-Key Takeaways
--------------
-
-* **Up to 75% memory reduction on BERT**: The paper demonstrates up to 75% peak memory savings when
-  replacing standard attention with ``RandMultiHeadAttention`` in BERT, while maintaining comparable
-  masked language modelling loss (4.601 vs. 4.594).
-* **Memory savings grow with embedding dimension**: The :math:`O(n^2)` attention matrix is replaced
-  by random feature projections of dimension :math:`r \ll d_{embed}`. At larger embed sizes the
-  absolute memory advantage is more pronounced.
-* **Softmax vs. ReLU kernel**: The Softmax kernel approximates standard scaled dot-product
-  attention; the ReLU kernel corresponds to the Performer linearized attention. Compare both to
-  choose the appropriate trade-off for your architecture.
-* **Time overhead at small embed**: At embed=128 the projection overhead can exceed the attention
-  matrix savings. ``RandMultiHeadAttention`` is most beneficial at embed :math:`\geq` 256.
-* **Backward memory**: The memory advantage is especially pronounced in the backward pass, where
-  storing the full attention map for gradient computation is replaced by projected gradients.
