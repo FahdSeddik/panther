@@ -51,7 +51,7 @@ For advanced/internal APIs not re-exported at the top level, use:
 SKAutoTuner Class
 -----------------
 
-.. py:class:: SKAutoTuner(model, configs, accuracy_eval_func, search_algorithm=None, verbose=False, accuracy_threshold=None, optmization_eval_func=None, num_runs_per_param=1)
+.. py:class:: SKAutoTuner(model, configs, accuracy_eval_func, search_algorithm=None, verbose=False, accuracy_threshold=None, optimization_eval_func=None, num_runs_per_param=1)
 
    Auto-tuner for sketched neural network layers.
 
@@ -60,12 +60,9 @@ SKAutoTuner Class
    :param accuracy_eval_func: Evaluation function that takes a model and returns an accuracy score (higher is better)
    :param search_algorithm: Search algorithm to use (default: ``OptunaSearch()``)
    :param verbose: Whether to print progress during tuning
-   :param accuracy_threshold: Minimum acceptable accuracy. If set along with ``optmization_eval_func``, the tuner maximizes speed while maintaining accuracy ≥ threshold
-   :param optmization_eval_func: Function to maximize (e.g., throughput) after reaching the accuracy threshold
+   :param accuracy_threshold: Minimum acceptable accuracy. If set along with ``optimization_eval_func``, the tuner maximizes speed while maintaining accuracy ≥ threshold
+   :param optimization_eval_func: Function to maximize (e.g., throughput) after reaching the accuracy threshold
    :param num_runs_per_param: Number of runs per parameter combination (for averaging noisy evaluations)
-
-   .. note::
-      The parameter is spelled ``optmization_eval_func`` (not "optimization") in the current implementation.
 
 Tuning Workflow Methods
 ~~~~~~~~~~~~~~~~~~~~~~~

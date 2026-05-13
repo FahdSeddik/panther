@@ -35,23 +35,6 @@ Specific Sketching Methods
 .. autofunction:: count_skop
    :no-index:
 
-Distribution Families
----------------------
-
-.. py:class:: DistributionFamily
-
-   Enumeration of available distribution families for sketching operators.
-   
-   .. note::
-      This class is provided by the pawX C++ extension and may not be available in all environments.
-
-.. py:class:: Axis
-
-   Enumeration of axis specifications for sketching operations.
-   
-   .. note::
-      This class is provided by the pawX C++ extension and may not be available in all environments.
-
 Examples
 --------
 

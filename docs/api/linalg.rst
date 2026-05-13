@@ -12,16 +12,6 @@ Core Functions
    :undoc-members:
    :show-inheritance:
 
-Distribution Families
----------------------
-
-.. autoclass:: panther.linalg.DistributionFamily
-
-   Enumeration of available distribution families for linear algebra operations.
-   
-   .. note::
-      This class is provided by the pawX C++ extension and may not be available in all environments.
-
 Examples
 --------
 
@@ -36,15 +26,15 @@ Examples
    A = torch.randn(1000, 500)
    
    # Perform CQRRPT decomposition  
-   Q, R, J = pr.linalg.cqrrpt(A, gamma=1.5)
-   
+   Q, R, P = pr.linalg.cqrrpt(A, gamma=1.5)
+
    # Q is orthogonal, R is upper triangular
    print(f"Q shape: {Q.shape}")  # (1000, 500)
-   print(f"R shape: {R.shape}")  # (500, 500)  
-   print(f"J shape: {J.shape}")  # (500,)
-   
-   # Verify decomposition: A[:, J] ≈ Q @ R
-   reconstruction_error = torch.norm(A[:, J] - Q @ R)
+   print(f"R shape: {R.shape}")  # (500, 500)
+   print(f"P shape: {P.shape}")  # (500,)
+
+   # Verify decomposition: A[:, P] ≈ Q @ R
+   reconstruction_error = torch.norm(A[:, P] - Q @ R)
    print(f"Reconstruction error: {reconstruction_error.item()}")
 
 **Randomized SVD**
@@ -83,7 +73,7 @@ All linear algebra operations support GPU acceleration:
    A = torch.randn(5000, 3000, device=device)
    
    # GPU computation
-   Q, R, J = pr.linalg.cqrrpt(A)
+   Q, R, P = pr.linalg.cqrrpt(A)
    
    # Results are on the same device
    print(f"Q device: {Q.device}")  # cuda:0

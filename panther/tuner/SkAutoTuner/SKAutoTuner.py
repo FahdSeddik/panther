@@ -27,7 +27,7 @@ class SKAutoTuner:
         search_algorithm: Optional[SearchAlgorithm] = None,
         verbose: bool = False,
         accuracy_threshold: Optional[float] = None,
-        optmization_eval_func: Optional[Callable[..., Optional[Any]]] = None,
+        optimization_eval_func: Optional[Callable[..., Optional[Any]]] = None,
         num_runs_per_param=1,
     ):
         """
@@ -40,7 +40,7 @@ class SKAutoTuner:
             search_algorithm: Search algorithm to use for finding optimal parameters
             verbose: Whether to print progress during tuning
             accuracy_threshold: Minimum acceptable accuracy (if None, will use accuracy_eval_func for optimization)
-            optmization_eval_func: Function to maxmimize (e.g., speed) after reaching the accuracy threshold
+            optimization_eval_func: Function to maxmimize (e.g., speed) after reaching the accuracy threshold
         """
         self.model = model
         self.accuracy_eval_func = accuracy_eval_func
@@ -48,7 +48,7 @@ class SKAutoTuner:
         self.verbose = verbose
         self.num_runs_per_param = num_runs_per_param
         self.accuracy_threshold = accuracy_threshold
-        self.optmization_eval_func = optmization_eval_func
+        self.optimization_eval_func = optimization_eval_func
         # Dictionary to store results for each layer
         self.results: Dict[str, Any] = {}
         # Dictionary to store best parameters for each layer
@@ -369,10 +369,10 @@ class SKAutoTuner:
         speed_score = None
         if (
             self.accuracy_threshold is not None
-            and self.optmization_eval_func is not None
+            and self.optimization_eval_func is not None
         ):
             if accuracy_score >= self.accuracy_threshold:
-                speed_score = self.optmization_eval_func(self.model)
+                speed_score = self.optimization_eval_func(self.model)
                 score = speed_score
             else:
                 score = float("-inf")

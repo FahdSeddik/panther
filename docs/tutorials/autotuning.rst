@@ -287,7 +287,7 @@ Running Constrained Tuning
        configs=TuningConfigs([config]),
        accuracy_eval_func=accuracy_eval_func,
        accuracy_threshold=0.95,              # Must maintain 95% accuracy
-       optmization_eval_func=speed_eval_func,  # Maximize this
+       optimization_eval_func=speed_eval_func,  # Maximize this
        search_algorithm=OptunaSearch(n_trials=100, seed=42),
        verbose=True
    )
@@ -304,7 +304,7 @@ Running Constrained Tuning
 Understanding the Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When both ``accuracy_threshold`` and ``optmization_eval_func`` are set:
+When both ``accuracy_threshold`` and ``optimization_eval_func`` are set:
 
 1. **Each trial evaluates accuracy first** (fast failure)
 2. **If accuracy ≥ threshold**: The configuration passes; its speed score becomes the objective
@@ -549,7 +549,7 @@ Complete Example: Transformer Tuning
        configs=configs,
        accuracy_eval_func=accuracy_eval_func,
        accuracy_threshold=0.98,  # Keep 98% of original accuracy
-       optmization_eval_func=speed_eval_func,
+       optimization_eval_func=speed_eval_func,
        search_algorithm=OptunaSearch(
            n_trials=200,
            study_name="transformer_tuning",
