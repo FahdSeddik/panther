@@ -35,23 +35,6 @@ Specific Sketching Methods
 .. autofunction:: count_skop
    :no-index:
 
-Distribution Families
----------------------
-
-.. py:class:: DistributionFamily
-
-   Enumeration of available distribution families for sketching operators.
-   
-   .. note::
-      This class is provided by the pawX C++ extension and may not be available in all environments.
-
-.. py:class:: Axis
-
-   Enumeration of axis specifications for sketching operations.
-   
-   .. note::
-      This class is provided by the pawX C++ extension and may not be available in all environments.
-
 Examples
 --------
 
@@ -81,13 +64,22 @@ Examples
 .. code-block:: python
 
    # Sparse sketching matrix (much less memory)
+   # Reproducible: torch.manual_seed() controls the sketch when seed=None (default)
+   torch.manual_seed(42)
    S_sparse = pr.sketch.sparse_sketch_operator(
        m=200,                              # output dimension
-       n=5000,                             # input dimension  
+       n=5000,                             # input dimension
        vec_nnz=3,                          # non-zeros per column
        axis=pr.sketch.Axis.Short
    )
-   
+
+   # Or pass an explicit seed to bypass PyTorch's RNG
+   S_fixed = pr.sketch.sparse_sketch_operator(
+       m=200, n=5000, vec_nnz=3,
+       axis=pr.sketch.Axis.Short,
+       seed=123
+   )
+
    # Apply to large matrix
    A_large = torch.randn(5000, 2000)
    SA_sparse = S_sparse @ A_large

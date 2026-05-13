@@ -56,7 +56,8 @@ torch::Tensor dense_sketch_operator(int64_t m, int64_t n,
 torch::Tensor sparse_sketch_operator(int64_t m, int64_t n, int64_t vec_nnz,
                                      Axis major_axis,
                                      c10::optional<torch::Device> device = c10::nullopt,
-                                     c10::optional<torch::Dtype> dtype = c10::nullopt);
+                                     c10::optional<torch::Dtype> dtype = c10::nullopt,
+                                     c10::optional<uint64_t> seed = c10::nullopt);
 
 std::tuple<torch::Tensor, torch::Tensor> sketch_tensor(const torch::Tensor& input,
                                                        int64_t axis,

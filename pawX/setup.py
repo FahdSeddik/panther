@@ -11,7 +11,6 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtensio
 def check_linux_dependencies():
     missing_deps = []
 
-    # Check for liblapacke-dev
     try:
         subprocess.run(
             ["dpkg", "-s", "liblapacke-dev"],
@@ -19,18 +18,11 @@ def check_linux_dependencies():
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # FileNotFoundError: dpkg not present (non-Debian distro)
         missing_deps.append("liblapacke-dev")
 
-    # Check for libopenblas-dev
     try:
-        subprocess.run(
-            ["dpkg", "-l"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        )
         result = subprocess.run(
             ["dpkg", "-l"],
             check=True,
@@ -40,7 +32,7 @@ def check_linux_dependencies():
         )
         if "libopenblas" not in result.stdout:
             missing_deps.append("libopenblas-dev")
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         missing_deps.append("libopenblas-dev")
 
     if missing_deps:
@@ -55,6 +47,14 @@ def check_linux_dependencies():
         print(f"  sudo apt-get install {' '.join(missing_deps)}")
         print("\n" + "=" * 60 + "\n")
         sys.exit(1)
+
+
+def _homebrew_openblas() -> str:
+    """Return the Homebrew OpenBLAS prefix, checking Apple Silicon then Intel paths."""
+    for prefix in ("/opt/homebrew/opt/openblas", "/usr/local/opt/openblas"):
+        if os.path.isdir(prefix):
+            return prefix
+    return "/usr/local/opt/openblas"  # best-effort fallback
 
 
 def get_platform_config(cuda_available=True):
@@ -87,8 +87,16 @@ def get_platform_config(cuda_available=True):
         return config
     elif system == "linux":
         check_linux_dependencies()
+        try:
+            multiarch = subprocess.check_output(
+                ["gcc", "-print-multiarch"], text=True, stderr=subprocess.DEVNULL
+            ).strip()
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            # Fallback: derive from platform.machine()
+            _m = platform.machine()
+            multiarch = f"{_m}-linux-gnu" if _m else "x86_64-linux-gnu"
         config = {
-            "include_dirs": ["/usr/include/x86_64-linux-gnu"],
+            "include_dirs": [f"/usr/include/{multiarch}"],
             "library_dirs": [],
             "libraries": ["openblas"],
             "extra_compile_args": {
@@ -108,17 +116,44 @@ def get_platform_config(cuda_available=True):
         if cuda_available:
             config["extra_compile_args"]["cxx"].append("-DWITH_CUDA")
         return config
+    elif system == "darwin":
+        # macOS is always CPU-only (no NVIDIA CUDA support)
+        openblas_prefix = _homebrew_openblas()
+        config = {
+            "include_dirs": [os.path.join(openblas_prefix, "include")],
+            "library_dirs": [os.path.join(openblas_prefix, "lib")],
+            "libraries": ["openblas"],
+            "extra_compile_args": {
+                "cxx": ["-O2"],
+                # OpenMP via libomp on macOS (installed by Homebrew as a dependency of openblas)
+            },
+            "extra_link_args": ["-lopenblas"],
+        }
+        return config
     else:
         raise RuntimeError(f"Unsupported platform: {system}")
 
 
-# Check for CUDA availability first
+# ── CUDA availability ──────────────────────────────────────────────────────────
+
 cuda_available = is_available()
 
 config = get_platform_config(cuda_available)
 
 
-def has_tensor_core_support():
+def _arch_list_includes_tensor_cores(arch_list: str) -> bool:
+    """Return True if any arch in the list is Volta (7.0) or newer."""
+    for token in arch_list.replace(";", " ").split():
+        numeric = token.split("+")[0]
+        try:
+            if float(numeric) >= 7.0:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def has_tensor_core_support() -> bool:
     if not is_available():
         print("\033[93m[WARNING] CUDA is not available on this system.\033[0m")
         return False
@@ -139,12 +174,24 @@ def has_tensor_core_support():
 
 
 cuda_no_tensor_core = ["linear_cuda.cu"]
-cuda_tensor_core = [
-    "linear_tc.cu",
-]
+cuda_tensor_core = ["linear_tc.cu"]
 
-# Dynamically choose the appropriate CUDA file
-use_tensor_core = has_tensor_core_support()
+# ── Choose CUDA source file ────────────────────────────────────────────────────
+# When TORCH_CUDA_ARCH_LIST is set (CI / no GPU present), determine tensor core
+# support from the arch list instead of querying the local device.
+arch_list_env = os.environ.get("TORCH_CUDA_ARCH_LIST", "")
+if arch_list_env:
+    use_tensor_core = _arch_list_includes_tensor_cores(arch_list_env)
+    if use_tensor_core:
+        print(
+            f"\033[92m[OK] TORCH_CUDA_ARCH_LIST={arch_list_env!r} -> tensor core build.\033[0m"
+        )
+    else:
+        print(
+            f"\033[93m[WARNING] TORCH_CUDA_ARCH_LIST={arch_list_env!r} -> no tensor core arch detected.\033[0m"
+        )
+else:
+    use_tensor_core = has_tensor_core_support()
 
 if cuda_available:
     cuda_file = cuda_tensor_core if use_tensor_core else cuda_no_tensor_core
@@ -154,7 +201,8 @@ else:
     print("\033[93m[WARNING] Building CPU-only version (no CUDA sources)\033[0m")
 
 
-# CPU-only source files (exclude .cu files)
+# ── Source files ───────────────────────────────────────────────────────────────
+
 cpp_sources = [
     "skops.cpp",
     "bindings.cpp",
@@ -166,13 +214,13 @@ cpp_sources = [
     "spre.cpp",
 ]
 
-# CUDA-specific source files
 cuda_sources = [
     "timing.cu",
     "conv_cuda.cu",
     "cuda_tensor_accessor.cu",
 ]
 
+# ── Build ──────────────────────────────────────────────────────────────────────
 
 setup(
     name="pawX",

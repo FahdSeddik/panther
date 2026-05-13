@@ -207,6 +207,7 @@ def sparse_sketch_operator(
     axis: Axis,
     device: Optional[torch.device] = None,
     dtype: Optional[torch.dtype] = None,
+    seed: Optional[int] = None,
 ) -> torch.Tensor:
     """
     Creates a sparse sketch operator matrix with specified number of non-zero entries per vector.
@@ -228,6 +229,11 @@ def sparse_sketch_operator(
             The device on which to allocate the resulting tensor (e.g., 'cpu' or 'cuda'). If None, defaults to the current device.
         dtype : Optional[torch.dtype], default=None
             The desired data type of the returned tensor. If None, defaults to the default dtype of the current torch device.
+        seed : Optional[int], default=None
+            Integer seed for the internal C++ random number generator used to construct the sparse pattern.
+            When ``None`` (default) the seed is drawn from ``torch``'s current RNG, so calling
+            ``torch.manual_seed(...)`` before this function produces a reproducible sketch.
+            Pass an explicit integer to bypass PyTorch's RNG entirely.
 
     Returns:
         torch.Tensor
@@ -238,13 +244,15 @@ def sparse_sketch_operator(
         >>> from panther.sketch import sparse_sketch_operator, Axis
         >>> m, n = 100, 500
         >>> vec_nnz = 5
+        >>> # Reproducible via torch seed
+        >>> torch.manual_seed(42)
         >>> sketch = sparse_sketch_operator(m, n, vec_nnz, Axis.Short)
         >>> print(sketch.shape)
         torch.Size([100, 500])
         >>> print(sketch._nnz())  # Number of non-zero entries in the sparse tensor
 
     """
-    return _sparse_sketch_operator(m, n, vec_nnz, axis, device=device, dtype=dtype)
+    return _sparse_sketch_operator(m, n, vec_nnz, axis, device=device, dtype=dtype, seed=seed)
 
 
 def srht(x: torch.Tensor, m: int) -> torch.Tensor:

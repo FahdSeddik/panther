@@ -233,7 +233,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> cqrrpt(const torch::Tens
     const int64_t d = static_cast<int64_t>(std::ceil(gamma * n));
     const auto opts = M.options().dtype(M.scalar_type());
 
-    torch::Tensor S = sparse_sketch_operator(d, m, 4, Axis::Short, opts.device(), M.scalar_type());
+    // Draw one seed from PyTorch's RNG so that torch.manual_seed() controls the sketch.
+    auto seed_t = torch::randint(0, std::numeric_limits<int64_t>::max(), {1},
+                                 torch::TensorOptions().dtype(torch::kInt64).device(torch::kCPU));
+    uint64_t sketch_seed = static_cast<uint64_t>(seed_t.item<int64_t>());
+
+    torch::Tensor S = sparse_sketch_operator(d, m, 4, Axis::Short, opts.device(), M.scalar_type(), sketch_seed);
 
     return cqrrpt_core(M, S);
 }

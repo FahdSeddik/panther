@@ -81,7 +81,7 @@ tuner = SKAutoTuner(
     configs=configs,
     accuracy_eval_func=evaluate_accuracy,
     accuracy_threshold=0.90,              # Minimum acceptable accuracy
-    optmization_eval_func=evaluate_speed, # Maximize this after meeting threshold
+    optimization_eval_func=evaluate_speed, # Maximize this after meeting threshold
     verbose=True
 )
 
@@ -223,7 +223,7 @@ All search strategies are unified under OptunaSearch using the appropriate sampl
 The auto-tuner tracks comprehensive metrics during the tuning process:
 
 - **accuracy**: Accuracy score for each parameter combination
-- **speed**: Speed/throughput metric when `optmization_eval_func` is provided
+- **speed**: Speed/throughput metric when `optimization_eval_func` is provided
 - **score**: Final objective score (speed if accuracy ≥ threshold, else -inf)
 - Best parameter combinations for each layer
 - Full trial history accessible via `get_results_dataframe()`

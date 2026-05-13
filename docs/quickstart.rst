@@ -6,32 +6,22 @@ This guide will get you up and running with Panther in just a few minutes.
 Installation
 ------------
 
-Install Panther via pip (Windows with CUDA 12.4 GPU only):
+First install PyTorch for your hardware, then panther-ml:
 
 .. code-block:: bash
 
-   pip install panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
+   # 1. PyTorch — choose your variant
+   pip install torch==2.6.0 torchvision==0.21.0 \
+       --extra-index-url https://download.pytorch.org/whl/cpu   # CPU
+   # or: --extra-index-url https://download.pytorch.org/whl/cu124  # CUDA 12.4
 
-.. note::
-   **CPU-only support requires building from source.** Panther fully supports CPU-only systems, 
-   but the PyPI package currently includes CUDA dependencies. Use the source installation below 
-   to automatically build a CPU-only version.
+   # 2a. CPU wheel from PyPI (Linux, Windows, macOS)
+   pip install panther-ml
 
-Build from source (for CPU-only systems or custom builds):
+   # 2b. CUDA wheel from GitHub Releases (example: Linux + CUDA 12.4)
+   pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu124-cp312-cp312-manylinux_2_28_x86_64.whl
 
-.. code-block:: bash
-
-   git clone https://github.com/FahdSeddik/panther.git
-   cd panther
-   .\\install.ps1  # Windows
-   # OR
-   make install   # Linux/macOS
-
-Using Docker (all dependencies included) for GPU systems:
-
-.. code-block:: bash
-
-   docker pull fahdseddik/panther-dev
+See :doc:`installation` for the full platform matrix and source-build instructions.
 
 Your First Panther Program
 ---------------------------

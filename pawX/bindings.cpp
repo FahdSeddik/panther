@@ -53,7 +53,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
             py::arg("vec_nnz"),
             py::arg("major_axis"),
             py::arg("device") = py::none(),
-            py::arg("dtype") = py::none());
+            py::arg("dtype") = py::none(),
+            py::arg("seed") = py::none());
 
       m.def("sketch_tensor",
             py::overload_cast<const torch::Tensor &, int64_t, int64_t, DistributionFamily, c10::optional<torch::Device>, c10::optional<torch::Dtype>>(&sketch_tensor),

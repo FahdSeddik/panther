@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "panther-ml"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 authors = ["The Panther Team"]
 readme = "README.md"
@@ -16,9 +16,9 @@ from = "."
 
 [tool.poetry.dependencies]
 python = "^3.12"
-torch = {version = "2.6.0+cu124", source = "pytorch"}
-torchvision = {version = "0.21.0+cu124", source = "pytorch"}
-torchaudio = {version = "2.6.0+cu124", source = "pytorch"}
+torch = ">=2.6.0"
+torchvision = ">=0.21.0"
+torchaudio = ">=2.6.0"
 matplotlib = "^3.10.3"
 optuna = "^4.1.0"
 
@@ -42,11 +42,6 @@ sphinx = "^8.1.3"
 sphinx-book-theme = "^1.1.3"
 sphinx-design = "^0.6.1"
 sphinx-autobuild = "^2025.1.0"
-
-[[tool.poetry.source]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cu124"
-priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]

@@ -163,8 +163,8 @@ static void repeated_fisher_yates(
     bool rows_are_major,
     std::vector<int64_t> &rows,
     std::vector<int64_t> &cols,
-    std::vector<float> &vals) {
-    std::mt19937_64 rng{std::random_device{}()};
+    std::vector<float> &vals,
+    std::mt19937_64 &rng) {
     std::uniform_int_distribution<int> coin_flip(0, 1);
 
     // Temporary working array for Fisher–Yates:
@@ -340,7 +340,8 @@ static void fill_sparse(
     Axis major_axis,
     std::vector<int64_t> &rows,
     std::vector<int64_t> &cols,
-    std::vector<float> &vals) {
+    std::vector<float> &vals,
+    std::mt19937_64 &rng) {
     //
     //  1) Determine (dim_major, dim_minor) exactly as RandBLAS's SparseDist:
     //
@@ -377,11 +378,10 @@ static void fill_sparse(
 
     if (major_axis == Axis::Short) {
         // Short‐axis -> call repeated_fisher_yates
-        repeated_fisher_yates(vec_nnz, dim_major, dim_minor, rows_are_major, rows, cols, vals);
+        repeated_fisher_yates(vec_nnz, dim_major, dim_minor, rows_are_major, rows, cols, vals, rng);
         // -> exactly (dim_minor * vec_nnz) nonzeros
     } else {
         // Long‐axis -> for each minor index i, draw vec_nnz with replacement, then merge
-        std::mt19937_64 rng{std::random_device{}()};
         std::uniform_int_distribution<int64_t> uni_major(0, dim_major - 1);
         std::uniform_int_distribution<int> coin_flip(0, 1);
 
@@ -431,6 +431,9 @@ static void fill_sparse(
  * @param distribution Distribution family used to generate the non-zero values.
  * @param device (Optional) Target device for the output tensor (e.g., CPU or CUDA). Defaults to CPU if not specified.
  * @param dtype (Optional) Desired data type for the output tensor. Defaults to float32 if not specified.
+ * @param seed (Optional) Seed for the internal std::mt19937_64 RNG. When absent, a seed is drawn from
+ *             torch's current generator so that torch::manual_seed() / torch.manual_seed() controls
+ *             reproducibility. Pass an explicit value to bypass PyTorch's RNG entirely.
  * @return torch::Tensor A sparse COO tensor representing the sketch operator, on the specified device and dtype.
  */
 torch::Tensor sparse_sketch_operator(
@@ -439,12 +442,15 @@ torch::Tensor sparse_sketch_operator(
     int64_t vec_nnz,
     Axis major_axis,
     c10::optional<torch::Device> device,
-    c10::optional<torch::Dtype> dtype) {
+    c10::optional<torch::Dtype> dtype,
+    c10::optional<uint64_t> seed) {
     // 1) Gather all (row, col, value) triplets on CPU
+    uint64_t rng_seed = seed.has_value() ? seed.value() : std::random_device{}();
+    std::mt19937_64 rng{rng_seed};
     std::vector<int64_t> rows;
     std::vector<int64_t> cols;
     std::vector<float> vals;
-    fill_sparse(m, n, vec_nnz, major_axis, rows, cols, vals);
+    fill_sparse(m, n, vec_nnz, major_axis, rows, cols, vals, rng);
 
     int64_t final_nnz = static_cast<int64_t>(vals.size());
 

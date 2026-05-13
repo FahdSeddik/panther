@@ -92,17 +92,18 @@ optimized_model = tuner.apply_best_params()
 
 ## Table of Contents
 
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start (Install & Use)](#quick-start-install--use)
-  - [Using Docker](#using-docker)
-- [Manual Setup (Optional)](#manual-setup-optional)
-  - [Installing Dependencies](#installing-dependencies)
-  - [Building the Native Backend (pawX)](#building-the-native-backend-pawx)
+- [Installation](#installation)
+  - [Step 1 — Install PyTorch](#step-1--install-pytorch)
+  - [Step 2 — Install panther-ml](#step-2--install-panther-ml)
+- [Using Docker](#using-docker)
 - [Running Panther](#running-panther)
 - [Running Tests](#running-tests)
+- [Building from Source (Contributors)](#building-from-source-contributors)
+  - [Prerequisites](#prerequisites)
+  - [Linux](#linux)
+  - [Windows](#windows)
+  - [macOS](#macos)
 - [Generating Documentation (Optional)](#generating-documentation-optional)
-- [Building a Python Wheel (Optional)](#building-a-python-wheel-optional)
 - [Project Structure](#project-structure)
 - [Pre-commit Hooks (Optional)](#pre-commit-hooks-optional)
 - [Acknowledgements](#acknowledgments)
@@ -110,108 +111,131 @@ optimized_model = tuner.apply_best_params()
 
 ---
 
-## Getting Started
+## Installation
 
-This guide explains how to build and run the Panther codebase, including the native backend (`pawX`), and how to generate a Python wheel for distribution.
+Panther ships pre-built wheels for **Linux x86_64**, **Windows x64**, and **macOS Apple Silicon (arm64)** targeting Python 3.12. CPU and CUDA variants are available.
+
+### Step 1 — Install PyTorch
+
+Install PyTorch **before** panther-ml. Choose the variant that matches your hardware:
+
+```bash
+# CPU only (all platforms)
+pip install torch==2.6.0 torchvision==0.21.0 --extra-index-url https://download.pytorch.org/whl/cpu
+
+# CUDA 11.8 (Linux / Windows)
+pip install torch==2.6.0+cu118 torchvision==0.21.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+
+# CUDA 12.4 (Linux / Windows)
+pip install torch==2.6.0+cu124 torchvision==0.21.0+cu124 --extra-index-url https://download.pytorch.org/whl/cu124
+```
+
+### Step 2 — Install panther-ml
+
+**CPU wheel (PyPI — Linux, Windows, macOS):**
+
+```bash
+pip install panther-ml
+```
+
+**CUDA wheels** are attached to each [GitHub Release](https://github.com/FahdSeddik/panther/releases) as direct-download assets. Install the wheel that matches your platform and CUDA version:
+
+```bash
+# Example: Linux x86_64, CUDA 12.4
+pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu124-cp312-cp312-manylinux_2_28_x86_64.whl
+
+# Example: Linux x86_64, CUDA 11.8
+pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu118-cp312-cp312-manylinux_2_28_x86_64.whl
+
+# Example: Windows x64, CUDA 12.4
+pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu124-cp312-cp312-win_amd64.whl
+
+# Example: macOS Apple Silicon (arm64), CPU
+pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cpu-cp312-cp312-macosx_12_0_arm64.whl
+```
+
+> **Platform matrix**
+>
+> | Platform | CPU | CUDA 11.8 | CUDA 12.4 |
+> |----------|:---:|:---------:|:---------:|
+> | Linux x86_64 | ✅ PyPI | ✅ Release | ✅ Release |
+> | Windows x64 | ✅ PyPI | — | ✅ Release |
+> | macOS arm64 | ✅ PyPI | — | — |
 
 ---
 
-## Prerequisites
-- **Python 3.12+**: Panther is compatible with Python 3.12 and later.
-- **Poetry** for dependency management
-- **C++ Compiler**: GCC on Linux, MSVC on Windows
-- **CUDA Toolkit** (Optional): For GPU acceleration, ensure you have the CUDA toolkit installed. **Panther fully supports CPU-only machines** - it will automatically build and run in CPU-only mode on systems without CUDA, providing the same functionality without GPU acceleration.
+## Using Docker
 
-## Quick Start (Install & Use)
-
-You can quickly install Panther using the powershell and Makefile scripts provided. This will set up the Python package and build the native backend.
-Note: This sets up a venv environment, installs poetry, install dependencies, and builds the native backend.
-
-**Note:** Panther works on both CPU-only and GPU-enabled machines. GPU users can use pip, while CPU-only users need to build from source using the installation scripts below.
-
-If you have CUDA 12.4 installed and you're on a Windows machine with GPU, install using pip:
-
-```bash
-pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
-```
-
-### Using Docker
-
-You can also use our pre-built Docker image with all dependencies included for GPU systems:
+A pre-built Docker image with all dependencies is available for GPU systems:
 
 ```bash
 docker pull fahdseddik/panther-dev
 ```
 
-### On Windows
-1. **Open PowerShell** and run the following command:
-
-    ```powershell
-    .\install.ps1
-    ```
-### On Linux/macOS
-1. **Open Terminal** and run the following command:
-
-    ```bash
-    make setup
-    ```
 ---
 
-## Manual Setup (Optional)
-If you prefer to set up Panther manually, follow these steps:
+## Building from Source (Contributors)
 
-### Installing Dependencies
+Use this path if you are contributing to panther-ml or need to modify the native backend.
 
-To install Python dependencies, run:
+### Prerequisites
+
+- Python 3.12+
+- Poetry (`pip install poetry`)
+- C++ compiler (GCC on Linux, MSVC on Windows, Clang on macOS)
+- CUDA Toolkit (optional — CPU-only build works without it)
+
+### Linux
 
 ```bash
+# System libraries
+sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapacke-dev
+
+# Clone and install Python deps
+git clone https://github.com/FahdSeddik/panther.git && cd panther
 poetry install
+
+# Build the native extension in-place
+cd pawX && python setup.py build_ext --inplace && cd ..
+
+# Install the panther package in editable mode
+pip install -e .
 ```
 
-This will set up a virtual environment and install all required packages.
+### Windows
 
-### Building the Native Backend (`pawX`)
+```powershell
+# Clone and install Python deps
+git clone https://github.com/FahdSeddik/panther.git; cd panther
+poetry install
 
-#### On Linux
+# Build the native extension in-place (bundled OpenBLAS is used automatically)
+cd pawX; python setup.py build_ext --inplace; cd ..
 
-1. **Install Required System Libraries**
+pip install -e .
+```
 
-    ```sh
-    sudo apt-get update
-    sudo apt-get install liblapacke-dev libopenblas-dev
-    ```
+### macOS
 
-2. **Build and Install `pawX`**
+```bash
+# Homebrew OpenBLAS
+brew install openblas
 
-    ```sh
-    cd pawX
-    make all
-    cd ..
-    ```
+# Clone and install Python deps
+git clone https://github.com/FahdSeddik/panther.git && cd panther
+poetry install
 
-3. **Install Panther Package**
+# Build the native extension in-place
+cd pawX && python setup.py build_ext --inplace && cd ..
 
-    ```sh
-    pip install -e .
-    ```
+pip install -e .
+```
 
-4. Confirm that `pawX.*.so` appears in the `pawX/` directory and panther is importable.
+After building, verify the extension loaded correctly:
 
-#### On Windows
-
-1. **Build and Install `pawX`**
-
-   ```powershell
-    cd pawX
-   .\build.ps1
-   ```
-
-2. Confirm that `pawX.*.pyd` appears in `pawX\` directory.
-
-**Note:** The build process automatically detects whether CUDA is available on your system:
-- If CUDA is available, it will build with GPU acceleration support
-- If CUDA is not available, it will build a CPU-only version that works without CUDA installed
-- The CPU-only build excludes CUDA-dependent features like `test_tensor_accessor` but maintains full functionality for core features
+```bash
+python -c "import torch; import pawX; t = pawX.scaled_sign_sketch(4, 4); print('OK:', t.shape)"
+```
 
 ---
 
@@ -259,18 +283,6 @@ Open `docs/_build/html/index.html` in your browser.
 
 ---
 
-## Building a Python Wheel (Optional)
-
-Create a distributable wheel file:
-
-```bash
-poetry build
-```
-
-Find the resulting `.whl` under `dist/`.
-
----
-
 ## Project Structure
 
 ```
@@ -280,10 +292,11 @@ panther/          # Python package
 ├── sketch/       # Sketching algorithms
 ├── utils/        # AutoTuner & Helper functions
 pawX/             # Native C++/CUDA backend
-├── Makefile      # Linux build script
-├── build.ps1     # Windows build script
+├── setup.py      # Extension build script
+scripts/          # Release utilities (wheel renaming)
 tests/            # Unit tests, notebooks & benchmarks
 docs/             # Sphinx documentation sources
+.github/workflows/build-wheels.yml  # CI: multi-platform wheel build & publish
 ```
 
 ---

@@ -1,6 +1,24 @@
 import sys
 
 
+def _install_hint() -> str:
+    import platform
+
+    system = platform.system()
+    if system == "Linux":
+        return (
+            "\nTo install OpenBLAS on Linux:\n"
+            "  Ubuntu/Debian: sudo apt-get install libopenblas-dev liblapacke-dev\n"
+            "  Fedora/RHEL:   sudo dnf install openblas-devel lapack-devel\n"
+            "  Arch:          sudo pacman -S openblas lapack"
+        )
+    if system == "Darwin":
+        return "\nTo install OpenBLAS on macOS:\n  brew install openblas"
+    if system == "Windows":
+        return "\nSee docs/installation.md for bundled OpenBLAS setup on Windows."
+    return ""
+
+
 def ensure_load():
     """
     Ensures that the OpenBLAS shared library is loaded and available for use by the current Python process.
@@ -13,10 +31,6 @@ def ensure_load():
           system locations using `ldconfig` or `ctypes.util.find_library`.
         - macOS (Darwin): Looks for `libopenblas.dylib` or `libopenblas.0.dylib` in an `OpenBLAS/lib` directory,
           or falls back to system locations using `ctypes.util.find_library`.
-    Raises:
-        FileNotFoundError: If the expected OpenBLAS directory or library file is not found.
-        OSError: If the OpenBLAS library cannot be loaded from any known location.
-        NotImplementedError: If the platform is not supported.
     Environment Variables Modified:
         - PATH (Windows): Prepends the OpenBLAS `bin` directory.
         - LD_LIBRARY_PATH (Linux): Prepends the OpenBLAS `lib` directory.
@@ -31,143 +45,119 @@ def ensure_load():
     import platform
     import subprocess
 
-    # Directory containing this file (adjust if your OpenBLAS folder is elsewhere):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     openblas_dir = os.path.join(current_dir, "OpenBLAS")
-
-    if not os.path.isdir(openblas_dir):
-        raise FileNotFoundError(f"OpenBLAS directory not found at: {openblas_dir}")
 
     system_name = platform.system()
 
     if system_name == "Windows":
-        # On Windows, libopenblas.dll should be in openblas_dir/bin
+        if not os.path.isdir(openblas_dir):
+            raise FileNotFoundError(
+                f"OpenBLAS directory not found at: {openblas_dir}{_install_hint()}"
+            )
         bin_dir = os.path.join(openblas_dir, "bin")
         dll_name = "libopenblas.dll"
         dll_path = os.path.join(bin_dir, dll_name)
 
         if not os.path.exists(dll_path):
-            raise FileNotFoundError(f"Could not find {dll_path}")
+            raise FileNotFoundError(
+                f"Could not find {dll_path}{_install_hint()}"
+            )
 
-        # Python 3.8+ allows adding a DLL directory:
         try:
             os.add_dll_directory(bin_dir)
         except (AttributeError, NotImplementedError):
-            # For older Python versions, fallback to modifying PATH
             pass
 
-        # Always ensure bin_dir is on PATH
         os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
-
-        # Load the DLL explicitly
         ctypes.CDLL(dll_path)
 
     elif system_name == "Linux":
-        # On Linux, libopenblas.so is usually in openblas_dir/lib
-        # We’ll attempt to load it from there; if that fails, we fallback to ldconfig or find_library
-        lib_dir = os.path.join(openblas_dir, "lib")
+        loaded = False
 
-        if os.path.isdir(lib_dir):
-            # Potential shared object names that might exist
-            candidate_files = [
-                "libopenblas.so",
-                "libopenblas.so.0",
-            ]
-            loaded = False
-            for file_name in candidate_files:
+        # Try bundled lib dir first (may only have Windows binaries — scan gracefully)
+        lib_dir = os.path.join(openblas_dir, "lib") if os.path.isdir(openblas_dir) else None
+        if lib_dir and os.path.isdir(lib_dir):
+            for file_name in ("libopenblas.so", "libopenblas.so.0"):
                 so_path = os.path.join(lib_dir, file_name)
                 if os.path.exists(so_path):
-                    # Prepend lib_dir to LD_LIBRARY_PATH so the loader can find dependencies
                     old_path = os.environ.get("LD_LIBRARY_PATH", "")
                     if lib_dir not in old_path.split(os.pathsep):
                         os.environ["LD_LIBRARY_PATH"] = lib_dir + os.pathsep + old_path
-
-                    # Try to load the .so directly
                     ctypes.CDLL(so_path)
                     loaded = True
                     break
 
-            # Fallback: if not loaded from the bundle, try the system’s ldconfig or find_library
-            if not loaded:
-                # 1) Attempt ldconfig-based approach
-                try:
-                    result = subprocess.run(
-                        ["ldconfig", "-p"], capture_output=True, text=True, check=True
-                    )
-                    lines = result.stdout.splitlines()
-                    for line in lines:
-                        if "libopenblas.so" in line:
-                            so_system_path = line.split("=>")[-1].strip()
+        # Fallback 1: ldconfig
+        if not loaded:
+            try:
+                result = subprocess.run(
+                    ["ldconfig", "-p"], capture_output=True, text=True, check=True
+                )
+                for line in result.stdout.splitlines():
+                    if "libopenblas.so" in line and "=>" in line:
+                        so_system_path = line.split("=>")[-1].strip()
+                        if os.path.exists(so_system_path):
                             ctypes.CDLL(so_system_path)
                             loaded = True
                             break
-                except (FileNotFoundError, subprocess.CalledProcessError):
-                    pass
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                pass
 
-                # 2) Attempt ctypes.util.find_library if still not loaded
-                if not loaded:
-                    so_name = ctypes.util.find_library("openblas")
-                    if so_name:
-                        ctypes.CDLL(so_name)
-                        loaded = True
-
-            if not loaded:
-                raise OSError(
-                    f"Could not load OpenBLAS on Linux. Checked {lib_dir}, ldconfig, and find_library."
-                )
-        else:
-            # No local 'lib' directory; fallback to system
+        # Fallback 2: ctypes.util.find_library
+        if not loaded:
             so_name = ctypes.util.find_library("openblas")
             if so_name:
                 ctypes.CDLL(so_name)
-            else:
-                raise OSError(
-                    "OpenBLAS library not found locally or in system paths on Linux."
-                )
+                loaded = True
+
+        if not loaded:
+            searched = lib_dir if lib_dir else "(no bundled dir)"
+            raise OSError(
+                f"Could not load OpenBLAS on Linux. "
+                f"Searched bundled path ({searched}), ldconfig, and find_library."
+                f"{_install_hint()}"
+            )
 
     elif system_name == "Darwin":
-        # On macOS, libopenblas.dylib is typically in openblas_dir/lib
-        lib_dir = os.path.join(openblas_dir, "lib")
-        if os.path.isdir(lib_dir):
-            # We might see libopenblas.dylib or similar
-            candidate_files = [
-                "libopenblas.dylib",
-                "libopenblas.0.dylib",
-            ]
-            loaded = False
-            for file_name in candidate_files:
+        loaded = False
+
+        lib_dir = os.path.join(openblas_dir, "lib") if os.path.isdir(openblas_dir) else None
+        if lib_dir and os.path.isdir(lib_dir):
+            for file_name in ("libopenblas.dylib", "libopenblas.0.dylib"):
                 dy_path = os.path.join(lib_dir, file_name)
                 if os.path.exists(dy_path):
-                    # Prepend lib_dir to DYLD_LIBRARY_PATH
                     old_path = os.environ.get("DYLD_LIBRARY_PATH", "")
                     if lib_dir not in old_path.split(os.pathsep):
-                        os.environ["DYLD_LIBRARY_PATH"] = (
-                            lib_dir + os.pathsep + old_path
-                        )
-
+                        os.environ["DYLD_LIBRARY_PATH"] = lib_dir + os.pathsep + old_path
                     ctypes.CDLL(dy_path)
                     loaded = True
                     break
 
-            if not loaded:
-                # Fallback: find_library
-                lib_name = ctypes.util.find_library("openblas")
-                if lib_name:
-                    ctypes.CDLL(lib_name)
+        # Fallback: Homebrew paths (Apple Silicon then Intel), then find_library
+        if not loaded:
+            homebrew_candidates = [
+                "/opt/homebrew/opt/openblas/lib/libopenblas.dylib",
+                "/usr/local/opt/openblas/lib/libopenblas.dylib",
+            ]
+            for candidate in homebrew_candidates:
+                if os.path.exists(candidate):
+                    ctypes.CDLL(candidate)
                     loaded = True
-                else:
-                    raise OSError(
-                        f"Could not load OpenBLAS from local {lib_dir} or system paths on macOS."
-                    )
-        else:
-            # No local 'lib' directory; fallback to system
+                    break
+
+        if not loaded:
             lib_name = ctypes.util.find_library("openblas")
             if lib_name:
                 ctypes.CDLL(lib_name)
-            else:
-                raise OSError(
-                    "OpenBLAS library not found locally or in system paths on macOS."
-                )
+                loaded = True
+
+        if not loaded:
+            raise OSError(
+                "Could not load OpenBLAS on macOS. "
+                "Checked bundled path, Homebrew paths, and find_library."
+                f"{_install_hint()}"
+            )
 
     else:
         raise NotImplementedError(
@@ -189,23 +179,19 @@ def verify_pawX():
         bool: True if all checks pass and 'pawX' is properly installed and functional, False otherwise.
     """
     try:
-        # Import torch first to prevent DLL issues
         import torch
 
         print(f"✅ PyTorch imported successfully (version: {torch.__version__})\n")
 
-        # Now import pawX
         import importlib
 
         pawX = importlib.import_module("pawX")
         print(f"✅ Successfully imported 'pawX' from: {pawX.__file__}\n")
 
-        # List available attributes
         available_methods = dir(pawX)
         print(f"🔍 Available methods in 'pawX':\n{available_methods}\n")
 
-        # Check if 'scaled_sign_sketch' exists
-        expected_methods = ["scaled_sign_sketch"]  # Add more methods if needed
+        expected_methods = ["scaled_sign_sketch"]
         missing_methods = [
             method for method in expected_methods if method not in available_methods
         ]
@@ -219,7 +205,6 @@ def verify_pawX():
         else:
             print(f"✅ All expected methods are present: {expected_methods}\n")
 
-        # Test calling scaled_sign_sketch
         try:
             result = pawX.scaled_sign_sketch(5, 5)
             if isinstance(result, torch.Tensor):
@@ -251,4 +236,4 @@ def verify_pawX():
 if __name__ == "__main__":
     ensure_load()
     success = verify_pawX()
-    sys.exit(0 if success else 1)  # Exit with error code 1 if verification fails
+    sys.exit(0 if success else 1)

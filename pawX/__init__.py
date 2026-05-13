@@ -1,6 +1,11 @@
 from .verify import ensure_load
 
-ensure_load()
+try:
+    ensure_load()
+except (OSError, NotImplementedError) as _e:
+    raise ImportError(
+        f"pawX: failed to load OpenBLAS — {_e}"
+    ) from _e
 
 from .pawX import (  # noqa: E402; BARRIER NO FORMAT; BARRIER; BARRIER NO FORMAT; BARRIER NO FORMAT
     Axis,

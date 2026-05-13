@@ -89,7 +89,7 @@ def randomized_svd(
     Examples
     --------
     >>> import torch
-    >>> from panther.linalg.randomized_svd import randomized_svd
+    >>> from panther.linalg import randomized_svd
     >>> A = torch.randn(100, 50)
     >>> U, S, V = randomized_svd(A, k=10, tol=1e-5)
     >>> # Reconstruct the approximation

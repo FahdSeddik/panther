@@ -6,255 +6,193 @@ This guide explains how to install Panther and its dependencies.
 System Requirements
 -------------------
 
-**Python**: Panther requires Python 3.12 or later.
-
-**Hardware Requirements**:
-
-* **CPU**: Any modern x86-64 processor (CPU-only operation fully supported)
-* **GPU**: NVIDIA GPU with CUDA 12.4+ (optional, for GPU acceleration)
-
-**Dependencies**:
-
-* PyTorch 2.6.0+ (CPU or CUDA version)
-* CUDA Toolkit 12.4+ (optional, only for GPU acceleration)
-* C++ compiler (GCC on Linux, MSVC on Windows)
+* **Python**: 3.12
+* **PyTorch**: 2.6.0 or later
+* **OS**: Linux x86_64, Windows x64, macOS Apple Silicon (arm64)
+* **GPU**: NVIDIA GPU with CUDA 11.8 or 12.4 (optional — CPU-only is fully supported)
 
 .. note::
-   **Panther works on CPU-only machines!** All core features are available without CUDA. 
-   The build system automatically detects your hardware and builds the appropriate version.
+   PyTorch must be installed **before** panther-ml. Choose the variant that matches your
+   hardware (see Step 1 below). panther-ml itself declares ``torch>=2.6.0`` so it works
+   with any compatible PyTorch flavor you install first.
 
-Quick Installation
-------------------
+Step 1 — Install PyTorch
+------------------------
 
-**Option 1: Install from PyPI (GPU Only)**
-
-For GPU-accelerated systems with CUDA 12.4 on Windows:
+Choose the variant that matches your hardware:
 
 .. code-block:: bash
 
-   pip install --force-reinstall panther-ml==0.1.2 --extra-index-url https://download.pytorch.org/whl/cu124
+   # CPU only (all platforms)
+   pip install torch==2.6.0 torchvision==0.21.0 \
+       --extra-index-url https://download.pytorch.org/whl/cpu
 
-.. note::
-   **CPU-only systems must build from source.** The PyPI package currently includes CUDA dependencies.
-   Use the automated setup scripts below (Option 2) which will automatically build the appropriate 
-   CPU-only version for your system.
+   # CUDA 11.8 (Linux / Windows)
+   pip install torch==2.6.0+cu118 torchvision==0.21.0+cu118 \
+       --extra-index-url https://download.pytorch.org/whl/cu118
 
-**Option 2: Build from Source (CPU & GPU)**
+   # CUDA 12.4 (Linux / Windows)
+   pip install torch==2.6.0+cu124 torchvision==0.21.0+cu124 \
+       --extra-index-url https://download.pytorch.org/whl/cu124
 
-For CPU-only systems or custom builds (works on both CPU-only and GPU systems):
+Step 2 — Install panther-ml
+----------------------------
 
-**Windows:**
-
-.. code-block:: powershell
-
-   # Open PowerShell as Administrator
-   .\install.ps1
-
-**Linux/macOS:**
+**CPU wheel (PyPI — Linux, Windows, macOS)**
 
 .. code-block:: bash
 
-   # Make sure you have build-essential installed
-   make setup
+   pip install panther-ml
 
-**Option 3: Docker Image**
+This installs the CPU wheel for your platform directly from PyPI.
 
-Use our pre-built Docker image with all dependencies included:
+**CUDA wheels (GitHub Releases)**
+
+CUDA variants are attached to each `GitHub Release <https://github.com/FahdSeddik/panther/releases>`_
+as direct-download assets. Install the wheel for your platform and CUDA version:
+
+.. code-block:: bash
+
+   # Linux x86_64, CUDA 12.4
+   pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu124-cp312-cp312-manylinux_2_28_x86_64.whl
+
+   # Linux x86_64, CUDA 11.8
+   pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu118-cp312-cp312-manylinux_2_28_x86_64.whl
+
+   # Windows x64, CUDA 12.4
+   pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cu124-cp312-cp312-win_amd64.whl
+
+   # macOS Apple Silicon (arm64), CPU
+   pip install https://github.com/FahdSeddik/panther/releases/download/v0.1.3/panther_ml-0.1.3+cpu-cp312-cp312-macosx_12_0_arm64.whl
+
+**Platform matrix**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 20 20
+
+   * - Platform
+     - CPU
+     - CUDA 11.8
+     - CUDA 12.4
+   * - Linux x86_64
+     - PyPI
+     - GitHub Release
+     - GitHub Release
+   * - Windows x64
+     - PyPI
+     - —
+     - GitHub Release
+   * - macOS arm64
+     - PyPI
+     - —
+     - —
+
+Docker (Optional)
+-----------------
+
+A pre-built Docker image with all dependencies is available for GPU systems:
 
 .. code-block:: bash
 
    docker pull fahdseddik/panther-dev
 
-.. note::
-   The Docker image includes all necessary dependencies and works on GPU systems.
-   Simply pull the image and start using Panther without any manual setup.
-
-Manual Installation
+Verify Installation
 -------------------
-
-If you prefer to install Panther manually or need to customize the installation:
-
-**Step 1: Install Poetry (if not already installed)**
-
-.. code-block:: bash
-
-   curl -sSL https://install.python-poetry.org | python3 -
-
-**Step 2: Clone the Repository**
-
-.. code-block:: bash
-
-   git clone https://github.com/FahdSeddik/panther.git
-   cd panther
-
-**Step 3: Install Python Dependencies**
-
-.. code-block:: bash
-
-   poetry install
-
-**Step 4: Build the Native Backend**
-
-**On Linux:**
-
-First, install required system libraries:
-
-.. code-block:: bash
-
-   sudo apt-get update
-   sudo apt-get install liblapacke-dev libopenblas-dev
-
-Then build the native backend:
-
-.. code-block:: bash
-
-   cd pawX
-   make all
-   cd ..
-
-**On Windows:**
-
-.. code-block:: powershell
-
-   cd pawX
-   .\build.ps1
-
-.. note::
-   **Automatic CPU/GPU Detection**: The build process automatically detects your system:
-   
-   * **With CUDA**: Builds with GPU acceleration support
-   * **Without CUDA**: Builds CPU-only version with full core functionality
-   * CPU-only builds exclude CUDA-dependent features but maintain all essential operations
-
-**Step 5: Install Panther Package**
-
-Install the panther package in editable mode:
-
-.. code-block:: bash
-
-   pip install -e .
-
-**Step 6: Verify Installation**
 
 .. code-block:: python
 
    import torch
    import panther as pr
-   
-   # Test basic functionality
-   A = torch.randn(100, 100)
+
+   print(f"CUDA available: {torch.cuda.is_available()}")
+
+   A = torch.randn(100, 80)
    Q, R, J = pr.linalg.cqrrpt(A)
    print("Installation successful!")
-   print(f"Q shape: {Q.shape}, R shape: {R.shape}, J shape: {J.shape}")
+   print(f"Q: {Q.shape}, R: {R.shape}, J: {J.shape}")
 
-Environment Setup
------------------
+Building from Source (Contributors)
+------------------------------------
 
-**Virtual Environment (Recommended)**
+Use this path if you are contributing to panther-ml or need to modify the native backend.
 
-It's recommended to use a virtual environment:
+**Prerequisites**: Poetry, a C++ compiler (GCC / MSVC / Clang), and optionally the CUDA Toolkit.
 
-.. code-block:: bash
-
-   python -m venv panther_env
-   
-   # On Windows:
-   panther_env\Scripts\activate
-   
-   # On Linux/macOS:
-   source panther_env/bin/activate
-
-**CUDA Environment Variables**
-
-For optimal GPU performance, ensure these environment variables are set:
+**Linux**
 
 .. code-block:: bash
 
-   export CUDA_HOME=/usr/local/cuda
-   export PATH=$CUDA_HOME/bin:$PATH
-   export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+   sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapacke-dev
 
-Development Installation
-------------------------
+   git clone https://github.com/FahdSeddik/panther.git && cd panther
+   poetry install
 
-For development work on Panther:
+   # Build native extension in-place (required for relative import)
+   cd pawX && python setup.py build_ext --inplace && cd ..
+
+   pip install -e .
+
+**Windows**
+
+.. code-block:: powershell
+
+   git clone https://github.com/FahdSeddik/panther.git; cd panther
+   poetry install
+
+   cd pawX; python setup.py build_ext --inplace; cd ..
+
+   pip install -e .
+
+**macOS**
 
 .. code-block:: bash
 
-   git clone https://github.com/FahdSeddik/panther.git
-   cd panther
-   poetry install --with dev
-   
-   # Install pre-commit hooks
-   poetry run pre-commit install
+   brew install openblas
+
+   git clone https://github.com/FahdSeddik/panther.git && cd panther
+   poetry install
+
+   cd pawX && python setup.py build_ext --inplace && cd ..
+
+   pip install -e .
+
+After building, verify the extension:
+
+.. code-block:: bash
+
+   python -c "import torch; import pawX; t = pawX.scaled_sign_sketch(4, 4); print('OK:', t.shape)"
 
 Common Issues
 -------------
 
-**Issue: CUDA not found**
+**"No module named 'panther'"**
 
-Make sure CUDA Toolkit is properly installed and in your PATH:
-
-.. code-block:: bash
-
-   nvcc --version
-
-**Issue: Compilation errors on Windows**
-
-Ensure you have Visual Studio Build Tools installed with C++ support.
-
-**Issue: Import errors ("No module named 'panther'")**
-
-Make sure you've installed the package in editable mode:
+Make sure the package is installed (editable mode for source builds):
 
 .. code-block:: bash
 
    pip install -e .
 
-If you still see import errors, check that the native backend was compiled successfully:
+**OpenBLAS not found (Linux)**
 
 .. code-block:: bash
 
-   ls pawX/pawX.*.pyd  # Windows
-   ls pawX/pawX.*.so   # Linux
+   sudo apt-get install libopenblas-dev liblapacke-dev
 
-**Issue: OpenBLAS not found (Linux)**
-
-If you see linker errors about missing ``-lopenblas``, install the OpenBLAS development package:
+**CUDA not found**
 
 .. code-block:: bash
 
-   sudo apt-get install libopenblas-dev
+   nvcc --version   # Check CUDA Toolkit is installed and on PATH
 
-The installation scripts should handle this automatically, but manual installation may be needed in some cases. On Windows, OpenBLAS binaries are bundled with the package.
+**Compilation errors on Windows**
 
-Verifying GPU Support
-----------------------
-
-To check if GPU acceleration is available:
-
-.. code-block:: python
-
-   import torch
-   import panther as pr
-   
-   print(f"CUDA available: {torch.cuda.is_available()}")
-   print(f"CUDA version: {torch.version.cuda}")
-   
-   if torch.cuda.is_available():
-       # Test GPU functionality
-       device = torch.device('cuda')
-       A = torch.randn(1000, 1000, device=device)
-       Q, R, J = pr.linalg.cqrrpt(A)
-       print("GPU acceleration is working!")
+Ensure Visual Studio Build Tools with C++ workload are installed.
 
 Uninstallation
 --------------
 
-To uninstall Panther:
-
 .. code-block:: bash
 
    pip uninstall panther-ml
-
-If installed from source, simply delete the cloned directory after deactivating any virtual environment.

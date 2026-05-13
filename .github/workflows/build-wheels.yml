@@ -1,0 +1,228 @@
+name: Build, Test, and Publish Wheels
+
+# Triggered only when a GitHub Release is published.
+# Use "workflow_dispatch" for manual test runs without publishing.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      publish_only:
+        description: "Skip builds — run only the publish job (downloads artifacts from run_id)"
+        type: boolean
+        default: false
+      run_id:
+        description: "Run ID to download wheel artifacts from (required when publish_only=true)"
+        type: string
+        default: ""
+      tag:
+        description: "Release tag to attach wheels to (e.g. v0.1.3, required when publish_only=true)"
+        type: string
+        default: ""
+
+jobs:
+  # ── Build matrix ────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.os }}, ${{ matrix.cuda }})
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_only == false }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── Linux ──────────────────────────────────────────────
+          - os: ubuntu-22.04
+            cuda: cpu
+            cuda_toolkit_version: ""
+            arch_list: ""
+
+          - os: ubuntu-22.04
+            cuda: cu118
+            cuda_toolkit_version: "11.8.0"
+            arch_list: "7.0;7.5;8.0;8.6;8.9;9.0+PTX"
+
+          - os: ubuntu-22.04
+            cuda: cu124
+            cuda_toolkit_version: "12.4.0"
+            arch_list: "7.0;7.5;8.0;8.6;8.9;9.0+PTX"
+
+          # ── Windows ────────────────────────────────────────────
+          - os: windows-2022
+            cuda: cpu
+            cuda_toolkit_version: ""
+            arch_list: ""
+
+          - os: windows-2022
+            cuda: cu124
+            cuda_toolkit_version: "12.4.0"
+            arch_list: "7.0;7.5;8.0;8.6;8.9;9.0+PTX"
+
+          # ── macOS (CPU-only; Apple Silicon arm64 only) ─────────
+          # macOS 13 Intel is excluded: PyTorch ≥ 2.6 has no x86_64 macOS wheels.
+          - os: macos-14
+            cuda: cpu
+            cuda_toolkit_version: ""
+            arch_list: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ── CUDA Toolkit (CUDA builds only) ─────────────────────────────────────
+      - name: Install CUDA Toolkit
+        if: matrix.cuda_toolkit_version != ''
+        uses: Jimver/cuda-toolkit@v0.2.15
+        with:
+          cuda: ${{ matrix.cuda_toolkit_version }}
+          method: network
+
+      # ── System libraries ─────────────────────────────────────────────────────
+      - name: Install system libraries (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapacke-dev
+
+      - name: Install system libraries (macOS)
+        if: runner.os == 'macOS'
+        run: brew install openblas
+
+      # ── PyTorch ──────────────────────────────────────────────────────────────
+      # macOS: plain torch (no +cpu suffix — PyTorch doesn't tag macOS wheels that way)
+      # Linux / Windows: use +<cuda> variant from the pytorch whl index
+      - name: Install PyTorch (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.6.0 torchvision==0.21.0 \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install PyTorch (Linux / Windows — ${{ matrix.cuda }})
+        if: runner.os != 'macOS'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.6.0+${{ matrix.cuda }} torchvision==0.21.0+${{ matrix.cuda }} \
+            --extra-index-url https://download.pytorch.org/whl/${{ matrix.cuda }}
+
+      # ── Build pawX native extension in-place ────────────────────────────────
+      # build_ext --inplace puts the .so next to __init__.py inside pawX/,
+      # which is required for the relative import `from .pawX import ...` to work.
+      - name: Build pawX (Linux / macOS)
+        if: runner.os != 'Windows'
+        working-directory: pawX
+        env:
+          TORCH_CUDA_ARCH_LIST: ${{ matrix.arch_list }}
+        run: python setup.py build_ext --inplace
+
+      - name: Build pawX (Windows)
+        if: runner.os == 'Windows'
+        working-directory: pawX
+        env:
+          TORCH_CUDA_ARCH_LIST: ${{ matrix.arch_list }}
+        run: python setup.py build_ext --inplace
+
+      # ── Smoke test ───────────────────────────────────────────────────────────
+      - name: Smoke test pawX import
+        run: python -c "import torch; import pawX; t = pawX.scaled_sign_sketch(4, 4); print('OK:', t.shape)"
+
+      # ── Full test suite ──────────────────────────────────────────────────────
+      - name: Install package + test dependencies
+        run: pip install optuna matplotlib pytest
+
+      - name: Run tests
+        shell: bash
+        run: |
+          if [ "${{ matrix.cuda }}" = "cpu" ]; then
+            pytest tests/ -v --tb=short -k "not cuda"
+          else
+            pytest tests/ -v --tb=short
+          fi
+
+      # ── Build wheel ──────────────────────────────────────────────────────────
+      - name: Install Poetry
+        run: pip install poetry==1.8.4
+
+      - name: Build distribution
+        run: poetry build
+
+      - name: Rename wheel with platform + CUDA tag
+        run: python scripts/rename_wheel.py dist/ ${{ matrix.cuda }}
+
+      - name: List dist/
+        run: ls dist/
+        shell: bash
+
+      # ── Upload artifact ───────────────────────────────────────────────────────
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-${{ matrix.cuda }}
+          path: dist/*.whl
+
+  # ── Publish ─────────────────────────────────────────────────────────────────
+  publish:
+    name: Publish to PyPI + GitHub Release
+    needs: [build]
+    if: |
+      always() && (
+        github.event_name == 'release' ||
+        (github.event_name == 'workflow_dispatch' && inputs.publish_only == true)
+      )
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Normal mode: download artifacts produced by the build jobs in this run
+      - name: Download all wheel artifacts (from this run)
+        if: ${{ inputs.publish_only != true }}
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      # Publish-only mode: download artifacts from a previous run specified by run_id
+      - name: Download all wheel artifacts (from run_id)
+        if: ${{ inputs.publish_only == true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run download ${{ inputs.run_id }} --dir dist/ 2>&1
+          # Flatten any per-job subdirectories into dist/
+          find dist -mindepth 2 -name "*.whl" -exec mv {} dist/ \;
+          rm -rf dist/wheel-*
+
+      - name: List collected wheels
+        run: ls -lh dist/
+
+      # All wheels (CPU + CUDA) are attached to the GitHub Release for direct download
+      - name: Attach all wheels to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+          tag_name: ${{ inputs.tag || github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # PyPI receives only the CPU wheels (manylinux + Windows + macOS).
+      # rename_wheel.py tags the filename with +cpu but leaves internal metadata at the plain
+      # version (e.g. 0.1.3). PyPI rejects filename/metadata version mismatches, so strip
+      # "+cpu" from the filename before uploading — the metadata already matches.
+      # CUDA wheels stay on GitHub Releases only (local version identifiers not on PyPI).
+      - name: Publish CPU wheels to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          pip install twine
+          mkdir dist_pypi
+          for f in dist/*+cpu*.whl; do
+            cp "$f" "dist_pypi/$(basename "$f" | sed 's/+cpu//')"
+          done
+          twine upload dist_pypi/*.whl --skip-existing
