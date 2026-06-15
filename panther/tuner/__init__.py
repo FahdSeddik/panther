@@ -1,6 +1,7 @@
 from .SkAutoTuner import (
     Categorical,
     Float,
+    GridSearch,
     Int,
     LayerConfig,
     ModelVisualizer,
@@ -23,6 +24,7 @@ __all__ = [
     # Search algorithms
     "SearchAlgorithm",
     "OptunaSearch",
+    "GridSearch",
     # Visualization (optional)
     "ModelVisualizer",
 ]

@@ -9,7 +9,7 @@ Covers the main execution paths:
 - replace_without_tuning: use first param values without search
 - Config validation errors
 
-Uses real Optuna with GridSampler for determinism and real pawX sketch layers.
+Uses real Optuna with seeded samplers for determinism and real pawX sketch layers.
 """
 
 import os
@@ -370,7 +370,7 @@ class TestReplaceWithoutTuning:
 
     def test_replace_without_tuning_uses_first_values(self, two_layer_model):
         """Should use first choice from each param spec."""
-        # Don't need GridSampler here since no search is run
+        # Don't need a deterministic sampler here since no search is run
         search = OptunaSearch(n_trials=1)
 
         configs = TuningConfigs(

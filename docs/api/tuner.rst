@@ -613,29 +613,25 @@ Simple random sampling:
        ),
    )
 
-**Grid Search**
+**Exhaustive Grid Search**
 
 Exhaustive search over all combinations (use for small parameter spaces):
 
 .. code-block:: python
 
-   from panther.tuner import SKAutoTuner, OptunaSearch
-   from optuna.samplers import GridSampler
-
-   # Define the full search space for GridSampler
-   search_space = {
-       "num_terms": [1, 2, 3],
-       "low_rank": [8, 16, 32, 64],
-   }
+   from panther.tuner import SKAutoTuner, GridSearch
 
    tuner = SKAutoTuner(
        model=model,
        configs=tuning_configs,
        accuracy_eval_func=accuracy_eval_func,
-       search_algorithm=OptunaSearch(
-           sampler=GridSampler(search_space)
-       ),
+       search_algorithm=GridSearch(max_iterations=50),
    )
+
+   Optuna's ``GridSampler`` is not recommended with Panther's ask/tell-style
+   search loop because Optuna raises a ``RuntimeError`` after evaluating the
+   final grid point. For exhaustive search, use ``GridSearch`` or implement
+   ``SearchAlgorithm`` directly.
 
 **CMA-ES**
 
