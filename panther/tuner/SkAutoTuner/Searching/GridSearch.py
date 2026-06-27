@@ -1,6 +1,7 @@
 import pickle
 from typing import Any, Dict, List, Optional
 
+from ..Configs.ParamSpec import get_param_choices
 from .SearchAlgorithm import SearchAlgorithm
 
 
@@ -30,6 +31,7 @@ class GridSearch(SearchAlgorithm):
         Args:
             max_iterations: The maximum number of iterations to run.
         """
+        self.requested_max_iterations = max_iterations
         self.max_iterations = max_iterations
         self.param_space: Dict[str, List] = {}
         self.curr_iteration: int = 0
@@ -57,7 +59,7 @@ class GridSearch(SearchAlgorithm):
     def param_combinations(self, value):
         self.indexed_param_space = value
 
-    def initialize(self, param_space: Dict[str, List]):
+    def initialize(self, param_space: Dict[str, Any]):
         """
         Initialize the search algorithm with the parameter space.
 
@@ -65,9 +67,22 @@ class GridSearch(SearchAlgorithm):
             param_space: Dictionary of parameter names and their possible values
         """
         self.reset()
-        self.param_space = param_space
+        self.param_space = self._normalize_param_space(param_space)
         self.indexed_param_space = self._generate_indexed_param_space()
-        self.max_iterations = min(self.max_iterations, len(self.indexed_param_space))
+        self.max_iterations = min(
+            self.requested_max_iterations, len(self.indexed_param_space)
+        )
+
+    def _normalize_param_space(self, param_space: Dict[str, Any]) -> Dict[str, List]:
+        normalized = {}
+        for name, spec in param_space.items():
+            choices = get_param_choices(spec)
+            if choices is None:
+                raise ValueError(
+                    f"GridSearch requires finite choices for parameter '{name}'"
+                )
+            normalized[name] = choices
+        return normalized
 
     def _my_product(self, value_lists: List[List[Any]]) -> List[tuple[Any, ...]]:
         """
@@ -160,6 +175,8 @@ class GridSearch(SearchAlgorithm):
         """
         state = {
             "param_space": self.param_space,
+            "requested_max_iterations": self.requested_max_iterations,
+            "max_iterations": self.max_iterations,
             "curr_iteration": self.curr_iteration,
             "indexed_param_space": self.indexed_param_space,
             "history": self.history,
@@ -183,6 +200,8 @@ class GridSearch(SearchAlgorithm):
         self.param_space = state["param_space"]
         self.curr_iteration = state["curr_iteration"]
         self.indexed_param_space = state["indexed_param_space"]
+        self.requested_max_iterations = state["requested_max_iterations"]
+        self.max_iterations = state["max_iterations"]
         self.history = state.get("history", [])
         self.best_params = state["best_params"]
         self.best_score = state["best_score"]
@@ -233,4 +252,4 @@ class GridSearch(SearchAlgorithm):
         Returns:
             True if the search is finished, False otherwise.
         """
-        return self.curr_iteration == self.max_iterations
+        return self.curr_iteration >= self.max_iterations

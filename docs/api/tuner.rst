@@ -613,9 +613,11 @@ Simple random sampling:
        ),
    )
 
-**Exhaustive Grid Search**
+**Bounded Grid Search**
 
-Exhaustive search over all combinations (use for small parameter spaces):
+Grid search over finite discrete parameter spaces. Set ``max_iterations`` to
+cap the number of combinations tried; use a value at least as large as the
+total grid size when you need exhaustive search.
 
 .. code-block:: python
 
@@ -630,8 +632,8 @@ Exhaustive search over all combinations (use for small parameter spaces):
 
    Optuna's ``GridSampler`` is not recommended with Panther's ask/tell-style
    search loop because Optuna raises a ``RuntimeError`` after evaluating the
-   final grid point. For exhaustive search, use ``GridSearch`` or implement
-   ``SearchAlgorithm`` directly.
+   final grid point. For bounded or exhaustive grid search over finite spaces,
+   use ``GridSearch`` or implement ``SearchAlgorithm`` directly.
 
 **CMA-ES**
 
