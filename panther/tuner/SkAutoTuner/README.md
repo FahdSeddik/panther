@@ -137,27 +137,13 @@ print(study.best_params)
 print(study.trials_dataframe())
 ```
 
-### Using Grid or Random Search via Optuna
+### Using TPE, Random, or Exhaustive Search
 
-For grid or random search, use the corresponding Optuna samplers:
+The default `OptunaSearch` sampler is Optuna's `TPESampler`, which is the recommended choice for most tuning runs. You can also use other Optuna samplers such as `RandomSampler`:
 
 ```python
 from panther.tuner.SkAutoTuner.Searching import OptunaSearch
-from optuna.samplers import GridSampler, RandomSampler
-
-# Grid Search via Optuna (exhaustive, use for small parameter spaces only)
-search_space = {
-    "num_terms": [1, 2, 3],
-    "low_rank": [8, 16, 32, 64],
-}
-tuner = SKAutoTuner(
-    model=model,
-    configs=configs,
-    accuracy_eval_func=evaluate_accuracy,
-    search_algorithm=OptunaSearch(
-        sampler=GridSampler(search_space),
-    ),
-)
+from optuna.samplers import RandomSampler
 
 # Random Search via Optuna (simple random sampling)
 tuner = SKAutoTuner(
@@ -170,6 +156,8 @@ tuner = SKAutoTuner(
     ),
 )
 ```
+
+For exhaustive grid search over finite discrete spaces, use Panther's `GridSearch` reference implementation or implement the `SearchAlgorithm` interface directly. Optuna's `GridSampler` is not recommended with Panther's ask/tell-style search loop because Optuna raises a `RuntimeError` after evaluating the final grid point.
 
 ## Configuration Components
 
@@ -214,9 +202,8 @@ OptunaSearch provides industry-standard HPO with state-of-the-art samplers:
 - **TPESampler** (default): Tree-structured Parzen Estimator - excellent for most use cases
 - **CmaEsSampler**: Covariance Matrix Adaptation - great for continuous parameters
 - **RandomSampler**: Simple random sampling
-- **GridSampler**: Exhaustive grid search
 
-All search strategies are unified under OptunaSearch using the appropriate sampler.
+For exhaustive grid search, use `GridSearch` or a custom `SearchAlgorithm`.
 
 ## Performance Tracking
 

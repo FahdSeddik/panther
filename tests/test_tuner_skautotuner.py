@@ -9,7 +9,7 @@ Covers the main execution paths:
 - replace_without_tuning: use first param values without search
 - Config validation errors
 
-Uses real Optuna with GridSampler for determinism and real pawX sketch layers.
+Uses real Optuna with seeded samplers for determinism and real pawX sketch layers.
 """
 
 import os
@@ -21,6 +21,7 @@ import torch.nn as nn
 from panther.tuner.SkAutoTuner.Configs.LayerConfig import LayerConfig
 from panther.tuner.SkAutoTuner.Configs.ParamSpec import Categorical, Int
 from panther.tuner.SkAutoTuner.Configs.TuningConfigs import TuningConfigs
+from panther.tuner.SkAutoTuner.Searching.GridSearch import GridSearch
 from panther.tuner.SkAutoTuner.Searching.OptunaSearch import OptunaSearch
 from panther.tuner.SkAutoTuner.SKAutoTuner import SKAutoTuner
 
@@ -32,6 +33,7 @@ pytestmark = pytest.mark.filterwarnings(
 
 # Try to import pawX for integration tests
 try:
+    from panther.nn.conv2d import SKConv2d
     from panther.nn.linear import SKLinear
 
     HAS_SKLINEAR = True
@@ -89,6 +91,22 @@ class MixedModel(nn.Module):
         x = self.conv(x)
         x = self.flatten(x)
         x = self.fc(x)
+        return x
+
+
+class MixedConvModel(nn.Module):
+    """Model with supported and unsupported Conv2d layers."""
+
+    def __init__(self):
+        super().__init__()
+        self.normal = nn.Conv2d(4, 4, kernel_size=1)
+        self.grouped = nn.Conv2d(4, 4, kernel_size=3, padding=1, groups=2)
+        self.dilated = nn.Conv2d(4, 4, kernel_size=3, padding=2, dilation=2)
+
+    def forward(self, x):
+        x = self.normal(x)
+        x = self.grouped(x)
+        x = self.dilated(x)
         return x
 
 
@@ -221,6 +239,41 @@ class TestTuneSeparate:
         # Check results are recorded
         assert "fc1" in tuner.results
         assert len(tuner.results["fc1"]) == 2  # 2 trials
+
+    def test_auto_skips_unsupported_conv2d_layers(self):
+        """Auto tuning should skip Conv2d variants that SKConv2d cannot replace."""
+        model = MixedConvModel()
+        search = GridSearch()
+
+        configs = TuningConfigs(
+            [
+                LayerConfig(
+                    layer_names=["normal", "grouped", "dilated"],
+                    params="auto",
+                    separate=True,
+                )
+            ]
+        )
+
+        tuner = SKAutoTuner(
+            model=model,
+            configs=configs,
+            accuracy_eval_func=dummy_eval_func,
+            search_algorithm=search,
+            verbose=False,
+        )
+
+        assert [config.layer_names for config in tuner.configs.configs] == [["normal"]]
+
+        best_params = tuner.tune()
+        tuner.apply_best_params()
+
+        assert "normal" in best_params
+        assert "grouped" not in best_params
+        assert "dilated" not in best_params
+        assert isinstance(model.normal, SKConv2d)
+        assert isinstance(model.grouped, nn.Conv2d)
+        assert isinstance(model.dilated, nn.Conv2d)
 
 
 # ============================================================================
@@ -370,7 +423,7 @@ class TestReplaceWithoutTuning:
 
     def test_replace_without_tuning_uses_first_values(self, two_layer_model):
         """Should use first choice from each param spec."""
-        # Don't need GridSampler here since no search is run
+        # Don't need a deterministic sampler here since no search is run
         search = OptunaSearch(n_trials=1)
 
         configs = TuningConfigs(

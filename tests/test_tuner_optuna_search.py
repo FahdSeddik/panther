@@ -5,7 +5,7 @@ Covers:
 - Initialization with different samplers/seeds
 - Parameter space normalization (list -> Categorical, ParamSpec types)
 - Lifecycle: initialize -> get_next_params -> update -> is_finished
-- Deterministic behavior with GridSampler
+- Deterministic behavior with seeded samplers
 - Error handling: uninitialized calls, invalid param types
 - Best params/score tracking
 - save_state/load_state round-trip

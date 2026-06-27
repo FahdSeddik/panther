@@ -170,6 +170,25 @@ class ParamsResolver:
             recommended_params["low_rank"] = [4, 8, 16, 32]
             return recommended_params
 
+    def _is_supported_auto_conv2d(self, layer_name: str, layer_obj: nn.Conv2d) -> bool:
+        if layer_obj.groups != 1:
+            if self.verbose:
+                print(
+                    f"Conv2d layer {layer_name} has groups={layer_obj.groups}. "
+                    "SKConv2d only supports groups=1, so auto tuning will skip it."
+                )
+            return False
+
+        if layer_obj.dilation != (1, 1):
+            if self.verbose:
+                print(
+                    f"Conv2d layer {layer_name} has dilation={layer_obj.dilation}. "
+                    "SKConv2d only supports dilation=(1, 1), so auto tuning will skip it."
+                )
+            return False
+
+        return True
+
     def resolve(self, config: LayerConfig) -> TuningConfigs:
         """
         Resolves and returns the parameters.
@@ -216,6 +235,8 @@ class ParamsResolver:
             if isinstance(layer_obj, nn.Linear):
                 size_key = (layer_obj.in_features, layer_obj.out_features)
             elif isinstance(layer_obj, nn.Conv2d):
+                if not self._is_supported_auto_conv2d(layer_name, layer_obj):
+                    continue
                 # Simplified size_key for Conv2d
                 size_key = (layer_obj.in_channels, layer_obj.out_channels)
             else:
